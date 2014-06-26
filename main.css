@@ -6,6 +6,12 @@
   100%  { margin-left: -260px; }
 }
 
+@keyframes splash-header {
+  0%    { width: 0; }
+  50%   { width: 0; }
+  100%  { width: 550px; }
+}
+
 body {
   margin: 0;
   background-color: #000;
@@ -24,14 +30,11 @@ h2 {
   color: #abcdef;
   font-size: 30px;
   font-weight: normal;
-  line-height: 12px;
+  line-height: 24px;
   margin-left: 4px;
 }
 
 #container {
-}
-
-#cube-container {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -43,7 +46,22 @@ h2 {
   animation-fill-mode: forwards;
 }
 
+#wrap {
+  position: relative;
+}
+
+#header {
+  overflow: hidden;
+  white-space: nowrap;
+  margin-left: 130px;
+  animation: splash-header 3.0s;
+  animation-fill-mode: forwards;
+}
+
 #cube {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 80px;
   height: 80px;
   backface-visibility: visible;
