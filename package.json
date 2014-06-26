@@ -1,0 +1,12 @@
+{
+  "name": "ghostcube",
+  "version": "0.0.1",
+  "description": "Just having some spectral fun.",
+  "author": "Kevin Mikles",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "devDependencies": {
+  }
+}
