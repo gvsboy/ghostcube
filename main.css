@@ -3,13 +3,13 @@
 @keyframes splash-cube {
   0%    { opacity: 0; }
   50%   { opacity: 1; margin-left: -40px }
-  100%  { margin-left: -260px; }
+  100%  { margin-left: -335px; }
 }
 
 @keyframes splash-header {
   0%    { width: 0; }
   50%   { width: 0; }
-  100%  { width: 550px; }
+  100%  { width: 540px; }
 }
 
 body {
@@ -30,7 +30,7 @@ h2 {
   color: #abcdef;
   font-size: 30px;
   font-weight: normal;
-  line-height: 24px;
+  line-height: 12px;
   margin-left: 4px;
 }
 
@@ -52,15 +52,17 @@ h2 {
 
 #header {
   overflow: hidden;
-  white-space: nowrap;
+  margin-top: -10px;
   margin-left: 130px;
+  padding-bottom: 12px;
+  white-space: nowrap;
   animation: splash-header 3.0s;
   animation-fill-mode: forwards;
 }
 
 #cube {
   position: absolute;
-  top: 0;
+  top: 10px;
   left: 0;
   width: 80px;
   height: 80px;
