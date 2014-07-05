@@ -1,0 +1,124 @@
+/* REMEMBER TO ADD -webkit PREFIXES!!! */
+@keyframes splash-cube {
+  0% {
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 1;
+    margin-left: -40px;
+  }
+
+  100% {
+    margin-left: -335px;
+  }
+}
+@keyframes splash-header {
+  0% {
+    width: 0;
+  }
+
+  50% {
+    width: 0;
+  }
+
+  100% {
+    width: 540px;
+  }
+}
+body {
+  margin: 0;
+  background-color: #000;
+  font-family: Verdana, sans-serif;
+}
+
+h1 {
+  margin: 0;
+  color: #6385A7;
+  font-size: 60px;
+  font-weight: normal;
+}
+
+h2 {
+  margin: 0;
+  color: #abcdef;
+  font-size: 30px;
+  font-weight: normal;
+  line-height: 12px;
+  margin-left: 4px;
+}
+
+#container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 80px;
+  height: 80px;
+  margin-top: -40px;
+  margin-left: -40px;
+  animation: splash-cube 3.0s;
+  animation-fill-mode: forwards;
+}
+
+#wrap {
+  position: relative;
+}
+
+#header {
+  overflow: hidden;
+  margin-top: -10px;
+  margin-left: 130px;
+  padding-bottom: 12px;
+  white-space: nowrap;
+  animation: splash-header 3.0s;
+  animation-fill-mode: forwards;
+}
+
+#cube {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  width: 80px;
+  height: 80px;
+  backface-visibility: visible;
+  transform-style: preserve-3d;
+}
+
+#cube:hover .face {
+  background-color: #abcdef;
+  border-color: #000;
+}
+
+.face {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border: 4px solid #abcdef;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.4s, border-color 0.4s;
+}
+
+.front {
+  transform: translateZ(40px);
+}
+
+.back {
+  transform: rotateY(180deg) translateZ(40px);
+}
+
+.right {
+  transform: rotateY(90deg) translateZ(40px);
+}
+
+.left {
+  transform: rotateY(-90deg) translateZ(40px);
+}
+
+.top {
+  transform: rotateX(90deg) translateZ(40px);
+}
+
+.bottom {
+  transform: rotateX(-90deg) translateZ(40px);
+}
