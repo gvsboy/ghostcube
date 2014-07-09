@@ -1,17 +1,63 @@
 /* REMEMBER TO ADD -webkit PREFIXES!!! */
 
+
+/*----------------------------------------------
+
+  Variables
+
+----------------------------------------------*/
+
 $splash-speed: 3.0s;
 
 /* Cube Vars */
 $cube-color: #abcdef;
-$cube-size: 80px;
+$cube-size: 8em;
 $z-translate: $cube-size / 2;
 
 /* Header Vars */
-$header-offset: 130px;
-$header-width: 540px;
+$header-offset: 13em;
+$header-width: 54em;
 
+/*----------------------------------------------
 
+  Mixins
+
+----------------------------------------------*/
+
+@mixin transform($transform) {
+  transform: $transform;
+  -o-transform: $transform;
+  -ms-transform: $transform;
+  -moz-transform: $transform;
+  -webkit-transform: $transform;
+}
+
+@mixin transform-style($style) {
+  transform-style: $style;
+  -o-transform-style: $style;
+  -moz-transform-style: $style;
+  -webkit-transform-style: $style;
+}
+
+@mixin backface-visibility($visibility) {
+  backface-visibility: $visibility;
+  -o-backface-visibility: $visibility;
+  -moz-backface-visibility: $visibility;
+  -webkit-backface-visibility: $visibility;
+}
+
+@mixin animation($animation) {
+  animation: $animation;
+  -o-animation: $animation;
+  -moz-animation: $animation;
+  -webkit-animation: $animation;
+}
+
+/*----------------------------------------------
+
+  Animations
+
+----------------------------------------------*/
 
 /* Animations */
 @keyframes splash-cube {
@@ -26,26 +72,34 @@ $header-width: 540px;
   100%  { width: $header-width; }
 }
 
+/*----------------------------------------------
 
+  Styles
 
-/* Styles */
+----------------------------------------------*/
+
+html {
+  font-size: 16px; /* Set base font size for em conversion */
+}
+
 body {
   margin: 0;
   background-color: #000;
+  font-size: 62.5%; /* make em conversion simple as pie (/10) */
   font-family: Verdana, sans-serif;
 }
 
 h1 {
   margin: 0;
   color: #6385a7;
-  font-size: 60px;
+  font-size: 6em;
   font-weight: normal;
 }
 
 h2 {
   margin: 0;
   color: $cube-color;
-  font-size: 30px;
+  font-size: 3em;
   font-weight: normal;
   line-height: 12px;
   margin-left: 4px;
@@ -59,8 +113,7 @@ h2 {
   height: $cube-size;
   margin-top: -($cube-size / 2);
   margin-left: -($cube-size / 2);
-  animation: splash-cube $splash-speed;
-  animation-fill-mode: forwards;
+  @include animation(splash-cube $splash-speed forwards);
 }
 
 #wrap {
@@ -73,8 +126,7 @@ h2 {
   margin-left: $header-offset;
   padding-bottom: 12px;
   white-space: nowrap;
-  animation: splash-header $splash-speed;
-  animation-fill-mode: forwards;
+  @include animation(splash-header $splash-speed forwards);
 }
 
 #cube {
@@ -83,8 +135,8 @@ h2 {
   left: 0;
   width: $cube-size;
   height: $cube-size;
-  backface-visibility: visible;
-  transform-style: preserve-3d;
+  @include backface-visibility(visible);
+  @include transform-style(preserve-3d);
 }
 
 #cube:hover .face {
@@ -103,20 +155,20 @@ h2 {
 }
 
 .front {
-  transform: translateZ($z-translate);
+  @include transform(translateZ($z-translate));
 }
 .back {
-  transform: rotateY(180deg) translateZ($z-translate);
+  @include transform(rotateY(180deg) translateZ($z-translate));
 }
 .right {
-  transform: rotateY(90deg) translateZ($z-translate);
+  @include transform(rotateY(90deg) translateZ($z-translate));
 }
 .left {
-  transform: rotateY(-90deg) translateZ($z-translate);
+  @include transform(rotateY(-90deg) translateZ($z-translate));
 }
 .top {
-  transform: rotateX(90deg) translateZ($z-translate);
+  @include transform(rotateX(90deg) translateZ($z-translate));
 }
 .bottom {
-  transform: rotateX(-90deg) translateZ($z-translate);
+  @include transform(rotateX(-90deg) translateZ($z-translate));
 }
