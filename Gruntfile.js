@@ -33,13 +33,11 @@ module.exports = function(grunt) {
       dist: 'dist'
     },
 
-    express: {
-      server: {
+    watch: { 
+      scripts: {
+        files: ['src/**/*'],
+        tasks: ['default'],
         options: {
-          debug: true,
-          port: 4000,
-          bases: [path.resolve(__dirname, 'dist')],
-          server: path.resolve(__dirname, './server'),
           livereload: true
         }
       }
@@ -50,12 +48,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-sass');
-  grunt.loadNpmTasks('grunt-express');
-
-  grunt.registerTask('server', [
-    'express:server',
-    'express-keepalive'
-  ]);
+  grunt.loadNpmTasks('grunt-contrib-watch');
 
   grunt.registerTask('default', [
     'clean',
