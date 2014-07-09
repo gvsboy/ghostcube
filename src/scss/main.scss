@@ -1,17 +1,34 @@
 /* REMEMBER TO ADD -webkit PREFIXES!!! */
 
+$splash-speed: 3.0s;
+
+/* Cube Vars */
+$cube-color: #abcdef;
+$cube-size: 80px;
+$z-translate: $cube-size / 2;
+
+/* Header Vars */
+$header-offset: 130px;
+$header-width: 540px;
+
+
+
+/* Animations */
 @keyframes splash-cube {
   0%    { opacity: 0; }
-  50%   { opacity: 1; margin-left: -40px }
-  100%  { margin-left: -335px; }
+  50%   { opacity: 1; margin-left: -$z-translate }
+  100%  { margin-left: -(($header-width + $header-offset) / 2); }
 }
 
 @keyframes splash-header {
   0%    { width: 0; }
   50%   { width: 0; }
-  100%  { width: 540px; }
+  100%  { width: $header-width; }
 }
 
+
+
+/* Styles */
 body {
   margin: 0;
   background-color: #000;
@@ -20,14 +37,14 @@ body {
 
 h1 {
   margin: 0;
-  color: #6385A7;
+  color: #6385a7;
   font-size: 60px;
   font-weight: normal;
 }
 
 h2 {
   margin: 0;
-  color: #abcdef;
+  color: $cube-color;
   font-size: 30px;
   font-weight: normal;
   line-height: 12px;
@@ -38,11 +55,11 @@ h2 {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 80px;
-  height: 80px;
-  margin-top: -40px;
-  margin-left: -40px;
-  animation: splash-cube 3.0s;
+  width: $cube-size;
+  height: $cube-size;
+  margin-top: -($cube-size / 2);
+  margin-left: -($cube-size / 2);
+  animation: splash-cube $splash-speed;
   animation-fill-mode: forwards;
 }
 
@@ -53,10 +70,10 @@ h2 {
 #header {
   overflow: hidden;
   margin-top: -10px;
-  margin-left: 130px;
+  margin-left: $header-offset;
   padding-bottom: 12px;
   white-space: nowrap;
-  animation: splash-header 3.0s;
+  animation: splash-header $splash-speed;
   animation-fill-mode: forwards;
 }
 
@@ -64,42 +81,42 @@ h2 {
   position: absolute;
   top: 10px;
   left: 0;
-  width: 80px;
-  height: 80px;
+  width: $cube-size;
+  height: $cube-size;
   backface-visibility: visible;
   transform-style: preserve-3d;
 }
 
 #cube:hover .face {
-  background-color: #abcdef;
+  background-color: $cube-color;
   border-color: #000;
 }
 
 .face {
   position: absolute;
-  width: 80px;
-  height: 80px;
-  border: 4px solid #abcdef;
+  width: $cube-size;
+  height: $cube-size;
+  border: 4px solid $cube-color;
   background: rgba(0, 0, 0, 0);
   cursor: pointer;
   transition: background-color 0.4s, border-color 0.4s;
 }
 
 .front {
-  transform: translateZ(40px);
+  transform: translateZ($z-translate);
 }
 .back {
-  transform: rotateY(180deg) translateZ(40px);
+  transform: rotateY(180deg) translateZ($z-translate);
 }
 .right {
-  transform: rotateY(90deg) translateZ(40px);
+  transform: rotateY(90deg) translateZ($z-translate);
 }
 .left {
-  transform: rotateY(-90deg) translateZ(40px);
+  transform: rotateY(-90deg) translateZ($z-translate);
 }
 .top {
-  transform: rotateX(90deg) translateZ(40px);
+  transform: rotateX(90deg) translateZ($z-translate);
 }
 .bottom {
-  transform: rotateX(-90deg) translateZ(40px);
+  transform: rotateX(-90deg) translateZ($z-translate);
 }
