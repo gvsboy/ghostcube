@@ -1,4 +1,3 @@
-/* REMEMBER TO ADD -webkit PREFIXES!!! */
 /*----------------------------------------------
 
   Variables
@@ -17,6 +16,48 @@
 
 ----------------------------------------------*/
 /* Animations */
+@-webkit-keyframes splash-cube {
+  0% {
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 1;
+    margin-left: -4em;
+  }
+
+  100% {
+    margin-left: -33.5em;
+  }
+}
+@-moz-keyframes splash-cube {
+  0% {
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 1;
+    margin-left: -4em;
+  }
+
+  100% {
+    margin-left: -33.5em;
+  }
+}
+@-o-keyframes splash-cube {
+  0% {
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 1;
+    margin-left: -4em;
+  }
+
+  100% {
+    margin-left: -33.5em;
+  }
+}
 @keyframes splash-cube {
   0% {
     opacity: 0;
@@ -29,6 +70,45 @@
 
   100% {
     margin-left: -33.5em;
+  }
+}
+@-webkit-keyframes splash-header {
+  0% {
+    width: 0;
+  }
+
+  50% {
+    width: 0;
+  }
+
+  100% {
+    width: 54em;
+  }
+}
+@-moz-keyframes splash-header {
+  0% {
+    width: 0;
+  }
+
+  50% {
+    width: 0;
+  }
+
+  100% {
+    width: 54em;
+  }
+}
+@-o-keyframes splash-header {
+  0% {
+    width: 0;
+  }
+
+  50% {
+    width: 0;
+  }
+
+  100% {
+    width: 54em;
   }
 }
 @keyframes splash-header {
@@ -44,11 +124,6 @@
     width: 54em;
   }
 }
-/*----------------------------------------------
-
-  Styles
-
-----------------------------------------------*/
 html {
   font-size: 16px;
   /* Set base font size for em conversion */
@@ -137,6 +212,9 @@ h2 {
   background: transparent;
   cursor: pointer;
   transition: background-color 0.4s, border-color 0.4s;
+  -o-transition: background-color 0.4s, border-color 0.4s;
+  -moz-transition: background-color 0.4s, border-color 0.4s;
+  -webkit-transition: background-color 0.4s, border-color 0.4s;
 }
 
 .front {

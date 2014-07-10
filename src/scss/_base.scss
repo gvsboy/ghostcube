@@ -1,0 +1,92 @@
+/*----------------------------------------------
+
+  Variables
+
+----------------------------------------------*/
+
+$splash-speed: 3.0s;
+
+/* Cube Vars */
+$cube-color: #abcdef;
+$cube-size: 8em;
+$z-translate: $cube-size / 2;
+
+/* Header Vars */
+$header-offset: 13em;
+$header-width: 54em;
+
+/*----------------------------------------------
+
+  Mixins
+
+----------------------------------------------*/
+
+@mixin transform($transform) {
+  transform: $transform;
+  -o-transform: $transform;
+  -ms-transform: $transform;
+  -moz-transform: $transform;
+  -webkit-transform: $transform;
+}
+
+@mixin transform-style($style) {
+  transform-style: $style;
+  -o-transform-style: $style;
+  -moz-transform-style: $style;
+  -webkit-transform-style: $style;
+}
+
+@mixin backface-visibility($visibility) {
+  backface-visibility: $visibility;
+  -o-backface-visibility: $visibility;
+  -moz-backface-visibility: $visibility;
+  -webkit-backface-visibility: $visibility;
+}
+
+@mixin animation($animation) {
+  animation: $animation;
+  -o-animation: $animation;
+  -moz-animation: $animation;
+  -webkit-animation: $animation;
+}
+
+@mixin transition($transition...) {
+  transition: $transition;
+  -o-transition: $transition;
+  -moz-transition: $transition;
+  -webkit-transition: $transition;
+}
+
+@mixin keyframes($name) {
+  @-webkit-keyframes $name {
+    @content;
+  }
+  @-moz-keyframes $name {
+    @content;
+  }
+  @-o-keyframes $name {
+    @content;
+  }
+  @keyframes $name {
+    @content;
+  }
+}
+
+/*----------------------------------------------
+
+  Animations
+
+----------------------------------------------*/
+
+/* Animations */
+@include keyframes(splash-cube) {
+  0%    { opacity: 0; }
+  50%   { opacity: 1; margin-left: -$z-translate }
+  100%  { margin-left: -(($header-width + $header-offset) / 2); }
+}
+
+@include keyframes(splash-header) {
+  0%    { width: 0; }
+  50%   { width: 0; }
+  100%  { width: $header-width; }
+}
