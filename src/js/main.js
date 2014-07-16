@@ -7,8 +7,10 @@
       REVOLUTION = 360,
       doc = win.document,
       cube = doc.getElementById('cube'),
+      container = doc.getElementById('container'),
       cubeStyle = cube.style,
       tick = 0,
+      stylePrefix = getVendorPrefix(),
       transformProperty,
       timer;
 
@@ -36,7 +38,12 @@
     }
   }
 
-  transformProperty = getVendorPrefix() + TRANSFORM;
+  // Begin rotating
+  transformProperty = stylePrefix + TRANSFORM;
   timer = win.setInterval(rotate, 10);
+
+  cube.addEventListener('click', function() {
+    container.classList.add('game');
+  });
 
 }(window));

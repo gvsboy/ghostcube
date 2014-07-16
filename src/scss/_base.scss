@@ -5,19 +5,24 @@
 ----------------------------------------------*/
 
 $splash-speed: 3.0s;
+$game-speed: 2.0s;
 
 /* Cube Vars */
 $cube-color: #abcdef;
 $cube-size: 8em;
-$z-translate: $cube-size / 2;
+$cube-z: $cube-size / 2;
+$cube-game-size: 16em;
+$cube-game-z: $cube-game-size / 2;
 
 /* Header Vars */
-$header-offset: 13em;
+$header-pad: 5em;
+$header-offset: $cube-size + $header-pad;
+$header-game-offset: $cube-game-size + $header-pad;
 $header-width: 54em;
 
 /*----------------------------------------------
 
-  Mixins
+  General Mixins
 
 ----------------------------------------------*/
 
@@ -74,15 +79,41 @@ $header-width: 54em;
 
 /*----------------------------------------------
 
+  Cube Game Start Mixins
+
+----------------------------------------------*/
+
+@mixin game-start-animation($name) {
+  @include animation($name $game-speed forwards);
+}
+
+@mixin game-face-keyframes($name, $rotate) {
+  @include keyframes($name) {
+    100%  {
+      width: $cube-game-size;
+      height: $cube-game-size;
+      @include transform($rotate translateZ($cube-game-z));
+    }
+  }
+}
+
+
+/*----------------------------------------------
+
   Animations
 
 ----------------------------------------------*/
 
 /* Animations */
 @include keyframes(splash-cube) {
-  0%    { opacity: 0; }
-  50%   { opacity: 1; margin-left: -$z-translate }
+  0%    { opacity: 0; margin-left: -($cube-size / 2); }
+  50%   { opacity: 1; margin-left: -($cube-size / 2); }
   100%  { margin-left: -(($header-width + $header-offset) / 2); }
+}
+
+@include keyframes(game-cube) {
+  0%    { width: $cube-size; height: $cube-size; }
+  100%  { width: $cube-game-size; height: $cube-game-size; margin-left: -($cube-size / 2); margin-top: -($cube-size / 2);}
 }
 
 @include keyframes(splash-header) {
@@ -90,3 +121,16 @@ $header-width: 54em;
   50%   { width: 0; }
   100%  { width: $header-width; }
 }
+
+@include keyframes(game-header) {
+  0%    { width: $header-width; margin-left: $header-offset; }
+  100%  { width: 0; margin-left: $header-game-offset; }
+}
+
+/* Cube face transitions to game */
+@include game-face-keyframes(game-cube-back, rotateY(180deg));
+@include game-face-keyframes(game-cube-right, rotateY(90deg));
+@include game-face-keyframes(game-cube-left, rotateY(-90deg));
+@include game-face-keyframes(game-cube-top, rotateX(90deg));
+@include game-face-keyframes(game-cube-bottom, rotateX(-90deg));
+@include game-face-keyframes(game-cube-front, rotateX(0deg));

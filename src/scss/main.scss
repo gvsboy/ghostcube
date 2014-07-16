@@ -27,6 +27,14 @@ h2 {
   margin-left: 4px;
 }
 
+
+
+/*----------------------------------------------
+
+  Cube
+
+----------------------------------------------*/
+
 #container {
   position: absolute;
   top: 50%;
@@ -34,8 +42,39 @@ h2 {
   width: $cube-size;
   height: $cube-size;
   margin-top: -($cube-size / 2);
-  margin-left: -($cube-size / 2);
+  margin-left: -(($header-width + $header-offset) / 2);
   @include animation(splash-cube $splash-speed forwards);
+
+  &.game {
+    @include game-start-animation(game-cube);
+
+    #header {
+      @include game-start-animation(game-header);
+    }
+
+    #cube {
+      @include game-start-animation(game-cube);
+    }
+
+    .front {
+      @include game-start-animation(game-cube-front);
+    }
+    .back {
+      @include game-start-animation(game-cube-back);
+    }
+    .right {
+      @include game-start-animation(game-cube-right);
+    }
+    .left {
+      @include game-start-animation(game-cube-left);
+    }
+    .top {
+      @include game-start-animation(game-cube-top);
+    }
+    .bottom {
+      @include game-start-animation(game-cube-bottom);
+    }
+  }
 }
 
 #wrap {
@@ -76,21 +115,22 @@ h2 {
   @include transition(background-color 0.4s, border-color 0.4s);
 }
 
+/* Normal Cube */
 .front {
-  @include transform(translateZ($z-translate));
+  @include transform(translateZ($cube-z));
 }
 .back {
-  @include transform(rotateY(180deg) translateZ($z-translate));
+  @include transform(rotateY(180deg) translateZ($cube-z));
 }
 .right {
-  @include transform(rotateY(90deg) translateZ($z-translate));
+  @include transform(rotateY(90deg) translateZ($cube-z));
 }
 .left {
-  @include transform(rotateY(-90deg) translateZ($z-translate));
+  @include transform(rotateY(-90deg) translateZ($cube-z));
 }
 .top {
-  @include transform(rotateX(90deg) translateZ($z-translate));
+  @include transform(rotateX(90deg) translateZ($cube-z));
 }
 .bottom {
-  @include transform(rotateX(-90deg) translateZ($z-translate));
+  @include transform(rotateX(-90deg) translateZ($cube-z));
 }

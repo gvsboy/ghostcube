@@ -7,7 +7,12 @@
 /* Header Vars */
 /*----------------------------------------------
 
-  Mixins
+  General Mixins
+
+----------------------------------------------*/
+/*----------------------------------------------
+
+  Cube Game Start Mixins
 
 ----------------------------------------------*/
 /*----------------------------------------------
@@ -19,6 +24,7 @@
 @-webkit-keyframes splash-cube {
   0% {
     opacity: 0;
+    margin-left: -4em;
   }
 
   50% {
@@ -33,6 +39,7 @@
 @-moz-keyframes splash-cube {
   0% {
     opacity: 0;
+    margin-left: -4em;
   }
 
   50% {
@@ -47,6 +54,7 @@
 @-o-keyframes splash-cube {
   0% {
     opacity: 0;
+    margin-left: -4em;
   }
 
   50% {
@@ -61,6 +69,7 @@
 @keyframes splash-cube {
   0% {
     opacity: 0;
+    margin-left: -4em;
   }
 
   50% {
@@ -70,6 +79,58 @@
 
   100% {
     margin-left: -33.5em;
+  }
+}
+@-webkit-keyframes game-cube {
+  0% {
+    width: 8em;
+    height: 8em;
+  }
+
+  100% {
+    width: 16em;
+    height: 16em;
+    margin-left: -4em;
+    margin-top: -4em;
+  }
+}
+@-moz-keyframes game-cube {
+  0% {
+    width: 8em;
+    height: 8em;
+  }
+
+  100% {
+    width: 16em;
+    height: 16em;
+    margin-left: -4em;
+    margin-top: -4em;
+  }
+}
+@-o-keyframes game-cube {
+  0% {
+    width: 8em;
+    height: 8em;
+  }
+
+  100% {
+    width: 16em;
+    height: 16em;
+    margin-left: -4em;
+    margin-top: -4em;
+  }
+}
+@keyframes game-cube {
+  0% {
+    width: 8em;
+    height: 8em;
+  }
+
+  100% {
+    width: 16em;
+    height: 16em;
+    margin-left: -4em;
+    margin-top: -4em;
   }
 }
 @-webkit-keyframes splash-header {
@@ -124,6 +185,315 @@
     width: 54em;
   }
 }
+@-webkit-keyframes game-header {
+  0% {
+    width: 54em;
+    margin-left: 13em;
+  }
+
+  100% {
+    width: 0;
+    margin-left: 21em;
+  }
+}
+@-moz-keyframes game-header {
+  0% {
+    width: 54em;
+    margin-left: 13em;
+  }
+
+  100% {
+    width: 0;
+    margin-left: 21em;
+  }
+}
+@-o-keyframes game-header {
+  0% {
+    width: 54em;
+    margin-left: 13em;
+  }
+
+  100% {
+    width: 0;
+    margin-left: 21em;
+  }
+}
+@keyframes game-header {
+  0% {
+    width: 54em;
+    margin-left: 13em;
+  }
+
+  100% {
+    width: 0;
+    margin-left: 21em;
+  }
+}
+/* Cube face transitions to game */
+@-webkit-keyframes game-cube-back {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateY(180deg) translateZ(8em);
+    -o-transform: rotateY(180deg) translateZ(8em);
+    -ms-transform: rotateY(180deg) translateZ(8em);
+    -moz-transform: rotateY(180deg) translateZ(8em);
+    -webkit-transform: rotateY(180deg) translateZ(8em);
+  }
+}
+@-moz-keyframes game-cube-back {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateY(180deg) translateZ(8em);
+    -o-transform: rotateY(180deg) translateZ(8em);
+    -ms-transform: rotateY(180deg) translateZ(8em);
+    -moz-transform: rotateY(180deg) translateZ(8em);
+    -webkit-transform: rotateY(180deg) translateZ(8em);
+  }
+}
+@-o-keyframes game-cube-back {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateY(180deg) translateZ(8em);
+    -o-transform: rotateY(180deg) translateZ(8em);
+    -ms-transform: rotateY(180deg) translateZ(8em);
+    -moz-transform: rotateY(180deg) translateZ(8em);
+    -webkit-transform: rotateY(180deg) translateZ(8em);
+  }
+}
+@keyframes game-cube-back {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateY(180deg) translateZ(8em);
+    -o-transform: rotateY(180deg) translateZ(8em);
+    -ms-transform: rotateY(180deg) translateZ(8em);
+    -moz-transform: rotateY(180deg) translateZ(8em);
+    -webkit-transform: rotateY(180deg) translateZ(8em);
+  }
+}
+@-webkit-keyframes game-cube-right {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateY(90deg) translateZ(8em);
+    -o-transform: rotateY(90deg) translateZ(8em);
+    -ms-transform: rotateY(90deg) translateZ(8em);
+    -moz-transform: rotateY(90deg) translateZ(8em);
+    -webkit-transform: rotateY(90deg) translateZ(8em);
+  }
+}
+@-moz-keyframes game-cube-right {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateY(90deg) translateZ(8em);
+    -o-transform: rotateY(90deg) translateZ(8em);
+    -ms-transform: rotateY(90deg) translateZ(8em);
+    -moz-transform: rotateY(90deg) translateZ(8em);
+    -webkit-transform: rotateY(90deg) translateZ(8em);
+  }
+}
+@-o-keyframes game-cube-right {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateY(90deg) translateZ(8em);
+    -o-transform: rotateY(90deg) translateZ(8em);
+    -ms-transform: rotateY(90deg) translateZ(8em);
+    -moz-transform: rotateY(90deg) translateZ(8em);
+    -webkit-transform: rotateY(90deg) translateZ(8em);
+  }
+}
+@keyframes game-cube-right {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateY(90deg) translateZ(8em);
+    -o-transform: rotateY(90deg) translateZ(8em);
+    -ms-transform: rotateY(90deg) translateZ(8em);
+    -moz-transform: rotateY(90deg) translateZ(8em);
+    -webkit-transform: rotateY(90deg) translateZ(8em);
+  }
+}
+@-webkit-keyframes game-cube-left {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateY(-90deg) translateZ(8em);
+    -o-transform: rotateY(-90deg) translateZ(8em);
+    -ms-transform: rotateY(-90deg) translateZ(8em);
+    -moz-transform: rotateY(-90deg) translateZ(8em);
+    -webkit-transform: rotateY(-90deg) translateZ(8em);
+  }
+}
+@-moz-keyframes game-cube-left {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateY(-90deg) translateZ(8em);
+    -o-transform: rotateY(-90deg) translateZ(8em);
+    -ms-transform: rotateY(-90deg) translateZ(8em);
+    -moz-transform: rotateY(-90deg) translateZ(8em);
+    -webkit-transform: rotateY(-90deg) translateZ(8em);
+  }
+}
+@-o-keyframes game-cube-left {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateY(-90deg) translateZ(8em);
+    -o-transform: rotateY(-90deg) translateZ(8em);
+    -ms-transform: rotateY(-90deg) translateZ(8em);
+    -moz-transform: rotateY(-90deg) translateZ(8em);
+    -webkit-transform: rotateY(-90deg) translateZ(8em);
+  }
+}
+@keyframes game-cube-left {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateY(-90deg) translateZ(8em);
+    -o-transform: rotateY(-90deg) translateZ(8em);
+    -ms-transform: rotateY(-90deg) translateZ(8em);
+    -moz-transform: rotateY(-90deg) translateZ(8em);
+    -webkit-transform: rotateY(-90deg) translateZ(8em);
+  }
+}
+@-webkit-keyframes game-cube-top {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateX(90deg) translateZ(8em);
+    -o-transform: rotateX(90deg) translateZ(8em);
+    -ms-transform: rotateX(90deg) translateZ(8em);
+    -moz-transform: rotateX(90deg) translateZ(8em);
+    -webkit-transform: rotateX(90deg) translateZ(8em);
+  }
+}
+@-moz-keyframes game-cube-top {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateX(90deg) translateZ(8em);
+    -o-transform: rotateX(90deg) translateZ(8em);
+    -ms-transform: rotateX(90deg) translateZ(8em);
+    -moz-transform: rotateX(90deg) translateZ(8em);
+    -webkit-transform: rotateX(90deg) translateZ(8em);
+  }
+}
+@-o-keyframes game-cube-top {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateX(90deg) translateZ(8em);
+    -o-transform: rotateX(90deg) translateZ(8em);
+    -ms-transform: rotateX(90deg) translateZ(8em);
+    -moz-transform: rotateX(90deg) translateZ(8em);
+    -webkit-transform: rotateX(90deg) translateZ(8em);
+  }
+}
+@keyframes game-cube-top {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateX(90deg) translateZ(8em);
+    -o-transform: rotateX(90deg) translateZ(8em);
+    -ms-transform: rotateX(90deg) translateZ(8em);
+    -moz-transform: rotateX(90deg) translateZ(8em);
+    -webkit-transform: rotateX(90deg) translateZ(8em);
+  }
+}
+@-webkit-keyframes game-cube-bottom {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateX(-90deg) translateZ(8em);
+    -o-transform: rotateX(-90deg) translateZ(8em);
+    -ms-transform: rotateX(-90deg) translateZ(8em);
+    -moz-transform: rotateX(-90deg) translateZ(8em);
+    -webkit-transform: rotateX(-90deg) translateZ(8em);
+  }
+}
+@-moz-keyframes game-cube-bottom {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateX(-90deg) translateZ(8em);
+    -o-transform: rotateX(-90deg) translateZ(8em);
+    -ms-transform: rotateX(-90deg) translateZ(8em);
+    -moz-transform: rotateX(-90deg) translateZ(8em);
+    -webkit-transform: rotateX(-90deg) translateZ(8em);
+  }
+}
+@-o-keyframes game-cube-bottom {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateX(-90deg) translateZ(8em);
+    -o-transform: rotateX(-90deg) translateZ(8em);
+    -ms-transform: rotateX(-90deg) translateZ(8em);
+    -moz-transform: rotateX(-90deg) translateZ(8em);
+    -webkit-transform: rotateX(-90deg) translateZ(8em);
+  }
+}
+@keyframes game-cube-bottom {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateX(-90deg) translateZ(8em);
+    -o-transform: rotateX(-90deg) translateZ(8em);
+    -ms-transform: rotateX(-90deg) translateZ(8em);
+    -moz-transform: rotateX(-90deg) translateZ(8em);
+    -webkit-transform: rotateX(-90deg) translateZ(8em);
+  }
+}
+@-webkit-keyframes game-cube-front {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateX(0deg) translateZ(8em);
+    -o-transform: rotateX(0deg) translateZ(8em);
+    -ms-transform: rotateX(0deg) translateZ(8em);
+    -moz-transform: rotateX(0deg) translateZ(8em);
+    -webkit-transform: rotateX(0deg) translateZ(8em);
+  }
+}
+@-moz-keyframes game-cube-front {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateX(0deg) translateZ(8em);
+    -o-transform: rotateX(0deg) translateZ(8em);
+    -ms-transform: rotateX(0deg) translateZ(8em);
+    -moz-transform: rotateX(0deg) translateZ(8em);
+    -webkit-transform: rotateX(0deg) translateZ(8em);
+  }
+}
+@-o-keyframes game-cube-front {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateX(0deg) translateZ(8em);
+    -o-transform: rotateX(0deg) translateZ(8em);
+    -ms-transform: rotateX(0deg) translateZ(8em);
+    -moz-transform: rotateX(0deg) translateZ(8em);
+    -webkit-transform: rotateX(0deg) translateZ(8em);
+  }
+}
+@keyframes game-cube-front {
+  100% {
+    width: 16em;
+    height: 16em;
+    transform: rotateX(0deg) translateZ(8em);
+    -o-transform: rotateX(0deg) translateZ(8em);
+    -ms-transform: rotateX(0deg) translateZ(8em);
+    -moz-transform: rotateX(0deg) translateZ(8em);
+    -webkit-transform: rotateX(0deg) translateZ(8em);
+  }
+}
 html {
   font-size: 16px;
   /* Set base font size for em conversion */
@@ -153,6 +523,11 @@ h2 {
   margin-left: 4px;
 }
 
+/*----------------------------------------------
+
+  Cube
+
+----------------------------------------------*/
 #container {
   position: absolute;
   top: 50%;
@@ -160,11 +535,65 @@ h2 {
   width: 8em;
   height: 8em;
   margin-top: -4em;
-  margin-left: -4em;
+  margin-left: -33.5em;
   animation: splash-cube 3s forwards;
   -o-animation: splash-cube 3s forwards;
   -moz-animation: splash-cube 3s forwards;
   -webkit-animation: splash-cube 3s forwards;
+}
+#container.game {
+  animation: game-cube 2s forwards;
+  -o-animation: game-cube 2s forwards;
+  -moz-animation: game-cube 2s forwards;
+  -webkit-animation: game-cube 2s forwards;
+}
+#container.game #header {
+  animation: game-header 2s forwards;
+  -o-animation: game-header 2s forwards;
+  -moz-animation: game-header 2s forwards;
+  -webkit-animation: game-header 2s forwards;
+}
+#container.game #cube {
+  animation: game-cube 2s forwards;
+  -o-animation: game-cube 2s forwards;
+  -moz-animation: game-cube 2s forwards;
+  -webkit-animation: game-cube 2s forwards;
+}
+#container.game .front {
+  animation: game-cube-front 2s forwards;
+  -o-animation: game-cube-front 2s forwards;
+  -moz-animation: game-cube-front 2s forwards;
+  -webkit-animation: game-cube-front 2s forwards;
+}
+#container.game .back {
+  animation: game-cube-back 2s forwards;
+  -o-animation: game-cube-back 2s forwards;
+  -moz-animation: game-cube-back 2s forwards;
+  -webkit-animation: game-cube-back 2s forwards;
+}
+#container.game .right {
+  animation: game-cube-right 2s forwards;
+  -o-animation: game-cube-right 2s forwards;
+  -moz-animation: game-cube-right 2s forwards;
+  -webkit-animation: game-cube-right 2s forwards;
+}
+#container.game .left {
+  animation: game-cube-left 2s forwards;
+  -o-animation: game-cube-left 2s forwards;
+  -moz-animation: game-cube-left 2s forwards;
+  -webkit-animation: game-cube-left 2s forwards;
+}
+#container.game .top {
+  animation: game-cube-top 2s forwards;
+  -o-animation: game-cube-top 2s forwards;
+  -moz-animation: game-cube-top 2s forwards;
+  -webkit-animation: game-cube-top 2s forwards;
+}
+#container.game .bottom {
+  animation: game-cube-bottom 2s forwards;
+  -o-animation: game-cube-bottom 2s forwards;
+  -moz-animation: game-cube-bottom 2s forwards;
+  -webkit-animation: game-cube-bottom 2s forwards;
 }
 
 #wrap {
@@ -217,6 +646,7 @@ h2 {
   -webkit-transition: background-color 0.4s, border-color 0.4s;
 }
 
+/* Normal Cube */
 .front {
   transform: translateZ(4em);
   -o-transform: translateZ(4em);
