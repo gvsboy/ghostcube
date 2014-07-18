@@ -52,7 +52,7 @@ h2 {
       @include game-start-animation(game-header);
     }
 
-    #cube {
+    .cube {
       @include game-start-animation(game-cube);
     }
 
@@ -90,7 +90,7 @@ h2 {
   @include animation(splash-header $splash-speed forwards);
 }
 
-#cube {
+.cube {
   position: absolute;
   top: 10px;
   left: 0;
@@ -100,7 +100,7 @@ h2 {
   @include transform-style(preserve-3d);
 }
 
-#cube:hover .face {
+.cube:hover .face {
   background-color: $cube-color;
   border-color: #000;
 }

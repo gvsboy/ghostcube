@@ -1,11 +1,3 @@
-var Const = {
-  TRANSFORM: 'Transform',
-  ROTATE_X_PREFIX: 'rotateX(',
-  ROTATE_Y_PREFIX: 'rotateY(',
-  ROTATE_UNIT_SUFFIX: 'deg)',
-  REVOLUTION: 360
-};
-
 function Cube(id) {
   this.container              = document.getElementById(id);
   this.el                     = this.container.getElementsByClassName('cube')[0];
@@ -50,27 +42,6 @@ Cube.prototype = {
       this.tick = 0;
     }
     this.rotate(tick, tick);
-  }
-
-};
-
-
-var Util = {
-
-  getVendorPrefix: function() {
-
-    var style = document.body.style,
-        prefixes = ['ms', 'O', 'Moz', 'Webkit', ''],
-        prefix;
-
-    while (prefixes.length) {
-      prefix = prefixes.pop();
-      if ((prefix + Const.TRANSFORM) in style) {
-        return prefix;
-      }
-    }
-
-    return '';
   }
 
 };

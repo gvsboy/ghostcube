@@ -553,7 +553,7 @@ h2 {
   -moz-animation: game-header 2s forwards;
   -webkit-animation: game-header 2s forwards;
 }
-#container.game #cube {
+#container.game .cube {
   animation: game-cube 2s forwards;
   -o-animation: game-cube 2s forwards;
   -moz-animation: game-cube 2s forwards;
@@ -612,7 +612,7 @@ h2 {
   -webkit-animation: splash-header 3s forwards;
 }
 
-#cube {
+.cube {
   position: absolute;
   top: 10px;
   left: 0;
@@ -628,7 +628,7 @@ h2 {
   -webkit-transform-style: preserve-3d;
 }
 
-#cube:hover .face {
+.cube:hover .face {
   background-color: #abcdef;
   border-color: #000;
 }
