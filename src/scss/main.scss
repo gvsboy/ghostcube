@@ -1,5 +1,4 @@
 @import 'base';
-@import 'test';
 
 html {
   font-size: 16px; /* Set base font size for em conversion */
@@ -96,12 +95,15 @@ h2 {
   width: $cube-size;
   height: $cube-size;
   border: 4px solid $cube-color;
-  background: rgba(0, 0, 0, 0);
+  border-radius: 8px;
   cursor: pointer;
   @include transition(background-color 0.4s, border-color 0.4s);
 }
 
-/* Normal Cube */
+
+
+/* Cube */
+
 .front {
   @include transform(translateZ($cube-z));
 }
@@ -120,3 +122,26 @@ h2 {
 .bottom {
   @include transform(rotateX(-90deg) translateZ($cube-z));
 }
+
+
+
+/* Tiles */
+
+.tile {
+  position: absolute;
+  width: $tile-size;
+  height: $tile-size;
+  border: 2px solid $cube-color;
+}
+
+@for $t from 1 through 9 {
+  .tile:nth-child(#{$t}) {
+    @if $t <= 3           { top: 0; }
+    @else if $t <= 6      { top: $tile-size; }
+    @else                 { top: $tile-size * 2; }
+    @if $t % 3 == 1       { left: 0; }
+    @else if $t % 3 == 2  { left: $tile-size; }
+    @else                 { left: $tile-size * 2; }
+  }
+}
+

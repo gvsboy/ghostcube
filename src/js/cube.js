@@ -6,6 +6,8 @@ function Cube(id) {
   this.transformProperty      = this.stylePrefix + Const.TRANSFORM;
 
   this.init();
+
+  this._buildGameTiles(3);
 }
 
 Cube.prototype = {
@@ -42,6 +44,31 @@ Cube.prototype = {
       this.tick = 0;
     }
     this.rotate(tick, tick);
+  },
+
+  _buildGameTiles: function(size) {
+
+    var DOC = document,
+        DIV = 'div',
+        TILE = 'tile',
+        tiles = Math.pow(size, 2),
+        sides = this.el.children,
+        len = sides.length,
+        s = 0,
+        side,
+        tile,
+        t;
+
+    for (s; s < len; s++) {
+      side = sides[s];
+      console.log(side);
+      for (t = 0; t < tiles; t++) {
+        tile = DOC.createElement(DIV);
+        tile.className = 'tile';
+        side.appendChild(tile);
+      }
+    }
+
   }
 
 };

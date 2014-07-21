@@ -4,6 +4,7 @@
 
 ----------------------------------------------*/
 /* Cube Vars */
+/* Tile Vars */
 /* Header Vars */
 /*----------------------------------------------
 
@@ -237,16 +238,6 @@
     -webkit-transform: scale(2);
   }
 }
-#sheet {
-  width: 100px;
-  height: 100px;
-  background-color: #ff0000;
-  border: 3px solid gold;
-  transform: scale(5, 5);
-  transform-origin: center;
-  transform-style: preserve-3d;
-}
-
 html {
   font-size: 16px;
   /* Set base font size for em conversion */
@@ -358,7 +349,7 @@ h2 {
   width: 8em;
   height: 8em;
   border: 4px solid #abcdef;
-  background: transparent;
+  border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.4s, border-color 0.4s;
   -o-transition: background-color 0.4s, border-color 0.4s;
@@ -366,7 +357,7 @@ h2 {
   -webkit-transition: background-color 0.4s, border-color 0.4s;
 }
 
-/* Normal Cube */
+/* Cube */
 .front {
   transform: translateZ(4em);
   -o-transform: translateZ(4em);
@@ -413,4 +404,57 @@ h2 {
   -ms-transform: rotateX(-90deg) translateZ(4em);
   -moz-transform: rotateX(-90deg) translateZ(4em);
   -webkit-transform: rotateX(-90deg) translateZ(4em);
+}
+
+/* Tiles */
+.tile {
+  position: absolute;
+  width: 2.3em;
+  height: 2.3em;
+  border: 2px solid #abcdef;
+}
+
+.tile:nth-child(1) {
+  top: 0;
+  left: 0;
+}
+
+.tile:nth-child(2) {
+  top: 0;
+  left: 2.3em;
+}
+
+.tile:nth-child(3) {
+  top: 0;
+  left: 4.6em;
+}
+
+.tile:nth-child(4) {
+  top: 2.3em;
+  left: 0;
+}
+
+.tile:nth-child(5) {
+  top: 2.3em;
+  left: 2.3em;
+}
+
+.tile:nth-child(6) {
+  top: 2.3em;
+  left: 4.6em;
+}
+
+.tile:nth-child(7) {
+  top: 4.6em;
+  left: 0;
+}
+
+.tile:nth-child(8) {
+  top: 4.6em;
+  left: 2.3em;
+}
+
+.tile:nth-child(9) {
+  top: 4.6em;
+  left: 4.6em;
 }

@@ -12,6 +12,9 @@ $cube-color: #abcdef;
 $cube-size: 8em;
 $cube-z: $cube-size / 2;
 
+/* Tile Vars */
+$tile-size: 2.3em;
+
 /* Header Vars */
 $header-pad: 5em;
 $header-offset: $cube-size + $header-pad;
