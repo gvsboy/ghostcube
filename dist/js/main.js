@@ -54,7 +54,6 @@ Cube.prototype = {
 
 };
 
-
 var Util = {
 
   getVendorPrefix: function() {

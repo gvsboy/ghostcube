@@ -11,13 +11,11 @@ $game-speed: 2.0s;
 $cube-color: #abcdef;
 $cube-size: 8em;
 $cube-z: $cube-size / 2;
-$cube-game-size: 16em;
-$cube-game-z: $cube-game-size / 2;
 
 /* Header Vars */
 $header-pad: 5em;
 $header-offset: $cube-size + $header-pad;
-$header-game-offset: $cube-game-size + $header-pad;
+$header-game-offset: ($cube-size * 2) + $header-pad;
 $header-width: 54em;
 
 /*----------------------------------------------
@@ -87,15 +85,6 @@ $header-width: 54em;
   @include animation($name $game-speed forwards);
 }
 
-@mixin game-face-keyframes($name, $rotate) {
-  @include keyframes($name) {
-    100%  {
-      width: $cube-game-size;
-      height: $cube-game-size;
-      @include transform($rotate translateZ($cube-game-z));
-    }
-  }
-}
 
 
 /*----------------------------------------------
@@ -112,8 +101,7 @@ $header-width: 54em;
 }
 
 @include keyframes(game-cube) {
-  0%    { width: $cube-size; height: $cube-size; }
-  100%  { width: $cube-game-size; height: $cube-game-size; margin-left: -($cube-size / 2); margin-top: -($cube-size / 2);}
+  100%  { margin-left: -($cube-size / 2); margin-top: -($cube-size / 2);}
 }
 
 @include keyframes(splash-header) {
@@ -127,10 +115,6 @@ $header-width: 54em;
   100%  { width: 0; margin-left: $header-game-offset; }
 }
 
-/* Cube face transitions to game */
-@include game-face-keyframes(game-cube-back, rotateY(180deg));
-@include game-face-keyframes(game-cube-right, rotateY(90deg));
-@include game-face-keyframes(game-cube-left, rotateY(-90deg));
-@include game-face-keyframes(game-cube-top, rotateX(90deg));
-@include game-face-keyframes(game-cube-bottom, rotateX(-90deg));
-@include game-face-keyframes(game-cube-front, rotateX(0deg));
+@include keyframes(stage) {
+  100%  { @include transform(scale(2)); }
+}
