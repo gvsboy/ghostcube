@@ -238,6 +238,42 @@
     -webkit-transform: scale(2);
   }
 }
+@-webkit-keyframes tile-start {
+  0% {
+    transform: translateZ(8em);
+    -o-transform: translateZ(8em);
+    -ms-transform: translateZ(8em);
+    -moz-transform: translateZ(8em);
+    -webkit-transform: translateZ(8em);
+  }
+}
+@-moz-keyframes tile-start {
+  0% {
+    transform: translateZ(8em);
+    -o-transform: translateZ(8em);
+    -ms-transform: translateZ(8em);
+    -moz-transform: translateZ(8em);
+    -webkit-transform: translateZ(8em);
+  }
+}
+@-o-keyframes tile-start {
+  0% {
+    transform: translateZ(8em);
+    -o-transform: translateZ(8em);
+    -ms-transform: translateZ(8em);
+    -moz-transform: translateZ(8em);
+    -webkit-transform: translateZ(8em);
+  }
+}
+@keyframes tile-start {
+  0% {
+    transform: translateZ(8em);
+    -o-transform: translateZ(8em);
+    -ms-transform: translateZ(8em);
+    -moz-transform: translateZ(8em);
+    -webkit-transform: translateZ(8em);
+  }
+}
 html {
   font-size: 16px;
   /* Set base font size for em conversion */
@@ -280,28 +316,28 @@ h2 {
   height: 8em;
   margin-top: -4em;
   margin-left: -33.5em;
-  animation: splash-cube 3s forwards;
-  -o-animation: splash-cube 3s forwards;
-  -moz-animation: splash-cube 3s forwards;
-  -webkit-animation: splash-cube 3s forwards;
+  animation: splash-cube 2s forwards;
+  -o-animation: splash-cube 2s forwards;
+  -moz-animation: splash-cube 2s forwards;
+  -webkit-animation: splash-cube 2s forwards;
 }
 #container.game {
-  animation: game-cube 2s forwards;
-  -o-animation: game-cube 2s forwards;
-  -moz-animation: game-cube 2s forwards;
-  -webkit-animation: game-cube 2s forwards;
+  animation: game-cube 1s forwards;
+  -o-animation: game-cube 1s forwards;
+  -moz-animation: game-cube 1s forwards;
+  -webkit-animation: game-cube 1s forwards;
 }
 #container.game #header {
-  animation: game-header 2s forwards;
-  -o-animation: game-header 2s forwards;
-  -moz-animation: game-header 2s forwards;
-  -webkit-animation: game-header 2s forwards;
+  animation: game-header 1s forwards;
+  -o-animation: game-header 1s forwards;
+  -moz-animation: game-header 1s forwards;
+  -webkit-animation: game-header 1s forwards;
 }
 #container.game #stage {
-  animation: stage 2s forwards;
-  -o-animation: stage 2s forwards;
-  -moz-animation: stage 2s forwards;
-  -webkit-animation: stage 2s forwards;
+  animation: stage 1s forwards;
+  -o-animation: stage 1s forwards;
+  -moz-animation: stage 1s forwards;
+  -webkit-animation: stage 1s forwards;
 }
 
 #wrap {
@@ -314,10 +350,10 @@ h2 {
   margin-left: 13em;
   padding-bottom: 12px;
   white-space: nowrap;
-  animation: splash-header 3s forwards;
-  -o-animation: splash-header 3s forwards;
-  -moz-animation: splash-header 3s forwards;
-  -webkit-animation: splash-header 3s forwards;
+  animation: splash-header 2s forwards;
+  -o-animation: splash-header 2s forwards;
+  -moz-animation: splash-header 2s forwards;
+  -webkit-animation: splash-header 2s forwards;
 }
 
 #stage {
@@ -338,8 +374,7 @@ h2 {
   -moz-transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
 }
-
-.cube:hover .face {
+.cube.init:hover .face {
   background-color: #abcdef;
   border-color: #000;
 }
@@ -351,6 +386,10 @@ h2 {
   border: 4px solid #abcdef;
   border-radius: 8px;
   cursor: pointer;
+  transform-style: preserve-3d;
+  -o-transform-style: preserve-3d;
+  -moz-transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
   transition: background-color 0.4s, border-color 0.4s;
   -o-transition: background-color 0.4s, border-color 0.4s;
   -moz-transition: background-color 0.4s, border-color 0.4s;
@@ -409,9 +448,17 @@ h2 {
 /* Tiles */
 .tile {
   position: absolute;
-  width: 2.3em;
-  height: 2.3em;
+  width: 2.54em;
+  height: 2.54em;
   border: 2px solid #abcdef;
+  background-color: #000;
+  animation: tile-start 1s forwards;
+  -o-animation: tile-start 1s forwards;
+  -moz-animation: tile-start 1s forwards;
+  -webkit-animation: tile-start 1s forwards;
+}
+.tile:hover {
+  background-color: #abcdef;
 }
 
 .tile:nth-child(1) {
@@ -421,40 +468,40 @@ h2 {
 
 .tile:nth-child(2) {
   top: 0;
-  left: 2.3em;
+  left: 2.54em;
 }
 
 .tile:nth-child(3) {
   top: 0;
-  left: 4.6em;
+  left: 5.08em;
 }
 
 .tile:nth-child(4) {
-  top: 2.3em;
+  top: 2.54em;
   left: 0;
 }
 
 .tile:nth-child(5) {
-  top: 2.3em;
-  left: 2.3em;
+  top: 2.54em;
+  left: 2.54em;
 }
 
 .tile:nth-child(6) {
-  top: 2.3em;
-  left: 4.6em;
+  top: 2.54em;
+  left: 5.08em;
 }
 
 .tile:nth-child(7) {
-  top: 4.6em;
+  top: 5.08em;
   left: 0;
 }
 
 .tile:nth-child(8) {
-  top: 4.6em;
-  left: 2.3em;
+  top: 5.08em;
+  left: 2.54em;
 }
 
 .tile:nth-child(9) {
-  top: 4.6em;
-  left: 4.6em;
+  top: 5.08em;
+  left: 5.08em;
 }

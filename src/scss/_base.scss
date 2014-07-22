@@ -4,8 +4,8 @@
 
 ----------------------------------------------*/
 
-$splash-speed: 3.0s;
-$game-speed: 2.0s;
+$splash-speed: 2.0s;
+$game-speed: 1.0s;
 
 /* Cube Vars */
 $cube-color: #abcdef;
@@ -13,7 +13,7 @@ $cube-size: 8em;
 $cube-z: $cube-size / 2;
 
 /* Tile Vars */
-$tile-size: 2.3em;
+$tile-size: 2.54em;
 
 /* Header Vars */
 $header-pad: 5em;
@@ -120,4 +120,8 @@ $header-width: 54em;
 
 @include keyframes(stage) {
   100%  { @include transform(scale(2)); }
+}
+
+@include keyframes(tile-start) {
+  0%    { @include transform(translateZ($cube-size)); }
 }

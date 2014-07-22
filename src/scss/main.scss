@@ -83,11 +83,11 @@ h2 {
   height: $cube-size;
   @include backface-visibility(visible);
   @include transform-style(preserve-3d);
-}
 
-.cube:hover .face {
-  background-color: $cube-color;
-  border-color: #000;
+  &.init:hover .face {
+    background-color: $cube-color;
+    border-color: #000;
+  }
 }
 
 .face {
@@ -97,6 +97,7 @@ h2 {
   border: 4px solid $cube-color;
   border-radius: 8px;
   cursor: pointer;
+  @include transform-style(preserve-3d);
   @include transition(background-color 0.4s, border-color 0.4s);
 }
 
@@ -132,6 +133,12 @@ h2 {
   width: $tile-size;
   height: $tile-size;
   border: 2px solid $cube-color;
+  background-color: #000;
+  @include animation(tile-start $game-speed forwards);
+
+  &:hover {
+    background-color: $cube-color;
+  }
 }
 
 @for $t from 1 through 9 {

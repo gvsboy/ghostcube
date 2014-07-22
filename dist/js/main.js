@@ -14,27 +14,29 @@ function Cube(id) {
   this.transformProperty      = this.stylePrefix + Const.TRANSFORM;
 
   this.init();
-
-  this._buildGameTiles(3);
 }
 
 Cube.prototype = {
 
   init: function() {
 
-    var container = this.container;
+    var container = this.container,
+        el = this.el,
+        self = this;
 
     this.tick = 0;
     this.timer = window.setInterval(this._rotateContinuously.bind(this), 10);
 
-    this.el.addEventListener('click', function() {
+    el.addEventListener('click', function() {
       container.classList.add('game');
+      el.classList.remove('init');
       container.addEventListener('animationend', function(evt) {
 
         // Every animated cube face will bubble up their animation events
         // so let's react to only one of them.
         if (evt.target === container) {
           console.log('done');
+          self._buildGameTiles();
         }
       });
     });
@@ -56,27 +58,31 @@ Cube.prototype = {
 
   _buildGameTiles: function(size) {
 
-    var DOC = document,
-        DIV = 'div',
-        TILE = 'tile',
-        tiles = Math.pow(size, 2),
+    var DELAY_MAX = 1000,
+        tiles = Math.pow(size || 3, 2),
         sides = this.el.children,
         len = sides.length,
         s = 0,
-        side,
-        tile,
         t;
 
     for (s; s < len; s++) {
-      side = sides[s];
-      console.log(side);
       for (t = 0; t < tiles; t++) {
-        tile = DOC.createElement(DIV);
-        tile.className = 'tile';
-        side.appendChild(tile);
+        this._placeTile(sides[s], Math.random() * DELAY_MAX);
       }
     }
+  },
 
+  _placeTile: function(side, delay) {
+
+    var DOC = document,
+        DIV = 'div',
+        CLASS_TILE = 'tile',
+        tile = DOC.createElement(DIV);
+
+    tile.className = CLASS_TILE;
+    window.setTimeout(function() {
+      side.appendChild(tile);
+    }, delay);
   }
 
 };
