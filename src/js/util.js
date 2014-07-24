@@ -14,6 +14,10 @@ var Util = {
     }
 
     return '';
-  }
+  },
+
+  requestAnimationFrame: (function(win) {
+    return win.requestAnimationFrame || win.mozRequestAnimationFrame || win.webkitRequestAnimationFrame || win.msRequestAnimationFrame;
+  }(window))
 
 };

@@ -123,5 +123,5 @@ $header-width: 54em;
 }
 
 @include keyframes(tile-start) {
-  0%    { @include transform(translateZ($cube-size)); }
+  0%    { @include transform(translateZ($cube-z)); }
 }
