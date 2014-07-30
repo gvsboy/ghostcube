@@ -83,6 +83,7 @@ h2 {
   height: $cube-size;
   @include backface-visibility(visible);
   @include transform-style(preserve-3d);
+  @include animation(cube-rotate 4s linear infinite);
 
   &.init:hover .face {
     background-color: $cube-color;

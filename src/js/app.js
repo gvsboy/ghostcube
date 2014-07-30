@@ -2,7 +2,9 @@ function App(containerId) {
   this.container = document.getElementById(containerId);
   this.cube = new Cube(this.container.getElementsByClassName('cube')[0]);
   this.listen();
-  this._startRendering();
+
+  //this.tick = 0;
+  //window.requestAnimationFrame(this.render.bind(this));
 }
 
 App.prototype = {
@@ -18,7 +20,7 @@ App.prototype = {
       // Every animated cube face will bubble up their animation events
       // so let's react to only one of them.
       if (evt.target === container) {
-        container.removeEventListener('animationend', beginGame);
+        container.removeEventListener(Vendor.animationEndEvent, beginGame);
         cube.beginGame();
       }
     }
@@ -27,23 +29,19 @@ App.prototype = {
       cubeEl.classList.remove('init');
       cubeEl.removeEventListener('click', cubeClicked);
       container.classList.add('game');
-      container.addEventListener('animationend', beginGame);
+      container.addEventListener(Vendor.animationEndEvent, beginGame);
     }
 
     cubeEl.addEventListener('click', cubeClicked);
   },
 
   render: function() {
-    var tick = this.tick++;
+    var tick = this.tick += 1.5;
     if (tick === Const.REVOLUTION) {
       this.tick = 0;
     }
     this.cube.rotate(tick, tick);
-  },
-
-  _startRendering: function() {
-    this.tick = 0;
-    this.timer = window.setInterval(this.render.bind(this), 10);
+    window.requestAnimationFrame(this.render.bind(this));
   }
 
 };

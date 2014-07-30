@@ -97,6 +97,11 @@ $header-width: 54em;
 ----------------------------------------------*/
 
 /* Animations */
+@include keyframes(cube-rotate) {
+  0%    { @include transform(rotateX(1deg) rotateY(1deg)); }
+  100%  { @include transform(rotateX(360deg) rotateY(360deg)); }
+}
+
 @include keyframes(splash-cube) {
   0%    { opacity: 0; margin-left: -($cube-size / 2); }
   50%   { opacity: 1; margin-left: -($cube-size / 2); }

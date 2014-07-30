@@ -2,7 +2,9 @@ function App(containerId) {
   this.container = document.getElementById(containerId);
   this.cube = new Cube(this.container.getElementsByClassName('cube')[0]);
   this.listen();
-  this._startRendering();
+
+  //this.tick = 0;
+  //window.requestAnimationFrame(this.render.bind(this));
 }
 
 App.prototype = {
@@ -18,7 +20,7 @@ App.prototype = {
       // Every animated cube face will bubble up their animation events
       // so let's react to only one of them.
       if (evt.target === container) {
-        container.removeEventListener('animationend', beginGame);
+        container.removeEventListener(Vendor.animationEndEvent, beginGame);
         cube.beginGame();
       }
     }
@@ -27,23 +29,19 @@ App.prototype = {
       cubeEl.classList.remove('init');
       cubeEl.removeEventListener('click', cubeClicked);
       container.classList.add('game');
-      container.addEventListener('animationend', beginGame);
+      container.addEventListener(Vendor.animationEndEvent, beginGame);
     }
 
     cubeEl.addEventListener('click', cubeClicked);
   },
 
   render: function() {
-    var tick = this.tick++;
+    var tick = this.tick += 1.5;
     if (tick === Const.REVOLUTION) {
       this.tick = 0;
     }
     this.cube.rotate(tick, tick);
-  },
-
-  _startRendering: function() {
-    this.tick = 0;
-    this.timer = window.setInterval(this.render.bind(this), 10);
+    window.requestAnimationFrame(this.render.bind(this));
   }
 
 };
@@ -59,8 +57,7 @@ var Const = {
 function Cube(el) {
   this.el                     = el;
   this.style                  = this.el.style;
-  this.stylePrefix            = Util.getVendorPrefix();
-  this.transformProperty      = this.stylePrefix + Const.TRANSFORM;
+  this.transformProperty      = Vendor.stylePrefix + Const.TRANSFORM;
 }
 
 Cube.prototype = {
@@ -69,6 +66,10 @@ Cube.prototype = {
     var C = Const;
     this.style[this.transformProperty] =
       C.ROTATE_X_PREFIX + x + C.ROTATE_UNIT_SUFFIX + ' ' + C.ROTATE_Y_PREFIX + y + C.ROTATE_UNIT_SUFFIX;
+  },
+
+  initialize: function() {
+    this.el.classList.add('start');
   },
 
   beginGame: function(size) {
@@ -80,11 +81,16 @@ Cube.prototype = {
         s = 0,
         t;
 
+    // Loop through each side to place tiles.
     for (s; s < len; s++) {
       for (t = 0; t < tiles; t++) {
         this._placeTile(sides[s], Math.random() * DELAY_MAX);
       }
     }
+
+    // Initialize the game.
+    // Slow down the cube to a stop, display instructions.
+    window.setTimeout(this.initialize.bind(this), DELAY_MAX);
   },
 
   _placeTile: function(side, delay) {
@@ -102,26 +108,52 @@ Cube.prototype = {
 
 };
 
-var Util = {
+(function(win) {
 
-  getVendorPrefix: function() {
+  var style = document.body.style,
 
-    var style = document.body.style,
-        prefixes = ['ms', 'O', 'Moz', 'Webkit', ''],
-        prefix;
+      // Prefixes used for things like Transform.
+      stylePrefixes = ['ms', 'O', 'Moz', 'Webkit', ''],
 
-    while (prefixes.length) {
-      prefix = prefixes.pop();
-      if ((prefix + Const.TRANSFORM) in style) {
-        return prefix;
-      }
+      // Animation end events. Not quite perfect as IE10+
+      // actually uses 'animation' -> 'MSAnimationEnd'
+      // I'll fix this later.
+      // So ridiculous. Can't these be consistent?!
+      eventEndMap = {
+        'animation': 'animationend',
+        '-o-animation': 'oAnimationEnd',
+        '-moz-animation': 'animationend',
+        '-webkit-animation': 'webkitAnimationEnd'
+      },
+
+      msAnimationEnd = 'MSAnimationEnd',
+      
+      len = stylePrefixes.length,
+
+      animationProperty,
+
+      vendor = {};
+
+  // First, let's determine the style prefix.
+  while (len--) {
+    if ((stylePrefixes[len] + Const.TRANSFORM) in style) {
+      vendor.stylePrefix = stylePrefixes[len];
+      break;
     }
+  }
 
-    return '';
-  },
+  // Now, let's determine the event end name. So messed up.
+  for (animationProperty in eventEndMap) {
+    if (typeof style[animationProperty] !== 'undefined') {
+      vendor.animationEndEvent = eventEndMap[animationProperty];
+      break;
+    }
+  }
 
-  requestAnimationFrame: (function(win) {
-    return win.requestAnimationFrame || win.mozRequestAnimationFrame || win.webkitRequestAnimationFrame || win.msRequestAnimationFrame;
-  }(window))
+  // Normalize requestAnimationFrame for cross-browser compatibility.
+  win.requestAnimationFrame = win.requestAnimationFrame || win.mozRequestAnimationFrame || win.webkitRequestAnimationFrame || win.msRequestAnimationFrame;    
 
-};
+  // Set the global Vendor variable.
+  win.Vendor = vendor;
+
+}(window));

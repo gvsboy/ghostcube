@@ -1,8 +1,7 @@
 function Cube(el) {
   this.el                     = el;
   this.style                  = this.el.style;
-  this.stylePrefix            = Util.getVendorPrefix();
-  this.transformProperty      = this.stylePrefix + Const.TRANSFORM;
+  this.transformProperty      = Vendor.stylePrefix + Const.TRANSFORM;
 }
 
 Cube.prototype = {
@@ -11,6 +10,10 @@ Cube.prototype = {
     var C = Const;
     this.style[this.transformProperty] =
       C.ROTATE_X_PREFIX + x + C.ROTATE_UNIT_SUFFIX + ' ' + C.ROTATE_Y_PREFIX + y + C.ROTATE_UNIT_SUFFIX;
+  },
+
+  initialize: function() {
+    this.el.classList.add('start');
   },
 
   beginGame: function(size) {
@@ -22,11 +25,16 @@ Cube.prototype = {
         s = 0,
         t;
 
+    // Loop through each side to place tiles.
     for (s; s < len; s++) {
       for (t = 0; t < tiles; t++) {
         this._placeTile(sides[s], Math.random() * DELAY_MAX);
       }
     }
+
+    // Initialize the game.
+    // Slow down the cube to a stop, display instructions.
+    window.setTimeout(this.initialize.bind(this), DELAY_MAX);
   },
 
   _placeTile: function(side, delay) {
