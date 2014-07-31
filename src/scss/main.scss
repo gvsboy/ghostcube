@@ -89,6 +89,10 @@ h2 {
     background-color: $cube-color;
     border-color: #000;
   }
+
+  &.start {
+    @include animation(cube-rotate-stop 2s ease-out forwards);
+  }
 }
 
 .face {
@@ -136,6 +140,7 @@ h2 {
   border: 2px solid $cube-color;
   background-color: #000;
   @include animation(tile-start $game-speed forwards);
+  @include transform(translateZ(0.1em));
 
   &:hover {
     background-color: $cube-color;

@@ -12,13 +12,9 @@ Cube.prototype = {
       C.ROTATE_X_PREFIX + x + C.ROTATE_UNIT_SUFFIX + ' ' + C.ROTATE_Y_PREFIX + y + C.ROTATE_UNIT_SUFFIX;
   },
 
-  initialize: function() {
-    this.el.classList.add('start');
-  },
-
   beginGame: function(size) {
 
-    var DELAY_MAX = 1000,
+    var DELAY_MAX = 2000,
         tiles = Math.pow(size || 3, 2),
         sides = this.el.children,
         len = sides.length,
@@ -34,7 +30,11 @@ Cube.prototype = {
 
     // Initialize the game.
     // Slow down the cube to a stop, display instructions.
-    window.setTimeout(this.initialize.bind(this), DELAY_MAX);
+    var el = this.el;
+    this.el.addEventListener('animationiteration', function() {
+      el.classList.add('start');
+      el.dispatchEvent(new Event('start'));
+    });
   },
 
   _placeTile: function(side, delay) {

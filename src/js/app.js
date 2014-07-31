@@ -1,10 +1,8 @@
 function App(containerId) {
   this.container = document.getElementById(containerId);
   this.cube = new Cube(this.container.getElementsByClassName('cube')[0]);
+  this.rendering = false;
   this.listen();
-
-  //this.tick = 0;
-  //window.requestAnimationFrame(this.render.bind(this));
 }
 
 App.prototype = {
@@ -12,7 +10,8 @@ App.prototype = {
   // I hate everything in here but it's ok for now.
   listen: function() {
 
-    var cube = this.cube,
+    var self = this,
+        cube = this.cube,
         cubeEl = cube.el,
         container = this.container;
 
@@ -32,16 +31,41 @@ App.prototype = {
       container.addEventListener(Vendor.animationEndEvent, beginGame);
     }
 
+    function gameStarted() {
+      self.keyboard = new Keyboard([
+        Keyboard.UP,
+        Keyboard.DOWN,
+        Keyboard.LEFT,
+        Keyboard.RIGHT,
+        Keyboard.W,
+        Keyboard.A,
+        Keyboard.S,
+        Keyboard.D
+      ]);
+      self.keyboard.listen(window, self._keyboardListener.bind(self));
+    }
+
     cubeEl.addEventListener('click', cubeClicked);
+    cubeEl.addEventListener('start', gameStarted);
   },
 
   render: function() {
-    var tick = this.tick += 1.5;
-    if (tick === Const.REVOLUTION) {
-      this.tick = 0;
+    console.log('rendering');
+    if (this.rendering) {
+      window.requestAnimationFrame(this.render.bind(this));
     }
-    this.cube.rotate(tick, tick);
-    window.requestAnimationFrame(this.render.bind(this));
+  },
+
+  _keyboardListener: function() {
+    if (this.keyboard.isAnyKeyDown()) {
+      if (!this.rendering) {
+        this.rendering = true;
+        window.requestAnimationFrame(this.render.bind(this));
+      }
+    }
+    else {
+      this.rendering = false;
+    }
   }
 
 };

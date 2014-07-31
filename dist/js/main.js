@@ -1,10 +1,8 @@
 function App(containerId) {
   this.container = document.getElementById(containerId);
   this.cube = new Cube(this.container.getElementsByClassName('cube')[0]);
+  this.rendering = false;
   this.listen();
-
-  //this.tick = 0;
-  //window.requestAnimationFrame(this.render.bind(this));
 }
 
 App.prototype = {
@@ -12,7 +10,8 @@ App.prototype = {
   // I hate everything in here but it's ok for now.
   listen: function() {
 
-    var cube = this.cube,
+    var self = this,
+        cube = this.cube,
         cubeEl = cube.el,
         container = this.container;
 
@@ -32,16 +31,41 @@ App.prototype = {
       container.addEventListener(Vendor.animationEndEvent, beginGame);
     }
 
+    function gameStarted() {
+      self.keyboard = new Keyboard([
+        Keyboard.UP,
+        Keyboard.DOWN,
+        Keyboard.LEFT,
+        Keyboard.RIGHT,
+        Keyboard.W,
+        Keyboard.A,
+        Keyboard.S,
+        Keyboard.D
+      ]);
+      self.keyboard.listen(window, self._keyboardListener.bind(self));
+    }
+
     cubeEl.addEventListener('click', cubeClicked);
+    cubeEl.addEventListener('start', gameStarted);
   },
 
   render: function() {
-    var tick = this.tick += 1.5;
-    if (tick === Const.REVOLUTION) {
-      this.tick = 0;
+    console.log('rendering');
+    if (this.rendering) {
+      window.requestAnimationFrame(this.render.bind(this));
     }
-    this.cube.rotate(tick, tick);
-    window.requestAnimationFrame(this.render.bind(this));
+  },
+
+  _keyboardListener: function() {
+    if (this.keyboard.isAnyKeyDown()) {
+      if (!this.rendering) {
+        this.rendering = true;
+        window.requestAnimationFrame(this.render.bind(this));
+      }
+    }
+    else {
+      this.rendering = false;
+    }
   }
 
 };
@@ -68,13 +92,9 @@ Cube.prototype = {
       C.ROTATE_X_PREFIX + x + C.ROTATE_UNIT_SUFFIX + ' ' + C.ROTATE_Y_PREFIX + y + C.ROTATE_UNIT_SUFFIX;
   },
 
-  initialize: function() {
-    this.el.classList.add('start');
-  },
-
   beginGame: function(size) {
 
-    var DELAY_MAX = 1000,
+    var DELAY_MAX = 2000,
         tiles = Math.pow(size || 3, 2),
         sides = this.el.children,
         len = sides.length,
@@ -90,7 +110,11 @@ Cube.prototype = {
 
     // Initialize the game.
     // Slow down the cube to a stop, display instructions.
-    window.setTimeout(this.initialize.bind(this), DELAY_MAX);
+    var el = this.el;
+    this.el.addEventListener('animationiteration', function() {
+      el.classList.add('start');
+      el.dispatchEvent(new Event('start'));
+    });
   },
 
   _placeTile: function(side, delay) {
@@ -107,6 +131,80 @@ Cube.prototype = {
   }
 
 };
+
+/**
+ * A software interface for determining which keyboard keys are pressed.
+ *
+ * @param {Array || String} keyCodes A collection of all the (string) keyCodes used.
+ */
+function Keyboard(keyCodes) {
+
+  this.keys = {};
+
+  if (typeof keyCodes === 'string') {
+    keyCodes = keyCodes.split(' ');
+  }
+  while (keyCodes.length) {
+    this.keys[keyCodes.pop()] = false;
+  }
+
+}
+
+Keyboard.prototype = { 
+
+  listen: function(win, callback) {
+
+    var UNDEFINED = 'undefined',
+        keys = this.keys;
+        
+    if (!win) {
+      win = window;
+    }
+
+    win.addEventListener('keydown', function(evt) {
+      var keyCode = evt.keyCode;
+      if (typeof keys[keyCode] !== UNDEFINED && !keys[keyCode]) {
+        keys[keyCode] = true;
+        if (callback) {
+          callback();
+        }
+      }
+    });
+
+    win.addEventListener('keyup', function(evt) {
+      var keyCode = evt.keyCode;
+      if (keys[keyCode]) {
+        keys[keyCode] = false;
+        if (callback) {
+          callback();
+        }
+      }
+    });
+
+  },
+
+  isAnyKeyDown: function() {
+    var keys = this.keys,
+        key;
+    for (key in keys) {
+      if (keys[key]) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+};
+
+Keyboard.UP = '38';
+Keyboard.DOWN = '40';
+Keyboard.LEFT = '37';
+Keyboard.RIGHT = '39';
+Keyboard.W = '87';
+Keyboard.A = '65';
+Keyboard.S = '83';
+Keyboard.D = '68';
+Keyboard.SPACE = '32';
 
 (function(win) {
 

@@ -102,6 +102,10 @@ $header-width: 54em;
   100%  { @include transform(rotateX(360deg) rotateY(360deg)); }
 }
 
+@include keyframes(cube-rotate-stop) {
+  100%  { @include transform(rotateX(123deg) rotateY(123deg)); }
+}
+
 @include keyframes(splash-cube) {
   0%    { opacity: 0; margin-left: -($cube-size / 2); }
   50%   { opacity: 1; margin-left: -($cube-size / 2); }

@@ -90,6 +90,42 @@
     -webkit-transform: rotateX(360deg) rotateY(360deg);
   }
 }
+@-webkit-keyframes cube-rotate-stop {
+  100% {
+    transform: rotateX(123deg) rotateY(123deg);
+    -o-transform: rotateX(123deg) rotateY(123deg);
+    -ms-transform: rotateX(123deg) rotateY(123deg);
+    -moz-transform: rotateX(123deg) rotateY(123deg);
+    -webkit-transform: rotateX(123deg) rotateY(123deg);
+  }
+}
+@-moz-keyframes cube-rotate-stop {
+  100% {
+    transform: rotateX(123deg) rotateY(123deg);
+    -o-transform: rotateX(123deg) rotateY(123deg);
+    -ms-transform: rotateX(123deg) rotateY(123deg);
+    -moz-transform: rotateX(123deg) rotateY(123deg);
+    -webkit-transform: rotateX(123deg) rotateY(123deg);
+  }
+}
+@-o-keyframes cube-rotate-stop {
+  100% {
+    transform: rotateX(123deg) rotateY(123deg);
+    -o-transform: rotateX(123deg) rotateY(123deg);
+    -ms-transform: rotateX(123deg) rotateY(123deg);
+    -moz-transform: rotateX(123deg) rotateY(123deg);
+    -webkit-transform: rotateX(123deg) rotateY(123deg);
+  }
+}
+@keyframes cube-rotate-stop {
+  100% {
+    transform: rotateX(123deg) rotateY(123deg);
+    -o-transform: rotateX(123deg) rotateY(123deg);
+    -ms-transform: rotateX(123deg) rotateY(123deg);
+    -moz-transform: rotateX(123deg) rotateY(123deg);
+    -webkit-transform: rotateX(123deg) rotateY(123deg);
+  }
+}
 @-webkit-keyframes splash-cube {
   0% {
     opacity: 0;
@@ -450,6 +486,12 @@ h2 {
   background-color: #abcdef;
   border-color: #000;
 }
+.cube.start {
+  animation: cube-rotate-stop 2s ease-out forwards;
+  -o-animation: cube-rotate-stop 2s ease-out forwards;
+  -moz-animation: cube-rotate-stop 2s ease-out forwards;
+  -webkit-animation: cube-rotate-stop 2s ease-out forwards;
+}
 
 .face {
   position: absolute;
@@ -528,6 +570,11 @@ h2 {
   -o-animation: tile-start 1s forwards;
   -moz-animation: tile-start 1s forwards;
   -webkit-animation: tile-start 1s forwards;
+  transform: translateZ(0.1em);
+  -o-transform: translateZ(0.1em);
+  -ms-transform: translateZ(0.1em);
+  -moz-transform: translateZ(0.1em);
+  -webkit-transform: translateZ(0.1em);
 }
 .tile:hover {
   background-color: #abcdef;
