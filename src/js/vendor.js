@@ -9,18 +9,23 @@
       // actually uses 'animation' -> 'MSAnimationEnd'
       // I'll fix this later.
       // So ridiculous. Can't these be consistent?!
-      eventEndMap = {
-        'animation': 'animationend',
-        '-o-animation': 'oAnimationEnd',
-        '-moz-animation': 'animationend',
-        '-webkit-animation': 'webkitAnimationEnd'
+      // ...
+      // Map format:
+      // 'css-attribute':       [start, iteration, end]
+      animationEventMap = {
+        'animation':            ['animationstart', 'animationiteration', 'animationend'],
+        '-o-animation':         ['oAnimationStart', 'oAnimationIteration', 'oAnimationEnd'],
+        '-moz-animation':       ['animationstart', 'animationiteration', 'animationend'],
+        '-webkit-animation':    ['webkitAnimationStart', 'webkitAnimationIteration', 'webkitAnimationEnd']
       },
 
-      msAnimationEnd = 'MSAnimationEnd',
+      msAnimationEnd = 'MSAnimationEnd',//TODO
       
       len = stylePrefixes.length,
 
       animationProperty,
+
+      eventTypes,
 
       vendor = {};
 
@@ -33,9 +38,12 @@
   }
 
   // Now, let's determine the event end name. So messed up.
-  for (animationProperty in eventEndMap) {
+  for (animationProperty in animationEventMap) {
     if (typeof style[animationProperty] !== 'undefined') {
-      vendor.animationEndEvent = eventEndMap[animationProperty];
+      eventTypes = animationEventMap[animationProperty];
+      vendor.animationStartEvent = eventTypes[0];
+      vendor.animationIterationEvent = eventTypes[1];
+      vendor.animationEndEvent = eventTypes[2];
       break;
     }
   }

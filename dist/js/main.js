@@ -122,8 +122,7 @@ Cube.prototype = {
     var C = Const;
     this.x += x;
     this.y += y;
-    //console.log(this.transformProperty, this.x, this.y);
-    console.log(this.style[this.transformProperty]);
+    console.log(this.transformProperty, this.x, this.y);//TODO: Reset over 360 or under 0
     this.style[this.transformProperty] =
       C.ROTATE_X_PREFIX + this.x + C.ROTATE_UNIT_SUFFIX + ' ' + C.ROTATE_Y_PREFIX + this.y + C.ROTATE_UNIT_SUFFIX;
   },
@@ -148,14 +147,14 @@ Cube.prototype = {
     // Slow down the cube to a stop, display instructions.
     var el = this.el,
         self = this;
-    el.addEventListener('animationiteration', function() {
+    el.addEventListener(Vendor.animationIterationEvent, function() {
       el.classList.add('transition');
       el.addEventListener(Vendor.animationEndEvent, function(evt) {
         if (evt.target === el) {
           el.classList.remove('transition');
           el.classList.add('init');
-          self.x = 123;//make dynamic http://css-tricks.com/get-value-of-css-rotation-through-javascript/
-          self.y = 123;//make dynamic
+          self.x = 123;//TODO: make dynamic http://css-tricks.com/get-value-of-css-rotation-through-javascript/
+          self.y = 123;//TODO: make dynamic
           el.dispatchEvent(new Event('init'));
         }
       });
@@ -263,18 +262,23 @@ Keyboard.SPACE = '32';
       // actually uses 'animation' -> 'MSAnimationEnd'
       // I'll fix this later.
       // So ridiculous. Can't these be consistent?!
-      eventEndMap = {
-        'animation': 'animationend',
-        '-o-animation': 'oAnimationEnd',
-        '-moz-animation': 'animationend',
-        '-webkit-animation': 'webkitAnimationEnd'
+      // ...
+      // Map format:
+      // 'css-attribute':       [start, iteration, end]
+      animationEventMap = {
+        'animation':            ['animationstart', 'animationiteration', 'animationend'],
+        '-o-animation':         ['oAnimationStart', 'oAnimationIteration', 'oAnimationEnd'],
+        '-moz-animation':       ['animationstart', 'animationiteration', 'animationend'],
+        '-webkit-animation':    ['webkitAnimationStart', 'webkitAnimationIteration', 'webkitAnimationEnd']
       },
 
-      msAnimationEnd = 'MSAnimationEnd',
+      msAnimationEnd = 'MSAnimationEnd',//TODO
       
       len = stylePrefixes.length,
 
       animationProperty,
+
+      eventTypes,
 
       vendor = {};
 
@@ -287,9 +291,12 @@ Keyboard.SPACE = '32';
   }
 
   // Now, let's determine the event end name. So messed up.
-  for (animationProperty in eventEndMap) {
+  for (animationProperty in animationEventMap) {
     if (typeof style[animationProperty] !== 'undefined') {
-      vendor.animationEndEvent = eventEndMap[animationProperty];
+      eventTypes = animationEventMap[animationProperty];
+      vendor.animationStartEvent = eventTypes[0];
+      vendor.animationIterationEvent = eventTypes[1];
+      vendor.animationEndEvent = eventTypes[2];
       break;
     }
   }
