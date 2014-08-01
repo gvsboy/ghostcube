@@ -25,35 +25,62 @@ App.prototype = {
     }
 
     function cubeClicked() {
-      cubeEl.classList.remove('init');
+      cubeEl.classList.remove('splash');
       cubeEl.removeEventListener('click', cubeClicked);
       container.classList.add('game');
       container.addEventListener(Vendor.animationEndEvent, beginGame);
     }
 
-    function gameStarted() {
-      self.keyboard = new Keyboard([
-        Keyboard.UP,
-        Keyboard.DOWN,
-        Keyboard.LEFT,
-        Keyboard.RIGHT,
-        Keyboard.W,
-        Keyboard.A,
-        Keyboard.S,
-        Keyboard.D
-      ]);
-      self.keyboard.listen(window, self._keyboardListener.bind(self));
+    function gameInitialized() {
+      self._attachKeyboard();
     }
 
     cubeEl.addEventListener('click', cubeClicked);
-    cubeEl.addEventListener('start', gameStarted);
+    cubeEl.addEventListener('init', gameInitialized);
   },
 
   render: function() {
-    console.log('rendering');
+
+    var KB = Keyboard,
+        keys = this.keyboard.keys,
+        moveX = 0,
+        moveY = 0;
+
+    // Detect either up or down movement.
+    if (keys[KB.UP] || keys[KB.W]) {
+      moveX = Const.CUBE_SPEED;
+    }
+    else if (keys[KB.DOWN] || keys[KB.S]) {
+      moveX = -Const.CUBE_SPEED;
+    }
+
+    // Detect either left or right movement.
+    if (keys[KB.LEFT] || keys[KB.A]) {
+      moveY = Const.CUBE_SPEED;
+    }
+    else if (keys[KB.RIGHT] || keys[KB.D]) {
+      moveY = -Const.CUBE_SPEED;
+    }
+
+    this.cube.rotate(moveX, moveY);
+
     if (this.rendering) {
       window.requestAnimationFrame(this.render.bind(this));
     }
+  },
+
+  _attachKeyboard: function() {
+    this.keyboard = new Keyboard([
+      Keyboard.UP,
+      Keyboard.DOWN,
+      Keyboard.LEFT,
+      Keyboard.RIGHT,
+      Keyboard.W,
+      Keyboard.A,
+      Keyboard.S,
+      Keyboard.D
+    ]);
+    this.keyboard.listen(window, this._keyboardListener.bind(this));
   },
 
   _keyboardListener: function() {
@@ -71,6 +98,11 @@ App.prototype = {
 };
 
 var Const = {
+
+  // Game Logic
+  CUBE_SPEED: 5,
+
+  // Display
   TRANSFORM: 'Transform',
   ROTATE_X_PREFIX: 'rotateX(',
   ROTATE_Y_PREFIX: 'rotateY(',
@@ -88,8 +120,12 @@ Cube.prototype = {
 
   rotate: function(x, y) {
     var C = Const;
+    this.x += x;
+    this.y += y;
+    //console.log(this.transformProperty, this.x, this.y);
+    console.log(this.style[this.transformProperty]);
     this.style[this.transformProperty] =
-      C.ROTATE_X_PREFIX + x + C.ROTATE_UNIT_SUFFIX + ' ' + C.ROTATE_Y_PREFIX + y + C.ROTATE_UNIT_SUFFIX;
+      C.ROTATE_X_PREFIX + this.x + C.ROTATE_UNIT_SUFFIX + ' ' + C.ROTATE_Y_PREFIX + this.y + C.ROTATE_UNIT_SUFFIX;
   },
 
   beginGame: function(size) {
@@ -110,11 +146,21 @@ Cube.prototype = {
 
     // Initialize the game.
     // Slow down the cube to a stop, display instructions.
-    var el = this.el;
-    this.el.addEventListener('animationiteration', function() {
-      el.classList.add('start');
-      el.dispatchEvent(new Event('start'));
+    var el = this.el,
+        self = this;
+    el.addEventListener('animationiteration', function() {
+      el.classList.add('transition');
+      el.addEventListener(Vendor.animationEndEvent, function(evt) {
+        if (evt.target === el) {
+          el.classList.remove('transition');
+          el.classList.add('init');
+          self.x = 123;//make dynamic http://css-tricks.com/get-value-of-css-rotation-through-javascript/
+          self.y = 123;//make dynamic
+          el.dispatchEvent(new Event('init'));
+        }
+      });
     });
+
   },
 
   _placeTile: function(side, delay) {

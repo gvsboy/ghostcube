@@ -25,35 +25,62 @@ App.prototype = {
     }
 
     function cubeClicked() {
-      cubeEl.classList.remove('init');
+      cubeEl.classList.remove('splash');
       cubeEl.removeEventListener('click', cubeClicked);
       container.classList.add('game');
       container.addEventListener(Vendor.animationEndEvent, beginGame);
     }
 
-    function gameStarted() {
-      self.keyboard = new Keyboard([
-        Keyboard.UP,
-        Keyboard.DOWN,
-        Keyboard.LEFT,
-        Keyboard.RIGHT,
-        Keyboard.W,
-        Keyboard.A,
-        Keyboard.S,
-        Keyboard.D
-      ]);
-      self.keyboard.listen(window, self._keyboardListener.bind(self));
+    function gameInitialized() {
+      self._attachKeyboard();
     }
 
     cubeEl.addEventListener('click', cubeClicked);
-    cubeEl.addEventListener('start', gameStarted);
+    cubeEl.addEventListener('init', gameInitialized);
   },
 
   render: function() {
-    console.log('rendering');
+
+    var KB = Keyboard,
+        keys = this.keyboard.keys,
+        moveX = 0,
+        moveY = 0;
+
+    // Detect either up or down movement.
+    if (keys[KB.UP] || keys[KB.W]) {
+      moveX = Const.CUBE_SPEED;
+    }
+    else if (keys[KB.DOWN] || keys[KB.S]) {
+      moveX = -Const.CUBE_SPEED;
+    }
+
+    // Detect either left or right movement.
+    if (keys[KB.LEFT] || keys[KB.A]) {
+      moveY = Const.CUBE_SPEED;
+    }
+    else if (keys[KB.RIGHT] || keys[KB.D]) {
+      moveY = -Const.CUBE_SPEED;
+    }
+
+    this.cube.rotate(moveX, moveY);
+
     if (this.rendering) {
       window.requestAnimationFrame(this.render.bind(this));
     }
+  },
+
+  _attachKeyboard: function() {
+    this.keyboard = new Keyboard([
+      Keyboard.UP,
+      Keyboard.DOWN,
+      Keyboard.LEFT,
+      Keyboard.RIGHT,
+      Keyboard.W,
+      Keyboard.A,
+      Keyboard.S,
+      Keyboard.D
+    ]);
+    this.keyboard.listen(window, this._keyboardListener.bind(this));
   },
 
   _keyboardListener: function() {

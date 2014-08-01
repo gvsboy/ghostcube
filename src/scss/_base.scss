@@ -11,6 +11,8 @@ $game-speed: 1.0s;
 $cube-color: #abcdef;
 $cube-size: 8em;
 $cube-z: $cube-size / 2;
+$cube-init-x: 123deg;
+$cube-init-y: 123deg;
 
 /* Tile Vars */
 $tile-size: 2.54em;
@@ -103,7 +105,7 @@ $header-width: 54em;
 }
 
 @include keyframes(cube-rotate-stop) {
-  100%  { @include transform(rotateX(123deg) rotateY(123deg)); }
+  100%  { @include transform(rotateX($cube-init-x) rotateY($cube-init-y)); }
 }
 
 @include keyframes(splash-cube) {

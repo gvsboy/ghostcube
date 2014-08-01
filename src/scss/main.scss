@@ -85,13 +85,18 @@ h2 {
   @include transform-style(preserve-3d);
   @include animation(cube-rotate 4s linear infinite);
 
-  &.init:hover .face {
+  &.splash:hover .face {
     background-color: $cube-color;
     border-color: #000;
   }
 
-  &.start {
+  &.transition {
     @include animation(cube-rotate-stop 2s ease-out forwards);
+  }
+
+  &.init {
+    @include animation(none);
+    @include transform(rotateX($cube-init-x) rotateY($cube-init-y));
   }
 }
 
