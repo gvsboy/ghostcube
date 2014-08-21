@@ -1,9 +1,9 @@
 (function(win) {
 
-  var style = document.body.style,
+  var STYLE = document.body.style,
 
       // Prefixes used for things like Transform.
-      stylePrefixes = ['ms', 'O', 'Moz', 'Webkit', ''],
+      STYLE_PREFIXES = ['ms', 'O', 'Moz', 'Webkit', ''],
 
       // Animation end events. Not quite perfect as IE10+
       // actually uses 'animation' -> 'MSAnimationEnd'
@@ -12,7 +12,7 @@
       // ...
       // Map format:
       // 'css-attribute':       [start, iteration, end]
-      animationEventMap = {
+      ANIMATION_EVENT_MAP = {
         'animation':            ['animationstart', 'animationiteration', 'animationend'],
         '-o-animation':         ['oAnimationStart', 'oAnimationIteration', 'oAnimationEnd'],
         '-moz-animation':       ['animationstart', 'animationiteration', 'animationend'],
@@ -21,29 +21,39 @@
 
       msAnimationEnd = 'MSAnimationEnd',//TODO
       
-      len = stylePrefixes.length,
+      len = STYLE_PREFIXES.length,
+
+      stylePrefix,
 
       animationProperty,
 
       eventTypes,
 
-      vendor = {};
+      vendor = {
+        JS: {},
+        CSS: {},
+        EVENT: {}
+      };
 
   // First, let's determine the style prefix.
   while (len--) {
-    if ((stylePrefixes[len] + Const.TRANSFORM) in style) {
-      vendor.stylePrefix = stylePrefixes[len];
+    if ((STYLE_PREFIXES[len] + Const.TRANSFORM) in STYLE) {
+      stylePrefix = STYLE_PREFIXES[len];
       break;
     }
   }
 
+  // Next, let's set some properties using the prefix.
+  vendor.JS.transform = stylePrefix + Const.TRANSFORM;
+  vendor.CSS.transform = stylePrefix ? '-' + stylePrefix.toLowerCase() + '-transform' : 'transform';
+
   // Now, let's determine the event end name. So messed up.
-  for (animationProperty in animationEventMap) {
-    if (typeof style[animationProperty] !== 'undefined') {
-      eventTypes = animationEventMap[animationProperty];
-      vendor.animationStartEvent = eventTypes[0];
-      vendor.animationIterationEvent = eventTypes[1];
-      vendor.animationEndEvent = eventTypes[2];
+  for (animationProperty in ANIMATION_EVENT_MAP) {
+    if (typeof STYLE[animationProperty] !== 'undefined') {
+      eventTypes = ANIMATION_EVENT_MAP[animationProperty];
+      vendor.EVENT.animationStart = eventTypes[0];
+      vendor.EVENT.animationIteration = eventTypes[1];
+      vendor.EVENT.animationEnd = eventTypes[2];
       break;
     }
   }

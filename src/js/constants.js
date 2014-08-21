@@ -8,5 +8,6 @@ var Const = {
   ROTATE_X_PREFIX: 'rotateX(',
   ROTATE_Y_PREFIX: 'rotateY(',
   ROTATE_UNIT_SUFFIX: 'deg)',
-  REVOLUTION: 360
+  REVOLUTION: 360,
+  ORIGIN: 0
 };

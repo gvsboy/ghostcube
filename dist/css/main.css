@@ -590,6 +590,9 @@ h2 {
 .tile:hover {
   background-color: #abcdef;
 }
+.tile.selected {
+  background-color: #defabc;
+}
 
 .tile:nth-child(1) {
   top: 0;

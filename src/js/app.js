@@ -19,7 +19,7 @@ App.prototype = {
       // Every animated cube face will bubble up their animation events
       // so let's react to only one of them.
       if (evt.target === container) {
-        container.removeEventListener(Vendor.animationEndEvent, beginGame);
+        container.removeEventListener(Vendor.EVENT.animationEnd, beginGame);
         cube.beginGame();
       }
     }
@@ -28,7 +28,7 @@ App.prototype = {
       cubeEl.classList.remove('splash');
       cubeEl.removeEventListener('click', cubeClicked);
       container.classList.add('game');
-      container.addEventListener(Vendor.animationEndEvent, beginGame);
+      container.addEventListener(Vendor.EVENT.animationEnd, beginGame);
     }
 
     function gameInitialized() {

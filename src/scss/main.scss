@@ -150,6 +150,10 @@ h2 {
   &:hover {
     background-color: $cube-color;
   }
+
+  &.selected {
+    background-color: $tile-selected;
+  }
 }
 
 @for $t from 1 through 9 {
