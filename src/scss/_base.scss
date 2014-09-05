@@ -4,8 +4,10 @@
 
 ----------------------------------------------*/
 
-$splash-speed: 2.0s;
-$game-speed: 1.0s;
+$BASE-SPEED: 0.1s;//2.0s;
+
+$splash-speed: $BASE-SPEED;
+$game-speed: $BASE-SPEED / 2;
 
 /* Cube Vars */
 $cube-color: #abcdef;
@@ -17,6 +19,7 @@ $cube-init-y: 123deg;
 /* Tile Vars */
 $tile-size: 2.54em;
 $tile-selected: #defabc;
+$tile-highlighted: red;
 $tile-available: #cdefab;
 
 /* Header Vars */

@@ -1,0 +1,12 @@
+{
+  "name": "ghostcube",
+  "version": "0.0.1",
+  "dependencies": {
+    "lodash": "*"
+  },
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components"
+  ]
+}

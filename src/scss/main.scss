@@ -91,7 +91,7 @@ h2 {
   }
 
   &.transition {
-    @include animation(cube-rotate-stop 2s ease-out forwards);
+    @include animation(cube-rotate-stop $BASE-SPEED ease-out forwards);
   }
 
   &.init {
@@ -115,22 +115,22 @@ h2 {
 
 /* Cube */
 
-.front {
+.side-front {
   @include transform(translateZ($cube-z));
 }
-.back {
+.side-back {
   @include transform(rotateY(180deg) translateZ($cube-z));
 }
-.right {
+.side-right {
   @include transform(rotateY(90deg) translateZ($cube-z));
 }
-.left {
+.side-left {
   @include transform(rotateY(-90deg) translateZ($cube-z));
 }
-.top {
+.side-top {
   @include transform(rotateX(90deg) translateZ($cube-z));
 }
-.bottom {
+.side-bottom {
   @include transform(rotateX(-90deg) translateZ($cube-z));
 }
 
@@ -139,13 +139,13 @@ h2 {
 /* Tiles */
 
 .tile {
+  display: none;
   position: absolute;
   width: $tile-size;
   height: $tile-size;
   border: 2px solid $cube-color;
   background-color: #000;
-  @include animation(tile-start $game-speed forwards);
-  @include transform(translateZ(0.1em));
+  @include transform(translateZ(0.01em));
 
   &:hover {
     background-color: $cube-color;
@@ -153,6 +153,15 @@ h2 {
 
   &.selected {
     background-color: $tile-selected;
+  }
+
+  &.highlighted {
+    background-color: $tile-highlighted;
+  }
+
+  &.init {
+    display: block;
+    @include animation(tile-start $game-speed forwards);
   }
 }
 

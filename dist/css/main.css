@@ -420,28 +420,28 @@ h2 {
   height: 8em;
   margin-top: -4em;
   margin-left: -33.5em;
-  animation: splash-cube 2s forwards;
-  -o-animation: splash-cube 2s forwards;
-  -moz-animation: splash-cube 2s forwards;
-  -webkit-animation: splash-cube 2s forwards;
+  animation: splash-cube 0.1s forwards;
+  -o-animation: splash-cube 0.1s forwards;
+  -moz-animation: splash-cube 0.1s forwards;
+  -webkit-animation: splash-cube 0.1s forwards;
 }
 #container.game {
-  animation: game-cube 1s forwards;
-  -o-animation: game-cube 1s forwards;
-  -moz-animation: game-cube 1s forwards;
-  -webkit-animation: game-cube 1s forwards;
+  animation: game-cube 0.05s forwards;
+  -o-animation: game-cube 0.05s forwards;
+  -moz-animation: game-cube 0.05s forwards;
+  -webkit-animation: game-cube 0.05s forwards;
 }
 #container.game #header {
-  animation: game-header 1s forwards;
-  -o-animation: game-header 1s forwards;
-  -moz-animation: game-header 1s forwards;
-  -webkit-animation: game-header 1s forwards;
+  animation: game-header 0.05s forwards;
+  -o-animation: game-header 0.05s forwards;
+  -moz-animation: game-header 0.05s forwards;
+  -webkit-animation: game-header 0.05s forwards;
 }
 #container.game #stage {
-  animation: stage 1s forwards;
-  -o-animation: stage 1s forwards;
-  -moz-animation: stage 1s forwards;
-  -webkit-animation: stage 1s forwards;
+  animation: stage 0.05s forwards;
+  -o-animation: stage 0.05s forwards;
+  -moz-animation: stage 0.05s forwards;
+  -webkit-animation: stage 0.05s forwards;
 }
 
 #wrap {
@@ -454,10 +454,10 @@ h2 {
   margin-left: 13em;
   padding-bottom: 12px;
   white-space: nowrap;
-  animation: splash-header 2s forwards;
-  -o-animation: splash-header 2s forwards;
-  -moz-animation: splash-header 2s forwards;
-  -webkit-animation: splash-header 2s forwards;
+  animation: splash-header 0.1s forwards;
+  -o-animation: splash-header 0.1s forwards;
+  -moz-animation: splash-header 0.1s forwards;
+  -webkit-animation: splash-header 0.1s forwards;
 }
 
 #stage {
@@ -487,10 +487,10 @@ h2 {
   border-color: #000;
 }
 .cube.transition {
-  animation: cube-rotate-stop 2s ease-out forwards;
-  -o-animation: cube-rotate-stop 2s ease-out forwards;
-  -moz-animation: cube-rotate-stop 2s ease-out forwards;
-  -webkit-animation: cube-rotate-stop 2s ease-out forwards;
+  animation: cube-rotate-stop 0.1s ease-out forwards;
+  -o-animation: cube-rotate-stop 0.1s ease-out forwards;
+  -moz-animation: cube-rotate-stop 0.1s ease-out forwards;
+  -webkit-animation: cube-rotate-stop 0.1s ease-out forwards;
 }
 .cube.init {
   animation: none;
@@ -522,7 +522,7 @@ h2 {
 }
 
 /* Cube */
-.front {
+.side-front {
   transform: translateZ(4em);
   -o-transform: translateZ(4em);
   -ms-transform: translateZ(4em);
@@ -530,7 +530,7 @@ h2 {
   -webkit-transform: translateZ(4em);
 }
 
-.back {
+.side-back {
   transform: rotateY(180deg) translateZ(4em);
   -o-transform: rotateY(180deg) translateZ(4em);
   -ms-transform: rotateY(180deg) translateZ(4em);
@@ -538,7 +538,7 @@ h2 {
   -webkit-transform: rotateY(180deg) translateZ(4em);
 }
 
-.right {
+.side-right {
   transform: rotateY(90deg) translateZ(4em);
   -o-transform: rotateY(90deg) translateZ(4em);
   -ms-transform: rotateY(90deg) translateZ(4em);
@@ -546,7 +546,7 @@ h2 {
   -webkit-transform: rotateY(90deg) translateZ(4em);
 }
 
-.left {
+.side-left {
   transform: rotateY(-90deg) translateZ(4em);
   -o-transform: rotateY(-90deg) translateZ(4em);
   -ms-transform: rotateY(-90deg) translateZ(4em);
@@ -554,7 +554,7 @@ h2 {
   -webkit-transform: rotateY(-90deg) translateZ(4em);
 }
 
-.top {
+.side-top {
   transform: rotateX(90deg) translateZ(4em);
   -o-transform: rotateX(90deg) translateZ(4em);
   -ms-transform: rotateX(90deg) translateZ(4em);
@@ -562,7 +562,7 @@ h2 {
   -webkit-transform: rotateX(90deg) translateZ(4em);
 }
 
-.bottom {
+.side-bottom {
   transform: rotateX(-90deg) translateZ(4em);
   -o-transform: rotateX(-90deg) translateZ(4em);
   -ms-transform: rotateX(-90deg) translateZ(4em);
@@ -572,26 +572,33 @@ h2 {
 
 /* Tiles */
 .tile {
+  display: none;
   position: absolute;
   width: 2.54em;
   height: 2.54em;
   border: 2px solid #abcdef;
   background-color: #000;
-  animation: tile-start 1s forwards;
-  -o-animation: tile-start 1s forwards;
-  -moz-animation: tile-start 1s forwards;
-  -webkit-animation: tile-start 1s forwards;
-  transform: translateZ(0.1em);
-  -o-transform: translateZ(0.1em);
-  -ms-transform: translateZ(0.1em);
-  -moz-transform: translateZ(0.1em);
-  -webkit-transform: translateZ(0.1em);
+  transform: translateZ(0.01em);
+  -o-transform: translateZ(0.01em);
+  -ms-transform: translateZ(0.01em);
+  -moz-transform: translateZ(0.01em);
+  -webkit-transform: translateZ(0.01em);
 }
 .tile:hover {
   background-color: #abcdef;
 }
 .tile.selected {
   background-color: #defabc;
+}
+.tile.highlighted {
+  background-color: red;
+}
+.tile.init {
+  display: block;
+  animation: tile-start 0.05s forwards;
+  -o-animation: tile-start 0.05s forwards;
+  -moz-animation: tile-start 0.05s forwards;
+  -webkit-animation: tile-start 0.05s forwards;
 }
 
 .tile:nth-child(1) {
