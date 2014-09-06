@@ -115,8 +115,10 @@ function Cube(el) {
   this.el                     = el;
   this.style                  = this.el.style;
 
-  // Should go somewhere else.
+  // Maps out the lines (x, y) that should be highlighted per index click.
   this._lineMap = this._buildLineMap();
+  // A friendly map containing all the highlighted tiles per index click.
+  // (Flattened, uniq version of lineMap.)
   this._highlightMap = this._buildHighlightMap(this._lineMap);
 }
 
@@ -130,26 +132,16 @@ Cube.prototype = {
       C.ROTATE_X_PREFIX + this.x + C.ROTATE_UNIT_SUFFIX + ' ' + C.ROTATE_Y_PREFIX + this.y + C.ROTATE_UNIT_SUFFIX;
   },
 
-  beginGame: function(size) {
+  beginGame: function() {
 
-    var DELAY_MAX = 2000,
-        tiles = Math.pow(size || 3, 2),
-        sides = this.el.children,
-        len = sides.length,
-        s = 0,
-        t;
-
-    // Loop through each side to place tiles.
-    for (s; s < len; s++) {
-      for (t = 0; t < tiles; t++) {
-        this._placeTile(sides[s], t, Math.random() * DELAY_MAX);
-      }
-    }
+    // Create the game sides.
+    this.sides = this._buildSides();
 
     // Initialize the game.
     // Slow down the cube to a stop, display instructions.
     var el = this.el,
         self = this;
+
     el.addEventListener(Vendor.EVENT.animationIteration, function() {
       el.classList.add('transition');
       el.addEventListener(Vendor.EVENT.animationEnd, function animEnd(evt) {
@@ -216,24 +208,66 @@ Cube.prototype = {
     return result;
   },
 
-  _getSideClass: function(face) {
-    return face.className.match(/\bside\-[a-z]*\b/g)[0];
-  },
+  _buildSides: function() {
 
-  _placeTile: function(side, index, delay) {
+    var elements = _.reduce(this.el.children, function(sides, el) {
+      sides[el.id] = el;
+      return sides;
+    }, {});
 
-    var DOC = document,
-        DIV = 'div',
-        CLASS_TILE = 'tile',
-        tile = DOC.createElement(DIV);
+    var TOP = elements['top'],
+        BOTTOM = elements['bottom'],
+        FRONT = elements['front'],
+        BACK = elements['back'],
+        LEFT = elements['left'],
+        RIGHT = elements['right'];
 
-    tile.id = this._getSideClass(side) + '-' + index;
-    tile.className = CLASS_TILE;
-    side.appendChild(tile);
+    // Pretty crappy ... FOR TESTING ONLY!
+    var neighborMap = {
+      top: {
+        top: BACK,
+        bottom: FRONT,
+        left: LEFT,
+        right: RIGHT
+      },
+      bottom: {
+        top: FRONT,
+        bottom: BACK,
+        left: LEFT,
+        right: RIGHT
+      },
+      front: {
+        top: TOP,
+        bottom: BOTTOM,
+        left: LEFT,
+        right: RIGHT
+      },
+      back: {
+        top: BOTTOM,
+        bottom: TOP,
+        left: LEFT,
+        right: RIGHT
+      },
+      left: {
+        top: TOP,
+        bottom: BOTTOM,
+        left: BACK,
+        right: FRONT
+      },
+      right: {
+        top: TOP,
+        bottom: BOTTOM,
+        left: FRONT,
+        right: BACK
+      }
+    };
 
-    window.setTimeout(function() {
-      tile.classList.add('init');
-    }, delay);
+    return _.reduce(elements, function(sides, element) {
+      var id = element.id;
+      sides[id] = new Side(id, element, neighborMap[id]);
+      return sides;
+    }, {});
+
   },
 
   _buildLineMap: function() {
@@ -355,6 +389,57 @@ Keyboard.A = '65';
 Keyboard.S = '83';
 Keyboard.D = '68';
 Keyboard.SPACE = '32';
+
+function Side(id, el, neighbors) {
+
+  // The face id (top, bottom, front, back, left, right).
+  this.id = id;
+
+  // HTML element representing the side.
+  this.el = el;
+
+  // An array of all the tiles by index.
+  this.tiles = this._buildTiles();
+
+  // Configures the neighboring sides.
+  this._buildNeighbors();
+}
+
+Side.prototype = {
+
+  _buildNeighbors: function(sides) {
+    _.forIn(sides, function(value, key) {
+      this[key] = function() {
+        return value;
+      };
+    }, this);
+  },
+
+  _buildTiles: function() {
+
+    var DELAY_MAX = 2000,
+        numberOfTiles = 9;
+
+    return _.times(numberOfTiles, function(index) {
+      return this._placeTile(index, Math.random() * DELAY_MAX);
+    }, this);
+  },
+
+  _placeTile: function(index, delay) {
+
+    var tile = document.createElement('div');
+    tile.id = this.id + '-' + index;
+    tile.className = 'tile';
+    this.el.appendChild(tile);
+
+    window.setTimeout(function() {
+      tile.classList.add('init');
+    }, delay);
+
+    return tile;
+  }
+
+};
 
 (function(win) {
 

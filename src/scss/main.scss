@@ -115,22 +115,22 @@ h2 {
 
 /* Cube */
 
-.side-front {
+#front {
   @include transform(translateZ($cube-z));
 }
-.side-back {
+#back {
   @include transform(rotateY(180deg) translateZ($cube-z));
 }
-.side-right {
+#right {
   @include transform(rotateY(90deg) translateZ($cube-z));
 }
-.side-left {
+#left {
   @include transform(rotateY(-90deg) translateZ($cube-z));
 }
-.side-top {
+#top {
   @include transform(rotateX(90deg) translateZ($cube-z));
 }
-.side-bottom {
+#bottom {
   @include transform(rotateX(-90deg) translateZ($cube-z));
 }
 

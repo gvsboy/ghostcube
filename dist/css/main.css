@@ -522,7 +522,7 @@ h2 {
 }
 
 /* Cube */
-.side-front {
+#front {
   transform: translateZ(4em);
   -o-transform: translateZ(4em);
   -ms-transform: translateZ(4em);
@@ -530,7 +530,7 @@ h2 {
   -webkit-transform: translateZ(4em);
 }
 
-.side-back {
+#back {
   transform: rotateY(180deg) translateZ(4em);
   -o-transform: rotateY(180deg) translateZ(4em);
   -ms-transform: rotateY(180deg) translateZ(4em);
@@ -538,7 +538,7 @@ h2 {
   -webkit-transform: rotateY(180deg) translateZ(4em);
 }
 
-.side-right {
+#right {
   transform: rotateY(90deg) translateZ(4em);
   -o-transform: rotateY(90deg) translateZ(4em);
   -ms-transform: rotateY(90deg) translateZ(4em);
@@ -546,7 +546,7 @@ h2 {
   -webkit-transform: rotateY(90deg) translateZ(4em);
 }
 
-.side-left {
+#left {
   transform: rotateY(-90deg) translateZ(4em);
   -o-transform: rotateY(-90deg) translateZ(4em);
   -ms-transform: rotateY(-90deg) translateZ(4em);
@@ -554,7 +554,7 @@ h2 {
   -webkit-transform: rotateY(-90deg) translateZ(4em);
 }
 
-.side-top {
+#top {
   transform: rotateX(90deg) translateZ(4em);
   -o-transform: rotateX(90deg) translateZ(4em);
   -ms-transform: rotateX(90deg) translateZ(4em);
@@ -562,7 +562,7 @@ h2 {
   -webkit-transform: rotateX(90deg) translateZ(4em);
 }
 
-.side-bottom {
+#bottom {
   transform: rotateX(-90deg) translateZ(4em);
   -o-transform: rotateX(-90deg) translateZ(4em);
   -ms-transform: rotateX(-90deg) translateZ(4em);
