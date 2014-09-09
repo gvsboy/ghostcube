@@ -1,32 +1,28 @@
-function Side(id, el, neighbors) {
-
-  // The face id (top, bottom, front, back, left, right).
-  this.id = id;
+function Side(el, size) {
 
   // HTML element representing the side.
   this.el = el;
 
-  // An array of all the tiles by index.
-  this.tiles = this._buildTiles();
+  // The face id (top, bottom, front, back, left, right).
+  this.id = el.id;
 
-  // Configures the neighboring sides.
-  this._buildNeighbors();
+  // An array of all the tiles by index.
+  this.tiles = this._buildTiles(size);
+
+  // This will be set using setNeighbors().
+  this.neighbors = {};
 }
 
 Side.prototype = {
 
-  _buildNeighbors: function(sides) {
-    _.forIn(sides, function(value, key) {
-      this[key] = function() {
-        return value;
-      };
-    }, this);
+  setNeighbors: function(sides) {
+    this.neighbors = sides;
   },
 
-  _buildTiles: function() {
+  _buildTiles: function(size) {
 
     var DELAY_MAX = 2000,
-        numberOfTiles = 9;
+        numberOfTiles = Math.pow(size, 2);
 
     return _.times(numberOfTiles, function(index) {
       return this._placeTile(index, Math.random() * DELAY_MAX);

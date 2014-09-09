@@ -1,5 +1,12 @@
-function Cube(el) {
+function Cube(el, size) {
+
+  // The HTML element representing the cube.
   this.el                     = el;
+
+  // The cube's size regarding tiles across a side. Default to 3.
+  this.size                   = size || 3;
+
+  // Cached reference to the style object.
   this.style                  = this.el.style;
 
   // Maps out the lines (x, y) that should be highlighted per index click.
@@ -7,6 +14,11 @@ function Cube(el) {
   // A friendly map containing all the highlighted tiles per index click.
   // (Flattened, uniq version of lineMap.)
   this._highlightMap = this._buildHighlightMap(this._lineMap);
+
+  // This will be set in beginGame.
+  this.sides = null;
+
+  console.log(this._lineMap);
 }
 
 Cube.prototype = {
@@ -22,7 +34,7 @@ Cube.prototype = {
   beginGame: function() {
 
     // Create the game sides.
-    this.sides = this._buildSides();
+    this.sides = this._buildSides(this.size);
 
     // Initialize the game.
     // Slow down the cube to a stop, display instructions.
@@ -51,10 +63,12 @@ Cube.prototype = {
   selectTile: function(evt) {
 
     var tile = evt.target,
-        tiles = tile.parentNode.children,
-        index = [].indexOf.call(tiles, tile);
+        side = this.sides[tile.parentNode.id];
+        tiles = side.tiles,
+        index = tiles.indexOf(tile);
 
     console.log(index);
+
     tile.classList.add('selected');
 
     // Find all the tiles that should be highlighted.
@@ -70,6 +84,103 @@ Cube.prototype = {
       }
     });
 
+
+    
+
+    // Get the line map for highlighting in neighbors.
+    var lines = this._lineMap[index];
+
+    // Now let's do something with the neighboring sides.
+    console.log('side id: -----', side.id, side.neighbors);
+    console.log('line map:', lines);
+
+    _.forIn(side.neighbors, function(neighbor, id) {
+      var tiles = neighbor.tiles,
+          indicies = this._translate(side.id, lines, id);
+
+      _.forEach(indicies, function(i) {
+        tiles[i].classList.add('highlighted');
+      });
+    }, this);
+
+
+  },
+
+  _flipLine: function(line) {
+
+    var size = this.size,
+        middle = (size - 1) / 2,
+        isHorizontal = line[1] === line[0] + 1,
+        flippedLine;
+
+    if (!isHorizontal) {
+      var indexAt = line[0] % size;
+      var diff = middle - indexAt;
+      console.log('middle:', middle);
+      console.log('diff:', diff);
+      console.log('indexAt:', indexAt);
+      flippedLine = this._lineMap[middle + diff][1];
+    }
+    console.log(isHorizontal, flippedLine);
+
+    return flippedLine;
+  },
+
+  _translate: function(sideId, lines, id) {
+
+    // Line coordinate mapping to side id (1 = x, 0 = y)
+    var coorMap = {
+          // Side id and nested neighbor positions
+          front: {
+            top: 1,
+            bottom: 1,
+            left: 0,
+            right: 0
+          },
+          back: {
+            top: 1,
+            bottom: 1,
+            left: 0,
+            right: 0
+          },
+          top: {
+            top: 1,
+            bottom: 1,
+            left: 1,
+            right: 1
+          },
+          bottom: {
+            top: 1,
+            bottom: [1],
+            left: [1],
+            right: 1
+          },
+          left: {
+            top: 0,
+            bottom: 0,
+            left: 0,
+            right: 0
+          },
+          right: {
+            top: 0,
+            bottom: 0,
+            left: 0,
+            right: 0
+          }
+        };
+
+    var index = coorMap[sideId][id],
+        line;
+
+    if (_.isArray(index)) {
+      line = this._flipLine(lines[index[0]]);
+    }
+    else {
+
+      line = lines[index];
+    }
+
+    return line;
   },
 
   /**
@@ -95,19 +206,20 @@ Cube.prototype = {
     return result;
   },
 
-  _buildSides: function() {
+  _buildSides: function(size) {
 
-    var elements = _.reduce(this.el.children, function(sides, el) {
-      sides[el.id] = el;
-      return sides;
+    // Create sides.
+    var sides = _.reduce(this.el.children, function(list, el) {
+      list[el.id] = new Side(el, size);
+      return list;
     }, {});
 
-    var TOP = elements['top'],
-        BOTTOM = elements['bottom'],
-        FRONT = elements['front'],
-        BACK = elements['back'],
-        LEFT = elements['left'],
-        RIGHT = elements['right'];
+    var TOP = sides['top'],
+        BOTTOM = sides['bottom'],
+        FRONT = sides['front'],
+        BACK = sides['back'],
+        LEFT = sides['left'],
+        RIGHT = sides['right'];
 
     // Pretty crappy ... FOR TESTING ONLY!
     var neighborMap = {
@@ -149,19 +261,17 @@ Cube.prototype = {
       }
     };
 
-    return _.reduce(elements, function(sides, element) {
-      var id = element.id;
-      sides[id] = new Side(id, element, neighborMap[id]);
-      return sides;
-    }, {});
-
+    // Now set the neighbors for each side.
+    return _.forIn(sides, function(side) {
+      side.setNeighbors(neighborMap[side.id]);
+    });
   },
 
   _buildLineMap: function() {
 
     // Loop through each tile index and calculate the two rows (x, y) each one generates.
     // Base it on the size (3 tiles, 4 tiles, etc.)
-    var size = 3; // Our faces are 3x3.
+    var size = this.size;
 
     // For each index, generate the x and y lines that should be highlighted.
     return _.times(Math.pow(size, 2), function(i) {
