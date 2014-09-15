@@ -145,18 +145,19 @@ h2 {
   height: $tile-size;
   border: 2px solid $cube-color;
   background-color: #000;
+  color: green; /* DEBUG */
   @include transform(translateZ(0.01em));
 
   &:hover {
     background-color: $cube-color;
   }
 
-  &.selected {
-    background-color: $tile-selected;
-  }
-
   &.highlighted {
     background-color: $tile-highlighted;
+  }
+
+  &.selected {
+    background-color: $tile-selected;
   }
 
   &.init {

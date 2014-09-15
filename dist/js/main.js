@@ -56,10 +56,10 @@ App.prototype = {
 
     // Detect either left or right movement.
     if (keys[KB.LEFT] || keys[KB.A]) {
-      moveY = Const.CUBE_SPEED;
+      moveY = -Const.CUBE_SPEED;
     }
     else if (keys[KB.RIGHT] || keys[KB.D]) {
-      moveY = -Const.CUBE_SPEED;
+      moveY = Const.CUBE_SPEED;
     }
 
     this.cube.rotate(moveX, moveY);
@@ -176,25 +176,24 @@ Cube.prototype = {
   selectTile: function(evt) {
 
     var tile = evt.target,
-        side = this.sides[tile.parentNode.id];
+        data = tile.id.split('-'),
+        side = this.sides[data[0]];
         tiles = side.tiles,
-        index = tiles.indexOf(tile);
+        index = data[1];
 
+    console.log(tile);
     console.log(index);
 
-    tile.classList.add('selected');
+    // ALL THIS TOGGLING IS NOT PERFECT.
+    // Should not toggle, just reset with every click?
+    tile.classList.toggle('selected');
 
     // Find all the tiles that should be highlighted.
     var highlightedIndicies = this._highlightMap[index];
 
-    // Loop through the indicies and do stuff.
+    // Loop through the indicies highlight each tile.
     _.forEach(highlightedIndicies, function(i) {
-
-      // Highlight the tiles that are not 'selected'.
-      var hTile = tiles[i];
-      if (tile !== hTile) {
-        hTile.classList.add('highlighted');
-      }
+      tiles[i].toggleClass('highlighted');
     });
 
 
@@ -212,13 +211,24 @@ Cube.prototype = {
           indicies = this._translate(side.id, lines, id);
 
       _.forEach(indicies, function(i) {
-        tiles[i].classList.add('highlighted');
+        tiles[i].toggleClass('highlighted');
       });
     }, this);
 
+  },
+
+  // Rotate in place, like a Tetrad. For instance:
+  // xoo      ooo
+  // xoo  ->  xxx
+  // xoo      ooo
+  _rotateLine: function(line) {
 
   },
 
+  // Flip across a median. For instance:
+  //    xoo      oox
+  //    xoo  ->  oox
+  //    xoo      oox
   _flipLine: function(line) {
 
     var size = this.size,
@@ -226,15 +236,19 @@ Cube.prototype = {
         isHorizontal = line[1] === line[0] + 1,
         flippedLine;
 
+    console.log('line:', line);
+
     if (!isHorizontal) {
       var indexAt = line[0] % size;
       var diff = middle - indexAt;
+      /*
       console.log('middle:', middle);
       console.log('diff:', diff);
       console.log('indexAt:', indexAt);
+      */
       flippedLine = this._lineMap[middle + diff][1];
     }
-    console.log(isHorizontal, flippedLine);
+    console.log('isHorizontal:', isHorizontal, flippedLine);
 
     return flippedLine;
   },
@@ -243,37 +257,50 @@ Cube.prototype = {
 
     // Line coordinate mapping to side id (1 = x, 0 = y)
     var coorMap = {
+
           // Side id and nested neighbor positions
+
+          // FRONT testing: PERFECT!!!
           front: {
             top: 1,
             bottom: 1,
             left: 0,
             right: 0
           },
+
+          // BACK testing: PERFECT!!!
           back: {
-            top: 1,
-            bottom: 1,
+            top: [1],
+            bottom: [1],
             left: 0,
             right: 0
           },
+
+          // TOP testing:
           top: {
             top: 1,
             bottom: 1,
             left: 1,
             right: 1
           },
+
+          // BOTTOM testing:
           bottom: {
             top: 1,
             bottom: [1],
             left: [1],
-            right: 1
+            right: [1]
           },
+
+          // LEFT testing:
           left: {
             top: 0,
             bottom: 0,
             left: 0,
             right: 0
           },
+
+          // RIGHT testing:
           right: {
             top: 0,
             bottom: 0,
@@ -533,16 +560,47 @@ Side.prototype = {
 
   _placeTile: function(index, delay) {
 
-    var tile = document.createElement('div');
-    tile.id = this.id + '-' + index;
-    tile.className = 'tile';
-    this.el.appendChild(tile);
+    var tile = new Tile(this.id + '-' + index);
+    this.el.appendChild(tile.el);
 
     window.setTimeout(function() {
-      tile.classList.add('init');
+      tile.addClass('init');
     }, delay);
 
     return tile;
+  }
+
+};
+
+function Tile(id) {
+  this.el = this.build(id);
+  this._classList = this.el.classList;
+}
+
+Tile.prototype = {
+
+  build: function(id) {
+    var el = document.createElement('div');
+    el.id = id;
+    el.className = 'tile';
+
+    // debug
+    var idData = id.split('-');
+    el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
+
+    return el;
+  },
+
+  addClass: function(name) {
+    this._classList.add(name);
+  },
+
+  removeClass: function(name) {
+    this._classList.remove(name);
+  },
+
+  toggleClass: function(name) {
+    this._classList.toggle(name);
   }
 
 };

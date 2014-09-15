@@ -578,6 +578,8 @@ h2 {
   height: 2.54em;
   border: 2px solid #abcdef;
   background-color: #000;
+  color: green;
+  /* DEBUG */
   transform: translateZ(0.01em);
   -o-transform: translateZ(0.01em);
   -ms-transform: translateZ(0.01em);
@@ -587,11 +589,11 @@ h2 {
 .tile:hover {
   background-color: #abcdef;
 }
-.tile.selected {
-  background-color: #defabc;
-}
 .tile.highlighted {
   background-color: red;
+}
+.tile.selected {
+  background-color: #defabc;
 }
 .tile.init {
   display: block;

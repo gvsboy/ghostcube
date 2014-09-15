@@ -31,13 +31,11 @@ Side.prototype = {
 
   _placeTile: function(index, delay) {
 
-    var tile = document.createElement('div');
-    tile.id = this.id + '-' + index;
-    tile.className = 'tile';
-    this.el.appendChild(tile);
+    var tile = new Tile(this.id + '-' + index);
+    this.el.appendChild(tile.el);
 
     window.setTimeout(function() {
-      tile.classList.add('init');
+      tile.addClass('init');
     }, delay);
 
     return tile;

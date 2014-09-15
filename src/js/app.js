@@ -56,10 +56,10 @@ App.prototype = {
 
     // Detect either left or right movement.
     if (keys[KB.LEFT] || keys[KB.A]) {
-      moveY = Const.CUBE_SPEED;
+      moveY = -Const.CUBE_SPEED;
     }
     else if (keys[KB.RIGHT] || keys[KB.D]) {
-      moveY = -Const.CUBE_SPEED;
+      moveY = Const.CUBE_SPEED;
     }
 
     this.cube.rotate(moveX, moveY);
