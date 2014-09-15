@@ -68,8 +68,7 @@ Cube.prototype = {
         tiles = side.tiles,
         index = data[1];
 
-    console.log(tile);
-    console.log(index);
+    console.log('SELECTED INDEX ----------- :', index);
 
     // ALL THIS TOGGLING IS NOT PERFECT.
     // Should not toggle, just reset with every click?
@@ -105,10 +104,12 @@ Cube.prototype = {
   },
 
   // Rotate in place, like a Tetrad. For instance:
-  // xoo      ooo
-  // xoo  ->  xxx
+  // xoo      xxx
+  // xoo  ->  ooo
   // xoo      ooo
   _rotateLine: function(line) {
+
+
 
   },
 
@@ -118,25 +119,57 @@ Cube.prototype = {
   //    xoo      oox
   _flipLine: function(line) {
 
+    // Cache the cube size.
     var size = this.size,
-        middle = (size - 1) / 2,
-        isHorizontal = line[1] === line[0] + 1,
-        flippedLine;
 
-    console.log('line:', line);
+        // Where the line begins, starting from top-left.
+        origin = line[0],
 
+        // Horizontal lines contain points that increment by one.
+        isHorizontal = line[1] === origin + 1,
+
+        // The transformed line.
+        flippedLine,
+
+        // The row or column the line is in.
+        indexAt,
+
+        // The middle line.
+        middle,
+
+        // Distance difference between the index and middle.
+        diff;
+
+    // If the line is vertical:
     if (!isHorizontal) {
-      var indexAt = line[0] % size;
-      var diff = middle - indexAt;
-      /*
-      console.log('middle:', middle);
-      console.log('diff:', diff);
-      console.log('indexAt:', indexAt);
-      */
+
+      // The column (starting at top-left and across).
+      indexAt = origin % size;
+
+      // The middle column.
+      middle = (size - 1) / 2;
+
+      // Determine the difference and get the calculated y line.
+      diff = middle - indexAt;
       flippedLine = this._lineMap[middle + diff][1];
     }
-    console.log('isHorizontal:', isHorizontal, flippedLine);
 
+    // Else, the line must be horizontal:
+    else {
+
+      // The row (starting at top-right and down).
+      indexAt = origin - (origin % size);
+
+      // The middle row, which is the size squared cut in half and floored.
+      // NOTE: This could be buggy with other sizes!
+      middle = Math.floor((Math.pow(size, 2) / 2) - 1);
+
+      // Determine the difference and get the calculated x line.
+      diff = middle - indexAt;
+      flippedLine = this._lineMap[middle + diff][0];
+    }
+
+    console.log('isHorizontal:', isHorizontal, flippedLine);
     return flippedLine;
   },
 
@@ -146,8 +179,10 @@ Cube.prototype = {
     var coorMap = {
 
           // Side id and nested neighbor positions
+          // [id, flip, rotate]
+          // [1, true, false]
 
-          // FRONT testing: PERFECT!!!
+          // FRONT testing:     PERFECT!!!
           front: {
             top: 1,
             bottom: 1,
@@ -155,31 +190,31 @@ Cube.prototype = {
             right: 0
           },
 
-          // BACK testing: PERFECT!!!
+          // BACK testing:      PERFECT!!!
           back: {
-            top: [1],
-            bottom: [1],
+            top: [1, true],
+            bottom: [1, true],
             left: 0,
             right: 0
           },
 
-          // TOP testing:
+          // TOP testing:       LEFT and RIGHT need rotation
           top: {
-            top: 1,
+            top: [1, true],
             bottom: 1,
-            left: 1,
+            left: 0,
+            right: 0,
+          },
+
+          // BOTTOM testing:    LEFT and RIGHT need rotation
+          bottom: {
+            top: 1,
+            bottom: [1, true],
+            left: [1, true],
             right: 1
           },
 
-          // BOTTOM testing:
-          bottom: {
-            top: 1,
-            bottom: [1],
-            left: [1],
-            right: [1]
-          },
-
-          // LEFT testing:
+          // LEFT testing:      TOP and BOTTOM need rotation
           left: {
             top: 0,
             bottom: 0,
@@ -187,7 +222,7 @@ Cube.prototype = {
             right: 0
           },
 
-          // RIGHT testing:
+          // RIGHT testing:     TOP and BOTTOM need rotation
           right: {
             top: 0,
             bottom: 0,
@@ -200,7 +235,9 @@ Cube.prototype = {
         line;
 
     if (_.isArray(index)) {
-      line = this._flipLine(lines[index[0]]);
+      if (index[1] === true) {
+        line = this._flipLine(lines[index[0]]);
+      }
     }
     else {
 
