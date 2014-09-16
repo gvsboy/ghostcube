@@ -18,7 +18,7 @@ function Cube(el, size) {
   // This will be set in beginGame.
   this.sides = null;
 
-  console.log(this._lineMap);
+  console.log('linemap:', this._lineMap);
 }
 
 Cube.prototype = {
@@ -89,8 +89,8 @@ Cube.prototype = {
     var lines = this._lineMap[index];
 
     // Now let's do something with the neighboring sides.
-    console.log('side id: -----', side.id, side.neighbors);
-    console.log('line map:', lines);
+    //console.log('side id: -----', side.id, side.neighbors);
+    //console.log('line map:', lines);
 
     _.forIn(side.neighbors, function(neighbor, id) {
       var tiles = neighbor.tiles,
@@ -109,8 +109,32 @@ Cube.prototype = {
   // xoo      ooo
   _rotateLine: function(line) {
 
+    // Cache the cube size.
+    var size = this.size,
 
+        // Where the line begins, starting from top-left.
+        origin = line[0],
 
+        // Horizontal lines contain points that increment by one.
+        isHorizontal = line[1] === origin + 1,
+
+        // The transformed line.
+        rotatedLine,
+
+        indexAt;
+
+    if (isHorizontal) {
+      // The row (starting at top-right and down).
+      indexAt = origin - (origin % size);
+      rotatedLine = this._lineMap[indexAt + (indexAt / size)][1];
+      console.log('rotateLine index:', indexAt);
+    }
+
+    else {
+      
+    }
+
+    return rotatedLine;
   },
 
   // Flip across a median. For instance:
@@ -169,7 +193,7 @@ Cube.prototype = {
       flippedLine = this._lineMap[middle + diff][0];
     }
 
-    console.log('isHorizontal:', isHorizontal, flippedLine);
+    //console.log('isHorizontal:', isHorizontal, flippedLine);
     return flippedLine;
   },
 
@@ -198,20 +222,20 @@ Cube.prototype = {
             right: 0
           },
 
-          // TOP testing:       LEFT and RIGHT need rotation
+          // TOP testing:       PERFECT!!!
           top: {
             top: [1, true],
             bottom: 1,
-            left: 0,
-            right: 0,
+            left: [0, false, true],
+            right: [0, true, true],
           },
 
-          // BOTTOM testing:    LEFT and RIGHT need rotation
+          // BOTTOM testing:    PERFECT!!!
           bottom: {
             top: 1,
             bottom: [1, true],
-            left: [1, true],
-            right: 1
+            left: [0, true, true],
+            right: [0, false, true]
           },
 
           // LEFT testing:      TOP and BOTTOM need rotation
@@ -238,9 +262,11 @@ Cube.prototype = {
       if (index[1] === true) {
         line = this._flipLine(lines[index[0]]);
       }
+      if (index[2] === true) {
+        line = this._rotateLine(line ? line : lines[index[0]]);
+      }
     }
     else {
-
       line = lines[index];
     }
 
