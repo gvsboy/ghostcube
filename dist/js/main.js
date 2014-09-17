@@ -240,11 +240,13 @@ Cube.prototype = {
       // The row (starting at top-right and down).
       indexAt = origin - (origin % size);
       rotatedLine = this._lineMap[indexAt + (indexAt / size)][1];
-      console.log('rotateLine index:', indexAt);
+      console.log('HORIZONTAL rotateLine index:', indexAt);
     }
 
     else {
-      
+      indexAt = origin % size;
+      console.log('VERTICAL rotateLine index:', indexAt);
+      rotatedLine = this._lineMap[indexAt * size][0];
     }
 
     return rotatedLine;
@@ -351,18 +353,18 @@ Cube.prototype = {
             right: [0, false, true]
           },
 
-          // LEFT testing:      TOP and BOTTOM need rotation
+          // LEFT testing:      PERFECT!!!
           left: {
-            top: 0,
-            bottom: 0,
+            top: [1, false, true],
+            bottom: [1, true, true],
             left: 0,
             right: 0
           },
 
           // RIGHT testing:     TOP and BOTTOM need rotation
           right: {
-            top: 0,
-            bottom: 0,
+            top: [1, true, true],
+            bottom: [1, false, true],
             left: 0,
             right: 0
           }
