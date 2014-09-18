@@ -11,12 +11,12 @@ function Cube(el, size) {
 
   // Maps out the lines (x, y) that should be highlighted per index click.
   this._lineMap = this._buildLineMap();
-  // A friendly map containing all the highlighted tiles per index click.
-  // (Flattened, uniq version of lineMap.)
-  this._highlightMap = this._buildHighlightMap(this._lineMap);
 
   // This will be set in beginGame.
   this.sides = null;
+
+  // The three selected tiles to place pieces on.
+  this.selectedTiles = [];
 
   console.log('linemap:', this._lineMap);
 }
@@ -51,7 +51,7 @@ Cube.prototype = {
           self.y = 123;//TODO: make dynamic
 
           // Begin listening for tile clicks.
-          el.addEventListener('click', self.selectTile.bind(self));
+          el.addEventListener('click', self._handleCubeClick.bind(self));
 
           el.dispatchEvent(new Event('init'));
         }
@@ -60,47 +60,100 @@ Cube.prototype = {
 
   },
 
-  selectTile: function(evt) {
-
-    var tile = evt.target,
-        data = tile.id.split('-'),
-        side = this.sides[data[0]];
-        tiles = side.tiles,
-        index = data[1];
-
-    console.log('SELECTED INDEX ----------- :', index);
-
-    // ALL THIS TOGGLING IS NOT PERFECT.
-    // Should not toggle, just reset with every click?
-    tile.classList.toggle('selected');
-
-    // Find all the tiles that should be highlighted.
-    var highlightedIndicies = this._highlightMap[index];
-
-    // Loop through the indicies highlight each tile.
-    _.forEach(highlightedIndicies, function(i) {
-      tiles[i].toggleClass('highlighted');
+  selectTile: function(tile) {
+    tile.classList.add('selected');
+    this.selectedTiles.push(tile);
+    this._updateAdjacentTiles(tile, function(tile) {
+      tile.addClass('highlighted');
     });
+  },
 
+  deselectTile: function(tile) {
+    tile.classList.remove('selected');
+    _.pull(this.selectedTiles, tile);
+    this._updateAdjacentTiles(tile, function(tile) {
+      tile.removeClass('highlighted');
+    });
+  },
 
-    
+  /**
+   * Detemines whether or not the passed element is a tile.
+   * @param  {DOMElement}  el The element to validate.
+   * @return {Boolean}    Is the element a tile?
+   */
+  isTile: function(el) {
+    return el.classList.contains('tile');
+  },
 
-    // Get the line map for highlighting in neighbors.
-    var lines = this._lineMap[index];
+  /**
+   * Fetches specific tiles for a side by the passed indicies.
+   * @param  {Side} side     The side to fetch the tiles from.
+   * @param  {Number[]} indicies An array of indicies.
+   * @return {Tile[]}          An array of selected tiles.
+   */
+  getTiles: function(side, indicies) {
+    return _.at(side.tiles, _.uniq(_.flatten(indicies)));
+  },
 
-    // Now let's do something with the neighboring sides.
-    //console.log('side id: -----', side.id, side.neighbors);
-    //console.log('line map:', lines);
+  /**
+   * Updates the passed tile and all related adjacent tiles with the
+   * passed callback. This method is mostly used for highlighting tiles
+   * to help the user make strategy decisions easier.
+   * @param  {DOMElement}   originTile The selected tile as a raw DOM element.
+   * @param  {Function}     callback   The method to invoke passing each tile as an argument.
+   */
+  _updateAdjacentTiles: function(originTile, callback) {
 
+    // An array containing the origin tile's side's orientation id and index.
+    // (e.g. ['bottom', 4])
+    var data = originTile.id.split('-'),
+
+        // The side's orientation id.
+        originId = data[0],
+
+        // The tile's index.
+        index = data[1],
+
+        // The side object containing the origin tile.
+        side = this.sides[originId],
+
+        // The highlightable lines related to the origin tile's index.
+        lines = this._lineMap[index];
+
+    // Update all the appropriate tiles on the origin tile's side.
+    _.forEach(this.getTiles(side, lines), callback);
+
+    // For each neighbor, pass in the side and the orientation id (e.g. 'left').
     _.forIn(side.neighbors, function(neighbor, id) {
-      var tiles = neighbor.tiles,
-          indicies = this._translate(side.id, lines, id);
 
-      _.forEach(indicies, function(i) {
-        tiles[i].toggleClass('highlighted');
-      });
+      // Get all the translated tiles based on the origin tile and update.
+      _.forEach(this.getTiles(neighbor, this._translate(lines, id, originId)), callback);
+
     }, this);
+  },
 
+  _handleCubeClick: function(evt) {
+
+    // Get the target element from the event.
+    var target = evt.target,
+        selectedTiles = this.selectedTiles;
+
+    // If the target is a tile, let's figure out what to do with it.
+    if (this.isTile(target)) {
+
+      // If nothing has been selected yet, select the tile normally.
+      if (_.isEmpty(selectedTiles)) {
+        this.selectTile(target);
+      }
+
+      // Else, if there's one selected tile already, either unselect it
+      // if it's the target or try to make a match.
+      else if (selectedTiles.length === 1) {
+        if (target === _.first(selectedTiles)) {
+          this.deselectTile(target);
+        }
+      }
+    };
   },
 
   // Rotate in place, like a Tetrad. For instance:
@@ -199,7 +252,7 @@ Cube.prototype = {
     return flippedLine;
   },
 
-  _translate: function(sideId, lines, id) {
+  _translate: function(lines, id, originId) {
 
     // Line coordinate mapping to side id (1 = x, 0 = y)
     var coorMap = {
@@ -257,7 +310,7 @@ Cube.prototype = {
           }
         };
 
-    var index = coorMap[sideId][id],
+    var index = coorMap[originId][id],
         line;
 
     if (_.isArray(index)) {
@@ -393,11 +446,16 @@ Cube.prototype = {
     });
   },
 
-  _buildHighlightMap: function(lineMap) {
 
+  /**
+   * THIS IS DEPRECIATED!
+   * I'll keep it in case I need it later.
+   * I'm famous for premature trashing.
+   */
+  _buildHighlightMap: function(lineMap) {
     // Boil down a simple highlight map for each tile based on the line map.
     // We'll flatten and uniq the line map for each tile.
-    return this._highlightMap = _.reduce(lineMap, function(map, lines) {
+    return _.reduce(lineMap, function(map, lines) {
       map.push(_.uniq(_.flatten(lines)));
       return map;
     }, []);
