@@ -125,6 +125,9 @@ function Cube(el, size) {
   // Maps out the lines (x, y) that should be highlighted per index click.
   this._lineMap = this._buildLineMap();
 
+  // Translates highlighted lines to different sides, normalizing the coordinate system.
+  this._translationMap = this._buildTranslationMap();
+
   // This will be set in beginGame.
   this.sides = null;
 
@@ -199,16 +202,6 @@ Cube.prototype = {
   },
 
   /**
-   * Fetches specific tiles for a side by the passed indicies.
-   * @param  {Side} side     The side to fetch the tiles from.
-   * @param  {Number[]} indicies An array of indicies.
-   * @return {Tile[]}          An array of selected tiles.
-   */
-  getTiles: function(side, indicies) {
-    return _.at(side.tiles, _.uniq(_.flatten(indicies)));
-  },
-
-  /**
    * Updates the passed tile and all related adjacent tiles with the
    * passed callback. This method is mostly used for highlighting tiles
    * to help the user make strategy decisions easier.
@@ -234,13 +227,13 @@ Cube.prototype = {
         lines = this._lineMap[index];
 
     // Update all the appropriate tiles on the origin tile's side.
-    _.forEach(this.getTiles(side, lines), callback);
+    _.forEach(side.getTiles(lines), callback);
 
     // For each neighbor, pass in the side and the orientation id (e.g. 'left').
     _.forIn(side.neighbors, function(neighbor, id) {
 
       // Get all the translated tiles based on the origin tile and update.
-      _.forEach(this.getTiles(neighbor, this._translate(lines, id, originId)), callback);
+      _.forEach(neighbor.getTiles(this._translate(lines, id, originId)), callback);
 
     }, this);
   },
@@ -293,12 +286,10 @@ Cube.prototype = {
       // The row (starting at top-right and down).
       indexAt = origin - (origin % size);
       rotatedLine = this._lineMap[indexAt + (indexAt / size)][1];
-      console.log('HORIZONTAL rotateLine index:', indexAt);
     }
-
     else {
+      // The column (starting top-right and across).
       indexAt = origin % size;
-      console.log('VERTICAL rotateLine index:', indexAt);
       rotatedLine = this._lineMap[indexAt * size][0];
     }
 
@@ -367,79 +358,17 @@ Cube.prototype = {
 
   _translate: function(lines, id, originId) {
 
-    // Line coordinate mapping to side id (1 = x, 0 = y)
-    var coorMap = {
+    var translation = this._translationMap[originId][id];
 
-          // Side id and nested neighbor positions
-          // [id, flip, rotate]
-          // [1, true, false]
-
-          // FRONT testing:     PERFECT!!!
-          front: {
-            top: 1,
-            bottom: 1,
-            left: 0,
-            right: 0
-          },
-
-          // BACK testing:      PERFECT!!!
-          back: {
-            top: [1, true],
-            bottom: [1, true],
-            left: 0,
-            right: 0
-          },
-
-          // TOP testing:       PERFECT!!!
-          top: {
-            top: [1, true],
-            bottom: 1,
-            left: [0, false, true],
-            right: [0, true, true],
-          },
-
-          // BOTTOM testing:    PERFECT!!!
-          bottom: {
-            top: 1,
-            bottom: [1, true],
-            left: [0, true, true],
-            right: [0, false, true]
-          },
-
-          // LEFT testing:      PERFECT!!!
-          left: {
-            top: [1, false, true],
-            bottom: [1, true, true],
-            left: 0,
-            right: 0
-          },
-
-          // RIGHT testing:     TOP and BOTTOM need rotation
-          right: {
-            top: [1, true, true],
-            bottom: [1, false, true],
-            left: 0,
-            right: 0
-          }
-        };
-
-    var index = coorMap[originId][id],
-        line;
-
-    if (_.isArray(index)) {
-      if (index[1] === true) {
-        line = this._flipLine(lines[index[0]]);
-      }
-      if (index[2] === true) {
-        line = this._rotateLine(line ? line : lines[index[0]]);
-      }
-    }
-    else {
-      line = lines[index];
-    }
-
-    return line;
+    return _.reduce(_.rest(translation), function(line, method) {
+      return method(line);
+    }, lines[_.first(translation)]);
   },
+
+
+
+
+
 
   /**
    * Given a current coordinate, update it with the difference.
@@ -559,6 +488,57 @@ Cube.prototype = {
     });
   },
 
+  _buildTranslationMap: function() {
+
+    var flip = _.bind(this._flipLine, this),
+        rotate = _.bind(this._rotateLine, this);
+
+    // Line coordinate mapping to side id (1 = x, 0 = y)
+    return {
+
+      front: {
+        top:      [1],
+        bottom:   [1],
+        left:     [0],
+        right:    [0]
+      },
+
+      back: {
+        top:      [1, flip],
+        bottom:   [1, flip],
+        left:     [0],
+        right:    [0]
+      },
+
+      top: {
+        top:      [1, flip],
+        bottom:   [1],
+        left:     [0, rotate],
+        right:    [0, flip, rotate],
+      },
+
+      bottom: {
+        top:      [1],
+        bottom:   [1, flip],
+        left:     [0, flip, rotate],
+        right:    [0, rotate]
+      },
+
+      left: {
+        top:      [1, rotate],
+        bottom:   [1, flip, rotate],
+        left:     [0],
+        right:    [0]
+      },
+
+      right: {
+        top:      [1, flip, rotate],
+        bottom:   [1, rotate],
+        left:     [0],
+        right:    [0]
+      }
+    };
+  },
 
   /**
    * THIS IS DEPRECIATED!
@@ -658,17 +638,30 @@ function Side(el, size) {
   // The face id (top, bottom, front, back, left, right).
   this.id = el.id;
 
-  // An array of all the tiles by index.
-  this.tiles = this._buildTiles(size);
-
   // This will be set using setNeighbors().
   this.neighbors = {};
+
+  // An array of all the tiles by index.
+  this._tiles = this._buildTiles(size);
 }
 
 Side.prototype = {
 
   setNeighbors: function(sides) {
     this.neighbors = sides;
+  },
+
+  /**
+   * Fetches specific tiles referenced by the passed indicies,
+   * or all tiles if indicies are not passed.
+   * @param  {[Number[]]} indicies An array of indicies.
+   * @return {Tile[]}          An array of selected tiles.
+   */
+  getTiles: function(indicies) {
+    if (indicies) {
+      return _.at(this._tiles, _.uniq(_.flatten(indicies)));
+    }
+    return this._tiles;
   },
 
   _buildTiles: function(size) {
