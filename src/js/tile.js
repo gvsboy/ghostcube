@@ -1,6 +1,12 @@
-function Tile(id) {
-  this.el = this.build(id);
-  this._classList = this.el.classList;
+function Tile(side, index) {
+
+  // Set properties.
+  this.el = this.build(side.id + '-' + index);
+  this.side = side;
+  this.index = index;
+
+  // Append the tile's element to the side.
+  side.el.appendChild(this.el);
 }
 
 Tile.prototype = {
@@ -18,15 +24,11 @@ Tile.prototype = {
   },
 
   addClass: function(name) {
-    this._classList.add(name);
+    this.el.classList.add(name);
   },
 
   removeClass: function(name) {
-    this._classList.remove(name);
-  },
-
-  toggleClass: function(name) {
-    this._classList.toggle(name);
+    this.el.classList.remove(name);
   }
 
 };

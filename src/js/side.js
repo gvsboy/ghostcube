@@ -20,14 +20,23 @@ Side.prototype = {
   },
 
   /**
+   * A check to determine if the passed side is one of this side's neighbors.
+   * @param  {Side}  side The side object to check.
+   * @return {Boolean}      Is the passed side a neighbor?
+   */
+  isNeighbor: function(side) {
+    return _.contains(this.neighbors, side);
+  },
+
+  /**
    * Fetches specific tiles referenced by the passed indicies,
    * or all tiles if indicies are not passed.
-   * @param  {[Number[]]} indicies An array of indicies.
+   * @param  {[String|Number|Number[]]} indicies An array of indicies.
    * @return {Tile[]}          An array of selected tiles.
    */
   getTiles: function(indicies) {
     if (indicies) {
-      return _.at(this._tiles, _.uniq(_.flatten(indicies)));
+      return _.at(this._tiles, _.isArray(indicies) ? _.uniq(_.flatten(indicies)) : +indicies);
     }
     return this._tiles;
   },
@@ -44,8 +53,7 @@ Side.prototype = {
 
   _placeTile: function(index, delay) {
 
-    var tile = new Tile(this.id + '-' + index);
-    this.el.appendChild(tile.el);
+    var tile = new Tile(this, index);
 
     window.setTimeout(function() {
       tile.addClass('init');

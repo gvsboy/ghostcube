@@ -16,7 +16,7 @@ function Cube(el, size) {
   this._translationMap = this._buildTranslationMap();
 
   // This will be set in beginGame.
-  this.sides = null;
+  this._sides = null;
 
   // The three selected tiles to place pieces on.
   this.selectedTiles = [];
@@ -37,7 +37,7 @@ Cube.prototype = {
   beginGame: function() {
 
     // Create the game sides.
-    this.sides = this._buildSides(this.size);
+    this._sides = this._buildSides(this.size);
 
     // Initialize the game.
     // Slow down the cube to a stop, display instructions.
@@ -53,9 +53,16 @@ Cube.prototype = {
           self.x = 123;//TODO: make dynamic http://css-tricks.com/get-value-of-css-rotation-through-javascript/
           self.y = 123;//TODO: make dynamic
 
-          // Begin listening for tile clicks.
-          el.addEventListener('click', self._handleCubeClick.bind(self));
+          // Listen for tile clicks.
+          el.addEventListener('click', _.bind(self._handleClick, self));
 
+          // Listen for mouseovers.
+          el.addEventListener('mouseover', _.bind(self._handleMouseOver, self));
+
+          // ...and mouseouts.
+          el.addEventListener('mouseout', _.bind(self._handleMouseOut, self));
+
+          // Let's go!
           el.dispatchEvent(new Event('init'));
         }
       });
@@ -63,8 +70,17 @@ Cube.prototype = {
 
   },
 
+  /**
+   * Fetches a cube side by name (e.g. 'top')
+   * @param  {String} name The name of the side you want.
+   * @return {Side}      The Side object by name.
+   */
+  getSide: function(name) {
+    return this._sides[name];
+  },
+
   selectTile: function(tile) {
-    tile.classList.add('selected');
+    tile.addClass('selected');
     this.selectedTiles.push(tile);
     this._updateAdjacentTiles(tile, function(tile) {
       tile.addClass('highlighted');
@@ -72,7 +88,7 @@ Cube.prototype = {
   },
 
   deselectTile: function(tile) {
-    tile.classList.remove('selected');
+    tile.removeClass('selected');
     _.pull(this.selectedTiles, tile);
     this._updateAdjacentTiles(tile, function(tile) {
       tile.removeClass('highlighted');
@@ -80,38 +96,19 @@ Cube.prototype = {
   },
 
   /**
-   * Detemines whether or not the passed element is a tile.
-   * @param  {DOMElement}  el The element to validate.
-   * @return {Boolean}    Is the element a tile?
-   */
-  isTile: function(el) {
-    return el.classList.contains('tile');
-  },
-
-  /**
    * Updates the passed tile and all related adjacent tiles with the
    * passed callback. This method is mostly used for highlighting tiles
    * to help the user make strategy decisions easier.
-   * @param  {DOMElement}   originTile The selected tile as a raw DOM element.
+   * @param  {DOMElement}   tile The selected tile as a raw DOM element.
    * @param  {Function}     callback   The method to invoke passing each tile as an argument.
    */
-  _updateAdjacentTiles: function(originTile, callback) {
+  _updateAdjacentTiles: function(tile, callback) {
 
-    // An array containing the origin tile's side's orientation id and index.
-    // (e.g. ['bottom', 4])
-    var data = originTile.id.split('-'),
-
-        // The side's orientation id.
-        originId = data[0],
-
-        // The tile's index.
-        index = data[1],
-
-        // The side object containing the origin tile.
-        side = this.sides[originId],
+    // The tile's side.
+    var side = tile.side,
 
         // The highlightable lines related to the origin tile's index.
-        lines = this._lineMap[index];
+        lines = this._lineMap[tile.index];
 
     // Update all the appropriate tiles on the origin tile's side.
     _.forEach(side.getTiles(lines), callback);
@@ -120,33 +117,87 @@ Cube.prototype = {
     _.forIn(side.neighbors, function(neighbor, id) {
 
       // Get all the translated tiles based on the origin tile and update.
-      _.forEach(neighbor.getTiles(this._translate(lines, id, originId)), callback);
+      _.forEach(neighbor.getTiles(this._translate(lines, id, side.id)), callback);
 
     }, this);
   },
 
-  _handleCubeClick: function(evt) {
+  _getTileFromElement: function(el) {
+    var data;
+    if (el.classList.contains('tile')) {
+      data = el.id.split('-');
+      return this.getSide(data[0]).getTiles(data[1])[0];
+    }
+    return null;
+  },
+
+  _handleClick: function(evt) {
 
     // Get the target element from the event.
-    var target = evt.target,
-        selectedTiles = this.selectedTiles;
+    var tile = this._getTileFromElement(evt.target),
+
+        // The first tile that has been selected.
+        initialTile = _.first(this.selectedTiles);
 
     // If the target is a tile, let's figure out what to do with it.
-    if (this.isTile(target)) {
+    if (tile) {
 
       // If nothing has been selected yet, select the tile normally.
-      if (_.isEmpty(selectedTiles)) {
-        this.selectTile(target);
+      if (!initialTile) {
+        this.selectTile(tile);
       }
 
-      // Else, if there's one selected tile already, either unselect it
-      // if it's the target or try to make a match.
-      else if (selectedTiles.length === 1) {
-        if (target === _.first(selectedTiles)) {
-          this.deselectTile(target);
+      // Otherwise, there must be a selected tile already.
+      else {
+
+        // Deselect the tile if it is the target.
+        if (tile === initialTile) {
+          this.deselectTile(tile);
+        }
+
+        // Otherwise, try and make a match.
+        else {
+
+          // If the same side was selected, display an error.
+          if (tile.side === initialTile.side) {
+            console.log('Same side! Choose a tile on a different side.');
+          }
+
+          // Else if the side selected is not a neighbor, display an error.
+          else if (!initialTile.side.isNeighbor(tile.side)) {
+            console.log('Not a neighboring side! Choose a tile different side.');
+          }
+
+          // Otherwise, we're on a good side. Let's drill down further.
+          else {
+            console.log('cool');
+          }
         }
       }
     };
+  },
+
+  _handleMouseOver: function(evt) {
+
+    var tile = this._getTileFromElement(evt.target),
+
+        // The first tile that has been selected.
+        initialTile = _.first(this.selectedTiles);
+
+    if (tile) {
+
+      // If a tile has been selected already, let's try to highlight a tile
+      // for targeting help.
+      if (initialTile) {
+
+
+
+      }
+    }
+  },
+
+  _handleMouseOut: function(evt) {
+    //console.log('out  ~~~', evt.target);
   },
 
   // Rotate in place, like a Tetrad. For instance:
@@ -252,11 +303,6 @@ Cube.prototype = {
     }, lines[_.first(translation)]);
   },
 
-
-
-
-
-
   /**
    * Given a current coordinate, update it with the difference.
    * If the result is out of the revolution bounds (between 0 and 360),
@@ -279,6 +325,13 @@ Cube.prototype = {
 
     return result;
   },
+
+
+
+// ------------------------------------------------------------------------------------------------------
+
+
+
 
   _buildSides: function(size) {
 

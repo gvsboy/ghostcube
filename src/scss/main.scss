@@ -148,12 +148,12 @@ h2 {
   color: green; /* DEBUG */
   @include transform(translateZ(0.01em));
 
-  &:hover {
-    background-color: $cube-color;
-  }
-
   &.highlighted {
     background-color: $tile-highlighted;
+  }
+
+  &:hover {
+    background-color: $cube-color;
   }
 
   &.selected {

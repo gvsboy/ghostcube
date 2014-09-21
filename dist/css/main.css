@@ -586,11 +586,11 @@ h2 {
   -moz-transform: translateZ(0.01em);
   -webkit-transform: translateZ(0.01em);
 }
-.tile:hover {
-  background-color: #abcdef;
-}
 .tile.highlighted {
   background-color: red;
+}
+.tile:hover {
+  background-color: #abcdef;
 }
 .tile.selected {
   background-color: #defabc;
