@@ -18,7 +18,7 @@ Tile.prototype = {
 
     // debug
     var idData = id.split('-');
-    el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
+    //el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
 
     return el;
   },

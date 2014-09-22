@@ -2,6 +2,7 @@ var Const = {
 
   // Game Logic
   CUBE_SPEED: 5,
+  CUBE_MOVE_UNIT: 90,
 
   // Display
   TRANSFORM: 'Transform',

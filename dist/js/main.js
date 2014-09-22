@@ -3,6 +3,11 @@ function App(containerId) {
   this.cube = new Cube(this.container.getElementsByClassName('cube')[0]);
   this.rendering = false;
   this.listen();
+
+  // crap
+  this.moveX;
+  this.moveY;
+  this.moveCount = 0;
 }
 
 App.prototype = {
@@ -41,32 +46,16 @@ App.prototype = {
 
   render: function() {
 
-    var KB = Keyboard,
-        keys = this.keyboard.keys,
-        moveX = 0,
-        moveY = 0;
+    this.moveCount -= Const.CUBE_SPEED;
+    this.cube.rotate(this.moveX, this.moveY);
 
-    // Detect either up or down movement.
-    if (keys[KB.UP] || keys[KB.W]) {
-      moveX = Const.CUBE_SPEED;
+    if (this.moveCount > 0 || this._setMovement()) {
+      this._loop();
     }
-    else if (keys[KB.DOWN] || keys[KB.S]) {
-      moveX = -Const.CUBE_SPEED;
-    }
+  },
 
-    // Detect either left or right movement.
-    if (keys[KB.LEFT] || keys[KB.A]) {
-      moveY = -Const.CUBE_SPEED;
-    }
-    else if (keys[KB.RIGHT] || keys[KB.D]) {
-      moveY = Const.CUBE_SPEED;
-    }
-
-    this.cube.rotate(moveX, moveY);
-
-    if (this.rendering) {
-      window.requestAnimationFrame(this.render.bind(this));
-    }
+  _loop: function() {
+    window.requestAnimationFrame(this.render.bind(this));
   },
 
   _attachKeyboard: function() {
@@ -84,15 +73,43 @@ App.prototype = {
   },
 
   _keyboardListener: function() {
-    if (this.keyboard.isAnyKeyDown()) {
-      if (!this.rendering) {
-        this.rendering = true;
-        window.requestAnimationFrame(this.render.bind(this));
-      }
+    if (this.moveCount === 0 && this._setMovement()) {
+      this._loop();
     }
-    else {
-      this.rendering = false;
+  },
+
+  _setMovement: function() {
+
+    var KB = Keyboard,
+        keys = this.keyboard.keys;
+
+    // reset movex and movey
+    this.moveX = this.moveY = 0;
+
+    // Detect either up or down movement.
+    if (keys[KB.UP] || keys[KB.W]) {
+      this.moveX = Const.CUBE_SPEED;
     }
+    else if (keys[KB.DOWN] || keys[KB.S]) {
+      this.moveX = -Const.CUBE_SPEED;
+    }
+
+    // Detect either left or right movement.
+    if (keys[KB.LEFT] || keys[KB.A]) {
+      this.moveY = Const.CUBE_SPEED;
+    }
+    else if (keys[KB.RIGHT] || keys[KB.D]) {
+      this.moveY = -Const.CUBE_SPEED;
+    }
+
+    // If there is movement, set moveCount and return true.
+    if (this.moveX !== 0 || this.moveY !== 0) {
+      this.moveCount = Const.CUBE_MOVE_UNIT;
+      return true;
+    }
+
+    // Movement was not set.
+    return false;
   }
 
 };
@@ -101,6 +118,7 @@ var Const = {
 
   // Game Logic
   CUBE_SPEED: 5,
+  CUBE_MOVE_UNIT: 90,
 
   // Display
   TRANSFORM: 'Transform',
@@ -143,6 +161,7 @@ Cube.prototype = {
     var C = Const;
     this.x = this._calculateCoordinate(this.x, x);
     this.y = this._calculateCoordinate(this.y, y);
+
     this.style[Vendor.JS.transform] =
       C.ROTATE_X_PREFIX + this.x + C.ROTATE_UNIT_SUFFIX + ' ' + C.ROTATE_Y_PREFIX + this.y + C.ROTATE_UNIT_SUFFIX;
   },
@@ -163,8 +182,8 @@ Cube.prototype = {
         if (evt.target === el) {
           el.classList.remove('transition');
           el.classList.add('init');
-          self.x = 123;//TODO: make dynamic http://css-tricks.com/get-value-of-css-rotation-through-javascript/
-          self.y = 123;//TODO: make dynamic
+          self.x = 315;//TODO: make dynamic http://css-tricks.com/get-value-of-css-rotation-through-javascript/
+          self.y = 315;//TODO: make dynamic
 
           // Listen for tile clicks.
           el.addEventListener('click', _.bind(self._handleClick, self));
@@ -303,6 +322,11 @@ Cube.prototype = {
       // for targeting help.
       if (initialTile) {
 
+        // If the user is hovering on a neighboring side of the initial tile,
+        // highlight some targeting help on a visible side.
+        if (initialTile.side.isNeighbor(tile.side)) {
+
+        }
 
 
       }
@@ -432,7 +456,7 @@ Cube.prototype = {
     if (result > REVOLUTION) {
       result = result - REVOLUTION;
     }
-    else if (result < Const.ORIGIN) {
+    else if (result <= Const.ORIGIN) {
       result = REVOLUTION - result;
     }
 
@@ -591,20 +615,6 @@ Cube.prototype = {
         right:    [0]
       }
     };
-  },
-
-  /**
-   * THIS IS DEPRECIATED!
-   * I'll keep it in case I need it later.
-   * I'm famous for premature trashing.
-   */
-  _buildHighlightMap: function(lineMap) {
-    // Boil down a simple highlight map for each tile based on the line map.
-    // We'll flatten and uniq the line map for each tile.
-    return _.reduce(lineMap, function(map, lines) {
-      map.push(_.uniq(_.flatten(lines)));
-      return map;
-    }, []);
   }
 
 };
@@ -769,7 +779,7 @@ Tile.prototype = {
 
     // debug
     var idData = id.split('-');
-    el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
+    //el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
 
     return el;
   },

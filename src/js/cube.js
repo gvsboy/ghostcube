@@ -30,6 +30,7 @@ Cube.prototype = {
     var C = Const;
     this.x = this._calculateCoordinate(this.x, x);
     this.y = this._calculateCoordinate(this.y, y);
+
     this.style[Vendor.JS.transform] =
       C.ROTATE_X_PREFIX + this.x + C.ROTATE_UNIT_SUFFIX + ' ' + C.ROTATE_Y_PREFIX + this.y + C.ROTATE_UNIT_SUFFIX;
   },
@@ -50,8 +51,8 @@ Cube.prototype = {
         if (evt.target === el) {
           el.classList.remove('transition');
           el.classList.add('init');
-          self.x = 123;//TODO: make dynamic http://css-tricks.com/get-value-of-css-rotation-through-javascript/
-          self.y = 123;//TODO: make dynamic
+          self.x = 315;//TODO: make dynamic http://css-tricks.com/get-value-of-css-rotation-through-javascript/
+          self.y = 315;//TODO: make dynamic
 
           // Listen for tile clicks.
           el.addEventListener('click', _.bind(self._handleClick, self));
@@ -190,6 +191,11 @@ Cube.prototype = {
       // for targeting help.
       if (initialTile) {
 
+        // If the user is hovering on a neighboring side of the initial tile,
+        // highlight some targeting help on a visible side.
+        if (initialTile.side.isNeighbor(tile.side)) {
+
+        }
 
 
       }
@@ -319,7 +325,7 @@ Cube.prototype = {
     if (result > REVOLUTION) {
       result = result - REVOLUTION;
     }
-    else if (result < Const.ORIGIN) {
+    else if (result <= Const.ORIGIN) {
       result = REVOLUTION - result;
     }
 
@@ -478,20 +484,6 @@ Cube.prototype = {
         right:    [0]
       }
     };
-  },
-
-  /**
-   * THIS IS DEPRECIATED!
-   * I'll keep it in case I need it later.
-   * I'm famous for premature trashing.
-   */
-  _buildHighlightMap: function(lineMap) {
-    // Boil down a simple highlight map for each tile based on the line map.
-    // We'll flatten and uniq the line map for each tile.
-    return _.reduce(lineMap, function(map, lines) {
-      map.push(_.uniq(_.flatten(lines)));
-      return map;
-    }, []);
   }
 
 };

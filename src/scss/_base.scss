@@ -4,7 +4,7 @@
 
 ----------------------------------------------*/
 
-$BASE-SPEED: 0.1s;//2.0s;
+$BASE-SPEED: 2.0s;
 
 $splash-speed: $BASE-SPEED;
 $game-speed: $BASE-SPEED / 2;
@@ -13,8 +13,8 @@ $game-speed: $BASE-SPEED / 2;
 $cube-color: #abcdef;
 $cube-size: 8em;
 $cube-z: $cube-size / 2;
-$cube-init-x: 123deg;
-$cube-init-y: 123deg;
+$cube-init-x: 315deg;
+$cube-init-y: 315deg;
 
 /* Tile Vars */
 $tile-size: 2.54em;

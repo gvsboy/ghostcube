@@ -3,6 +3,11 @@ function App(containerId) {
   this.cube = new Cube(this.container.getElementsByClassName('cube')[0]);
   this.rendering = false;
   this.listen();
+
+  // crap
+  this.moveX;
+  this.moveY;
+  this.moveCount = 0;
 }
 
 App.prototype = {
@@ -41,32 +46,16 @@ App.prototype = {
 
   render: function() {
 
-    var KB = Keyboard,
-        keys = this.keyboard.keys,
-        moveX = 0,
-        moveY = 0;
+    this.moveCount -= Const.CUBE_SPEED;
+    this.cube.rotate(this.moveX, this.moveY);
 
-    // Detect either up or down movement.
-    if (keys[KB.UP] || keys[KB.W]) {
-      moveX = Const.CUBE_SPEED;
+    if (this.moveCount > 0 || this._setMovement()) {
+      this._loop();
     }
-    else if (keys[KB.DOWN] || keys[KB.S]) {
-      moveX = -Const.CUBE_SPEED;
-    }
+  },
 
-    // Detect either left or right movement.
-    if (keys[KB.LEFT] || keys[KB.A]) {
-      moveY = -Const.CUBE_SPEED;
-    }
-    else if (keys[KB.RIGHT] || keys[KB.D]) {
-      moveY = Const.CUBE_SPEED;
-    }
-
-    this.cube.rotate(moveX, moveY);
-
-    if (this.rendering) {
-      window.requestAnimationFrame(this.render.bind(this));
-    }
+  _loop: function() {
+    window.requestAnimationFrame(this.render.bind(this));
   },
 
   _attachKeyboard: function() {
@@ -84,15 +73,43 @@ App.prototype = {
   },
 
   _keyboardListener: function() {
-    if (this.keyboard.isAnyKeyDown()) {
-      if (!this.rendering) {
-        this.rendering = true;
-        window.requestAnimationFrame(this.render.bind(this));
-      }
+    if (this.moveCount === 0 && this._setMovement()) {
+      this._loop();
     }
-    else {
-      this.rendering = false;
+  },
+
+  _setMovement: function() {
+
+    var KB = Keyboard,
+        keys = this.keyboard.keys;
+
+    // reset movex and movey
+    this.moveX = this.moveY = 0;
+
+    // Detect either up or down movement.
+    if (keys[KB.UP] || keys[KB.W]) {
+      this.moveX = Const.CUBE_SPEED;
     }
+    else if (keys[KB.DOWN] || keys[KB.S]) {
+      this.moveX = -Const.CUBE_SPEED;
+    }
+
+    // Detect either left or right movement.
+    if (keys[KB.LEFT] || keys[KB.A]) {
+      this.moveY = Const.CUBE_SPEED;
+    }
+    else if (keys[KB.RIGHT] || keys[KB.D]) {
+      this.moveY = -Const.CUBE_SPEED;
+    }
+
+    // If there is movement, set moveCount and return true.
+    if (this.moveX !== 0 || this.moveY !== 0) {
+      this.moveCount = Const.CUBE_MOVE_UNIT;
+      return true;
+    }
+
+    // Movement was not set.
+    return false;
   }
 
 };
