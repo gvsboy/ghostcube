@@ -145,7 +145,7 @@ h2 {
   height: $tile-size;
   border: 2px solid $cube-color;
   background-color: #000;
-  color: green; /* DEBUG */
+  color: #fff; /* DEBUG */
   @include transform(translateZ(0.01em));
 
   &.highlighted {
@@ -158,6 +158,19 @@ h2 {
 
   &.selected {
     background-color: $tile-selected;
+  }
+
+  &.helper {
+    background-color: $tile-helper;
+  }
+
+  &.claimed {
+    &.player1 {
+      background-color: red;
+    }
+    &.player2 {
+      background-color: blue;
+    }
   }
 
   &.init {

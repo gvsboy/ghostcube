@@ -4,6 +4,10 @@ function App(containerId) {
   this.rendering = false;
   this.listen();
 
+  // Set when the game begins.
+  this.players = null;
+  this.turn = null;
+
   // crap
   this.moveX;
   this.moveY;
@@ -25,7 +29,14 @@ App.prototype = {
       // so let's react to only one of them.
       if (evt.target === container) {
         container.removeEventListener(Vendor.EVENT.animationEnd, beginGame);
-        cube.beginGame();
+
+        self.players = [
+          new Player(),
+          new Player()
+        ];
+        self.turn = _.first(self.players);
+
+        cube.build();
       }
     }
 
@@ -52,6 +63,11 @@ App.prototype = {
     if (this.moveCount > 0 || this._setMovement()) {
       this._loop();
     }
+
+    // debug
+    else {
+      console.log('cube x y', this.cube.x, this.cube.y);
+    }
   },
 
   _loop: function() {
@@ -75,6 +91,7 @@ App.prototype = {
   _keyboardListener: function() {
     if (this.moveCount === 0 && this._setMovement()) {
       this._loop();
+      this.cube.el.dispatchEvent(new Event('renderstart'));
     }
   },
 

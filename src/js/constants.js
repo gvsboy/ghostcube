@@ -10,5 +10,9 @@ var Const = {
   ROTATE_Y_PREFIX: 'rotateY(',
   ROTATE_UNIT_SUFFIX: 'deg)',
   REVOLUTION: 360,
-  ORIGIN: 0
+  ORIGIN: 0,
+
+  // Coordinates
+  X_COOR: 0,
+  Y_COOR: 1
 };

@@ -7,7 +7,7 @@ function Side(el, size) {
   this.id = el.id;
 
   // This will be set using setNeighbors().
-  this.neighbors = {};
+  this._neighbors = {};
 
   // An array of all the tiles by index.
   this._tiles = this._buildTiles(size);
@@ -15,8 +15,12 @@ function Side(el, size) {
 
 Side.prototype = {
 
+  getNeighbors: function() {
+    return this._neighbors;
+  },
+
   setNeighbors: function(sides) {
-    this.neighbors = sides;
+    this._neighbors = sides;
   },
 
   /**
@@ -25,7 +29,15 @@ Side.prototype = {
    * @return {Boolean}      Is the passed side a neighbor?
    */
   isNeighbor: function(side) {
-    return _.contains(this.neighbors, side);
+    return _.contains(this._neighbors, side);
+  },
+
+  setVisibilityMap: function(map) {
+    this._visibilityMap = map;
+  },
+
+  isVisible: function(cubeX, cubeY) {
+    return _.contains(this._visibilityMap[cubeX], cubeY);
   },
 
   /**

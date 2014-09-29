@@ -5,6 +5,8 @@ function Tile(side, index) {
   this.side = side;
   this.index = index;
 
+  this.claimedBy = null;
+
   // Append the tile's element to the side.
   side.el.appendChild(this.el);
 }
@@ -18,9 +20,15 @@ Tile.prototype = {
 
     // debug
     var idData = id.split('-');
-    //el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
+    el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
 
     return el;
+  },
+
+  claim: function(player) {
+    this.claimedBy = true;//player;
+    this.addClass('claimed');
+    this.addClass('player1');//testing!
   },
 
   addClass: function(name) {
@@ -29,6 +37,10 @@ Tile.prototype = {
 
   removeClass: function(name) {
     this.el.classList.remove(name);
+  },
+
+  hasClass: function(name) {
+    return this.el.classList.contains(name);
   }
 
 };

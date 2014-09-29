@@ -21,21 +21,13 @@ function Cube(el, size) {
   // The three selected tiles to place pieces on.
   this.selectedTiles = [];
 
-  console.log('linemap:', this._lineMap);
+  // Cross-selected tile for helping attacks.
+  this._helperTile = null;
 }
 
 Cube.prototype = {
 
-  rotate: function(x, y) {
-    var C = Const;
-    this.x = this._calculateCoordinate(this.x, x);
-    this.y = this._calculateCoordinate(this.y, y);
-
-    this.style[Vendor.JS.transform] =
-      C.ROTATE_X_PREFIX + this.x + C.ROTATE_UNIT_SUFFIX + ' ' + C.ROTATE_Y_PREFIX + this.y + C.ROTATE_UNIT_SUFFIX;
-  },
-
-  beginGame: function() {
+  build: function() {
 
     // Create the game sides.
     this._sides = this._buildSides(this.size);
@@ -63,12 +55,24 @@ Cube.prototype = {
           // ...and mouseouts.
           el.addEventListener('mouseout', _.bind(self._handleMouseOut, self));
 
+          // ...and render start.
+          el.addEventListener('renderstart', _.bind(self._handleRenderStart, self))
+
           // Let's go!
           el.dispatchEvent(new Event('init'));
         }
       });
     });
 
+  },
+
+  rotate: function(x, y) {
+    var C = Const;
+    this.x = this._calculateCoordinate(this.x, x);
+    this.y = this._calculateCoordinate(this.y, y);
+
+    this.style[Vendor.JS.transform] =
+      C.ROTATE_X_PREFIX + this.x + C.ROTATE_UNIT_SUFFIX + ' ' + C.ROTATE_Y_PREFIX + this.y + C.ROTATE_UNIT_SUFFIX;
   },
 
   /**
@@ -78,6 +82,13 @@ Cube.prototype = {
    */
   getSide: function(name) {
     return this._sides[name];
+  },
+
+  getLines: function(index, coordinate) {
+    if (_.isNumber(coordinate)) {
+      return this._lineMap[index][coordinate];
+    }
+    return this._lineMap[index];
   },
 
   selectTile: function(tile) {
@@ -96,6 +107,64 @@ Cube.prototype = {
     });
   },
 
+  clearHelperTile: function() {
+    if (this._helperTile) {
+      this._helperTile.removeClass('helper');
+    }
+    this._helperTile = null;
+  },
+
+  claim: function() {
+
+    // Set the selected tiles to the player's color.
+    _.forEach(this.selectedTiles, function(tile) {
+      tile.claim();//pass in the player
+    });
+
+    // Remove all helpers.
+    this.clearHelperTile();
+    this.deselectTile(_.first(this.selectedTiles));
+
+    // Move this out to App and implement eventing.
+    this.selectedTiles = [];
+
+    this.checkWin();
+  },
+
+  checkWin: function() {
+
+    // Loop through each cube side.
+    _.forEach(this._sides, function(side) {
+
+      // Find all the tiles claimed by this player.
+      var claimedTiles = _.filter(side.getTiles(), {claimedBy: true}),//truth check for now...
+          size = this.size,
+          map;
+
+      // If there are enough tiles available for a line, determine if one exists.
+      if (claimedTiles.length >= size) {
+
+        // Build an index map for faster lookup.
+        map = _.times(Math.pow(size, 2), function(i) {
+          return _.find(claimedTiles, {index: i});
+        });
+
+        // Check for vertical matches.
+        _.forEach(_.at(map, _.times(size)), function(tile) {
+          if (tile) {
+            var line = _.at(map, _.times(size - 1, function(i) {
+              return (i + 1) * size;
+            }));
+            console.log(line);
+          }
+        });
+        
+        // Check for horizontal matches.
+      }
+    }, this);
+
+  },
+
   /**
    * Updates the passed tile and all related adjacent tiles with the
    * passed callback. This method is mostly used for highlighting tiles
@@ -109,20 +178,22 @@ Cube.prototype = {
     var side = tile.side,
 
         // The highlightable lines related to the origin tile's index.
-        lines = this._lineMap[tile.index];
+        lines = this.getLines(tile.index);
 
     // Update all the appropriate tiles on the origin tile's side.
     _.forEach(side.getTiles(lines), callback);
 
     // For each neighbor, pass in the side and the orientation id (e.g. 'left').
-    _.forIn(side.neighbors, function(neighbor, id) {
+    _.forEach(side.getNeighbors(), function(neighbor) {
 
       // Get all the translated tiles based on the origin tile and update.
-      _.forEach(neighbor.getTiles(this._translate(lines, id, side.id)), callback);
+      _.forEach(neighbor.getTiles(this._translate(lines, neighbor.id, side.id)), callback);
 
     }, this);
   },
 
+  // Potentially dangerous as this is hackable...
+  // Perhaps do a straigh-up element match too?
   _getTileFromElement: function(el) {
     var data;
     if (el.classList.contains('tile')) {
@@ -130,6 +201,10 @@ Cube.prototype = {
       return this.getSide(data[0]).getTiles(data[1])[0];
     }
     return null;
+  },
+
+  _handleRenderStart: function() {
+    this.clearHelperTile();
   },
 
   _handleClick: function(evt) {
@@ -172,6 +247,8 @@ Cube.prototype = {
           // Otherwise, we're on a good side. Let's drill down further.
           else {
             console.log('cool');
+            this.selectedTiles.push(tile, this._helperTile);
+            this.claim();
           }
         }
       }
@@ -179,31 +256,49 @@ Cube.prototype = {
   },
 
   _handleMouseOver: function(evt) {
+    this._determineHelperHighlight(evt, _.bind(function(tile) {
+      tile.addClass('helper');
+      this._helperTile = tile;
+    }, this));
+  },
 
+  _handleMouseOut: function(evt) {
+    this._determineHelperHighlight(evt, function(tile) {
+      tile.removeClass('helper');
+    });
+  },
+
+  _determineHelperHighlight: function(evt, callback) {
+
+    // The tile the user is interacting with.
     var tile = this._getTileFromElement(evt.target),
 
         // The first tile that has been selected.
         initialTile = _.first(this.selectedTiles);
 
-    if (tile) {
-
-      // If a tile has been selected already, let's try to highlight a tile
-      // for targeting help.
-      if (initialTile) {
-
-        // If the user is hovering on a neighboring side of the initial tile,
-        // highlight some targeting help on a visible side.
-        if (initialTile.side.isNeighbor(tile.side)) {
-
-        }
-
-
-      }
+    // If the user is hovering on a neighboring side of the initial tile,
+    // highlight some targeting help on a visible side.
+    if (tile && initialTile && initialTile.side.isNeighbor(tile.side)) {
+      this._updateHelperHighlight(tile, initialTile, callback);
     }
   },
 
-  _handleMouseOut: function(evt) {
-    //console.log('out  ~~~', evt.target);
+  _updateHelperHighlight: function(tile, initialTile, callback) {
+
+    // Get the raw neighbor sides (without their placement keys)
+    // and exclude the selected side.
+    var neighbors = _.without(initialTile.side.getNeighbors(), tile.side);
+
+    _.forEach(neighbors, function(neighbor) {
+
+      if (neighbor.isVisible(this.x, this.y)) {
+        var highlightTiles = neighbor.getTiles(this._translate(this.getLines(tile.index), neighbor.id, tile.side.id));
+        var helperTile = _.find(highlightTiles, function(ti) {
+          return ti.hasClass('highlighted');
+        });
+        callback(helperTile);
+      }
+    }, this);
   },
 
   // Rotate in place, like a Tetrad. For instance:
@@ -229,12 +324,12 @@ Cube.prototype = {
     if (isHorizontal) {
       // The row (starting at top-right and down).
       indexAt = origin - (origin % size);
-      rotatedLine = this._lineMap[indexAt + (indexAt / size)][1];
+      rotatedLine = this.getLines(indexAt + (indexAt / size), Const.Y_COOR);
     }
     else {
       // The column (starting top-right and across).
       indexAt = origin % size;
-      rotatedLine = this._lineMap[indexAt * size][0];
+      rotatedLine = this.getLines(indexAt * size, Const.X_COOR);
     }
 
     return rotatedLine;
@@ -278,7 +373,7 @@ Cube.prototype = {
 
       // Determine the difference and get the calculated y line.
       diff = middle - indexAt;
-      flippedLine = this._lineMap[middle + diff][1];
+      flippedLine = this.getLines(middle + diff, Const.Y_COOR);
     }
 
     // Else, the line must be horizontal:
@@ -293,10 +388,9 @@ Cube.prototype = {
 
       // Determine the difference and get the calculated x line.
       diff = middle - indexAt;
-      flippedLine = this._lineMap[middle + diff][0];
+      flippedLine = this.getLines(middle + diff, Const.X_COOR);
     }
 
-    //console.log('isHorizontal:', isHorizontal, flippedLine);
     return flippedLine;
   },
 
@@ -334,7 +428,12 @@ Cube.prototype = {
 
 
 
+
+
 // ------------------------------------------------------------------------------------------------------
+// ---------------------------------------------- MAPPINGS ----------------------------------------------
+// ------------------------------------------------------------------------------------------------------
+
 
 
 
@@ -356,48 +455,117 @@ Cube.prototype = {
 
     // Pretty crappy ... FOR TESTING ONLY!
     var neighborMap = {
-      top: {
-        top: BACK,
-        bottom: FRONT,
-        left: LEFT,
-        right: RIGHT
-      },
-      bottom: {
-        top: FRONT,
-        bottom: BACK,
-        left: LEFT,
-        right: RIGHT
-      },
+      top: [BACK, FRONT, LEFT, RIGHT],
+      bottom: [FRONT, BACK, LEFT, RIGHT],
+      front: [TOP, BOTTOM, LEFT, RIGHT],
+      back: [BOTTOM, TOP, LEFT, RIGHT],
+      left: [TOP, BOTTOM, BACK, FRONT],
+      right: [TOP, BOTTOM, FRONT, BACK]
+    };
+
+    var visibilityMap = {
+      // x: [y]
       front: {
-        top: TOP,
-        bottom: BOTTOM,
-        left: LEFT,
-        right: RIGHT
+        '315':    [45, 315],
+        '45':     [45, 315],
+        '135':    [135, 225],
+        '225':    [135, 225]
       },
+
       back: {
-        top: BOTTOM,
-        bottom: TOP,
-        left: LEFT,
-        right: RIGHT
+        '315':    [135, 225],
+        '45':     [135, 225],
+        '135':    [45, 315],
+        '225':    [45, 315]
       },
+
+      top: {
+        '315':    [45, 135, 225, 315],
+        '225':    [45, 135, 225, 315]
+      },
+
+      bottom: {
+        '135':    [45, 135, 225, 315],
+        '45':     [45, 135, 225, 315]
+      },
+
       left: {
-        top: TOP,
-        bottom: BOTTOM,
-        left: BACK,
-        right: FRONT
+        '315':    [45, 135],
+        '45':     [45, 135],
+        '135':    [225, 315],
+        '225':    [225, 315]
       },
+
       right: {
-        top: TOP,
-        bottom: BOTTOM,
-        left: FRONT,
-        right: BACK
+        '315':    [225, 315],
+        '45':     [225, 315],
+        '135':    [45, 135],
+        '225':    [45, 135]
       }
     };
 
     // Now set the neighbors for each side.
     return _.forIn(sides, function(side) {
       side.setNeighbors(neighborMap[side.id]);
+      side.setVisibilityMap(visibilityMap[side.id]);
     });
+  },
+
+  _buildTranslationMap: function() {
+
+    var flip = _.bind(this._flipLine, this),
+        rotate = _.bind(this._rotateLine, this);
+
+    // Line coordinate mapping to side id (1 = x, 0 = y)
+    // follows format:
+    // top
+    // bottom
+    // left
+    // right
+    return {
+
+      front: {
+        top:      [1],
+        bottom:   [1],
+        left:     [0],
+        right:    [0]
+      },
+
+      back: {
+        bottom:   [1, flip],
+        top:      [1, flip],
+        left:     [0],
+        right:    [0]
+      },
+
+      top: {
+        back:     [1, flip],
+        front:    [1],
+        left:     [0, rotate],
+        right:    [0, flip, rotate],
+      },
+
+      bottom: {
+        front:    [1],
+        back:     [1, flip],
+        left:     [0, flip, rotate],
+        right:    [0, rotate]
+      },
+
+      left: {
+        top:      [1, rotate],
+        bottom:   [1, flip, rotate],
+        back:     [0],
+        front:    [0]
+      },
+
+      right: {
+        top:      [1, flip, rotate],
+        bottom:   [1, rotate],
+        front:    [0],
+        back:     [0]
+      }
+    };
   },
 
   _buildLineMap: function() {
@@ -432,58 +600,6 @@ Cube.prototype = {
       // Return this tile config.
       return lines;
     });
-  },
-
-  _buildTranslationMap: function() {
-
-    var flip = _.bind(this._flipLine, this),
-        rotate = _.bind(this._rotateLine, this);
-
-    // Line coordinate mapping to side id (1 = x, 0 = y)
-    return {
-
-      front: {
-        top:      [1],
-        bottom:   [1],
-        left:     [0],
-        right:    [0]
-      },
-
-      back: {
-        top:      [1, flip],
-        bottom:   [1, flip],
-        left:     [0],
-        right:    [0]
-      },
-
-      top: {
-        top:      [1, flip],
-        bottom:   [1],
-        left:     [0, rotate],
-        right:    [0, flip, rotate],
-      },
-
-      bottom: {
-        top:      [1],
-        bottom:   [1, flip],
-        left:     [0, flip, rotate],
-        right:    [0, rotate]
-      },
-
-      left: {
-        top:      [1, rotate],
-        bottom:   [1, flip, rotate],
-        left:     [0],
-        right:    [0]
-      },
-
-      right: {
-        top:      [1, flip, rotate],
-        bottom:   [1, rotate],
-        left:     [0],
-        right:    [0]
-      }
-    };
   }
 
 };
