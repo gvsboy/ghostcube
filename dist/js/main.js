@@ -285,6 +285,8 @@ Cube.prototype = {
 
   checkWin: function() {
 
+    var winLines = [];
+
     // Loop through each cube side.
     _.forEach(this._sides, function(side) {
 
@@ -293,26 +295,60 @@ Cube.prototype = {
           size = this.size,
           map;
 
-      // If there are enough tiles available for a line, determine if one exists.
-      if (claimedTiles.length >= size) {
-
-        // Build an index map for faster lookup.
-        map = _.times(Math.pow(size, 2), function(i) {
-          return _.find(claimedTiles, {index: i});
-        });
-
-        // Check for vertical matches.
-        _.forEach(_.at(map, _.times(size)), function(tile) {
-          if (tile) {
-            var line = _.at(map, _.times(size - 1, function(i) {
-              return (i + 1) * size;
-            }));
-            console.log(line);
-          }
-        });
-        
-        // Check for horizontal matches.
+      // If there are not enough tiles available for a line, exit immediately.
+      if (claimedTiles.length < size) {
+        return;
       }
+
+      // Build an index map of the claimed tiles for faster lookup.
+      map = _.times(Math.pow(size, 2), function(i) {
+        return _.find(claimedTiles, {index: i});
+      });
+
+      // Check for vertical matches.
+      // Inspect each starting index from 0 and leftwards.
+      _.forEach(_.at(map, _.times(size)), function(tile) {
+        var line;
+
+        // If a tile exists at an index, begin searching rightwards.
+        if (tile) {
+          line = _.at(map, _.times(size - 1, function(i) {
+            return tile.index + ((i + 1) * size);
+          }));
+
+          // Push the original tile on the line stack.
+          line.push(tile);
+
+          // If the limit is reached, the line is complete. It's a win!
+          if (_.compact(line).length === size) {
+            winLines.push(line);
+          }
+        }
+      });
+      
+      // Check for horizontal matches.
+      // Inspect each starting index from 0 and downwards.
+      _.forEach(_.at(map, _.times(size, function(i) { return i * size })), function(tile) {
+        var line;
+
+        // If a tile exists at an index, begin searching rightwards.
+        if (tile) {
+          line = _.at(map, _.times(size - 1, function(i) {
+            return tile.index + (i + 1);
+          }));
+
+          // Push the original tile on the line stack.
+          line.push(tile);
+
+          // If the limit is reached, the line is complete. It's a win!
+          if (_.compact(line).length === size) {
+            winLines.push(line);
+          }
+        }
+      });
+
+      console.log('+++ win lines?', winLines);
+
     }, this);
 
   },
@@ -370,6 +406,12 @@ Cube.prototype = {
     // If the target is a tile, let's figure out what to do with it.
     if (tile) {
 
+      // If the tile is already claimed, get outta dodge.
+      if (tile.claimedBy) {
+        console.log('This tile is already claimed!');
+        return;
+      }
+
       // If nothing has been selected yet, select the tile normally.
       if (!initialTile) {
         this.selectTile(tile);
@@ -398,9 +440,18 @@ Cube.prototype = {
 
           // Otherwise, we're on a good side. Let's drill down further.
           else {
-            console.log('cool');
-            this.selectedTiles.push(tile, this._helperTile);
-            this.claim();
+
+            // If the attack target is claimed, try another tile.
+            if (this._helperTile.claimedBy) {
+              console.log('The attack target is already claimed!');
+            }
+
+            // Otherwise, a valid selection has been made!
+            else {
+              console.log('cool');
+              this.selectedTiles.push(tile, this._helperTile);
+              this.claim();
+            }
           }
         }
       }
