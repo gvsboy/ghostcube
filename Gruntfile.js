@@ -29,6 +29,12 @@ module.exports = function(grunt) {
       }
     },
 
+    bower_concat: {
+      all: {
+        dest: 'dist/js/lib.js'
+      }
+    },
+
     clean: {
       dist: 'dist'
     },
@@ -49,11 +55,13 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-sass');
   grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-bower-concat');
 
   grunt.registerTask('default', [
     'clean',
     'sass',
-    'concat'
+    'concat',
+    'bower_concat'
   ]);
 
 };

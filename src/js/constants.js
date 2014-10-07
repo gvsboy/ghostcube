@@ -14,5 +14,13 @@ var Const = {
 
   // Coordinates
   X_COOR: 0,
-  Y_COOR: 1
+  Y_COOR: 1,
+
+  // Messages
+  MESSAGES: {
+    claimed: 'This tile is already claimed!',
+    targetClaimed: 'The attack target is already claimed!',
+    sameSide: 'Same side! Choose a tile on a different side.',
+    notNeighbor: 'Not a neighboring side! Choose a tile different side.'
+  }
 };

@@ -2,7 +2,8 @@
   "name": "ghostcube",
   "version": "0.0.1",
   "dependencies": {
-    "lodash": "*"
+    "lodash": "*",
+    "eventemitter2": "~0.4.14"
   },
   "ignore": [
     "**/.*",

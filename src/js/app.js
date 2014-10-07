@@ -1,6 +1,7 @@
 function App(containerId) {
   this.container = document.getElementById(containerId);
   this.cube = new Cube(this.container.getElementsByClassName('cube')[0]);
+  this.messages = new Messages();
   this.rendering = false;
   this.listen();
 
@@ -53,6 +54,7 @@ App.prototype = {
 
     cubeEl.addEventListener('click', cubeClicked);
     cubeEl.addEventListener('init', gameInitialized);
+    this.messages.listenTo(cube);
   },
 
   render: function() {

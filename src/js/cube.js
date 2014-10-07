@@ -23,6 +23,9 @@ function Cube(el, size) {
 
   // Cross-selected tile for helping attacks.
   this._helperTile = null;
+
+  // EventEmitter constructor call.
+  EventEmitter2.call(this);
 }
 
 Cube.prototype = {
@@ -195,8 +198,6 @@ Cube.prototype = {
         }
       });
 
-      console.log('+++ win lines?', winLines);
-
     }, this);
 
   },
@@ -256,7 +257,7 @@ Cube.prototype = {
 
       // If the tile is already claimed, get outta dodge.
       if (tile.claimedBy) {
-        console.log('This tile is already claimed!');
+        this._sendMessage('claimed');
         return;
       }
 
@@ -278,12 +279,12 @@ Cube.prototype = {
 
           // If the same side was selected, display an error.
           if (tile.side === initialTile.side) {
-            console.log('Same side! Choose a tile on a different side.');
+            this._sendMessage('sameSide');
           }
 
           // Else if the side selected is not a neighbor, display an error.
           else if (!initialTile.side.isNeighbor(tile.side)) {
-            console.log('Not a neighboring side! Choose a tile different side.');
+            this._sendMessage('notNeighbor');
           }
 
           // Otherwise, we're on a good side. Let's drill down further.
@@ -291,12 +292,11 @@ Cube.prototype = {
 
             // If the attack target is claimed, try another tile.
             if (this._helperTile.claimedBy) {
-              console.log('The attack target is already claimed!');
+              this._sendMessage('targetClaimed');
             }
 
             // Otherwise, a valid selection has been made!
             else {
-              console.log('cool');
               this.selectedTiles.push(tile, this._helperTile);
               this.claim();
             }
@@ -317,6 +317,10 @@ Cube.prototype = {
     this._determineHelperHighlight(evt, function(tile) {
       tile.removeClass('helper');
     });
+  },
+
+  _sendMessage: function(type) {
+    this.emit('message', Const.MESSAGES[type]);
   },
 
   _determineHelperHighlight: function(evt, callback) {
@@ -654,3 +658,7 @@ Cube.prototype = {
   }
 
 };
+
+// Mixin the EventEmitter methods for great justice.
+// Ditch when we migrate to Browserify.
+_.assign(Cube.prototype, EventEmitter2.prototype);

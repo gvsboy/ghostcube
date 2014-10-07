@@ -1,6 +1,7 @@
 function App(containerId) {
   this.container = document.getElementById(containerId);
   this.cube = new Cube(this.container.getElementsByClassName('cube')[0]);
+  this.messages = new Messages();
   this.rendering = false;
   this.listen();
 
@@ -53,6 +54,7 @@ App.prototype = {
 
     cubeEl.addEventListener('click', cubeClicked);
     cubeEl.addEventListener('init', gameInitialized);
+    this.messages.listenTo(cube);
   },
 
   render: function() {
@@ -147,7 +149,15 @@ var Const = {
 
   // Coordinates
   X_COOR: 0,
-  Y_COOR: 1
+  Y_COOR: 1,
+
+  // Messages
+  MESSAGES: {
+    claimed: 'This tile is already claimed!',
+    targetClaimed: 'The attack target is already claimed!',
+    sameSide: 'Same side! Choose a tile on a different side.',
+    notNeighbor: 'Not a neighboring side! Choose a tile different side.'
+  }
 };
 
 function Cube(el, size) {
@@ -175,6 +185,9 @@ function Cube(el, size) {
 
   // Cross-selected tile for helping attacks.
   this._helperTile = null;
+
+  // EventEmitter constructor call.
+  EventEmitter2.call(this);
 }
 
 Cube.prototype = {
@@ -347,8 +360,6 @@ Cube.prototype = {
         }
       });
 
-      console.log('+++ win lines?', winLines);
-
     }, this);
 
   },
@@ -408,7 +419,7 @@ Cube.prototype = {
 
       // If the tile is already claimed, get outta dodge.
       if (tile.claimedBy) {
-        console.log('This tile is already claimed!');
+        this._sendMessage('claimed');
         return;
       }
 
@@ -430,12 +441,12 @@ Cube.prototype = {
 
           // If the same side was selected, display an error.
           if (tile.side === initialTile.side) {
-            console.log('Same side! Choose a tile on a different side.');
+            this._sendMessage('sameSide');
           }
 
           // Else if the side selected is not a neighbor, display an error.
           else if (!initialTile.side.isNeighbor(tile.side)) {
-            console.log('Not a neighboring side! Choose a tile different side.');
+            this._sendMessage('notNeighbor');
           }
 
           // Otherwise, we're on a good side. Let's drill down further.
@@ -443,12 +454,11 @@ Cube.prototype = {
 
             // If the attack target is claimed, try another tile.
             if (this._helperTile.claimedBy) {
-              console.log('The attack target is already claimed!');
+              this._sendMessage('targetClaimed');
             }
 
             // Otherwise, a valid selection has been made!
             else {
-              console.log('cool');
               this.selectedTiles.push(tile, this._helperTile);
               this.claim();
             }
@@ -469,6 +479,10 @@ Cube.prototype = {
     this._determineHelperHighlight(evt, function(tile) {
       tile.removeClass('helper');
     });
+  },
+
+  _sendMessage: function(type) {
+    this.emit('message', Const.MESSAGES[type]);
   },
 
   _determineHelperHighlight: function(evt, callback) {
@@ -807,6 +821,10 @@ Cube.prototype = {
 
 };
 
+// Mixin the EventEmitter methods for great justice.
+// Ditch when we migrate to Browserify.
+_.assign(Cube.prototype, EventEmitter2.prototype);
+
 /**
  * A software interface for determining which keyboard keys are pressed.
  *
@@ -880,6 +898,20 @@ Keyboard.A = '65';
 Keyboard.S = '83';
 Keyboard.D = '68';
 Keyboard.SPACE = '32';
+
+function Messages() {
+
+}
+
+Messages.prototype = {
+
+  listenTo: function(source) {
+    source.on('message', function(data) {
+      console.log('message received!', data);
+    });
+  }
+
+};
 
 function Player() {
   
@@ -989,7 +1021,7 @@ Tile.prototype = {
 
     // debug
     var idData = id.split('-');
-    el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
+    //el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
 
     return el;
   },
