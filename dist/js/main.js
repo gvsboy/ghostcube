@@ -153,6 +153,8 @@ var Const = {
 
   // Messages
   MESSAGES: {
+    start: 'Let\'s play! Click any tile to begin.',
+
     claimed: 'This tile is already claimed!',
     targetClaimed: 'The attack target is already claimed!',
     sameSide: 'Same side! Choose a tile on a different side.',
@@ -185,6 +187,8 @@ function Cube(el, size) {
 
   // Cross-selected tile for helping attacks.
   this._helperTile = null;
+
+  this.tutorial = new Tutorial(this);
 
   // EventEmitter constructor call.
   EventEmitter2.call(this);
@@ -225,6 +229,9 @@ Cube.prototype = {
 
           // Let's go!
           el.dispatchEvent(new Event('init'));
+
+          // Start the tutorial.
+          self.tutorial.next().next();
         }
       });
     });
@@ -362,6 +369,10 @@ Cube.prototype = {
 
     }, this);
 
+    if (winLines.length) {
+      var modifier = winLines.length > 1 ? ' x' + winLines.length : '';
+      this.emit('message', 'YOU WIN' + modifier, 'info');
+    }
   },
 
   /**
@@ -426,6 +437,7 @@ Cube.prototype = {
       // If nothing has been selected yet, select the tile normally.
       if (!initialTile) {
         this.selectTile(tile);
+        this.tutorial.next();
       }
 
       // Otherwise, there must be a selected tile already.
@@ -461,6 +473,7 @@ Cube.prototype = {
             else {
               this.selectedTiles.push(tile, this._helperTile);
               this.claim();
+              this.tutorial.next().next();
             }
           }
         }
@@ -481,8 +494,8 @@ Cube.prototype = {
     });
   },
 
-  _sendMessage: function(type) {
-    this.emit('message', Const.MESSAGES[type]);
+  _sendMessage: function(message, type) {
+    this.emit('message', Const.MESSAGES[message], type);
   },
 
   _determineHelperHighlight: function(evt, callback) {
@@ -900,15 +913,34 @@ Keyboard.D = '68';
 Keyboard.SPACE = '32';
 
 function Messages() {
-
+  this.container = this._buildContainer();
+  this.container.addEventListener(Vendor.EVENT.animationEnd, _.bind(this._remove, this));
 }
 
 Messages.prototype = {
 
   listenTo: function(source) {
-    source.on('message', function(data) {
-      console.log('message received!', data);
-    });
+    source.on('message', _.bind(this.add, this));
+  },
+
+  add: function(data, type) {
+    var item = document.createElement('li');
+    if (type) {
+      item.className = type;
+    }
+    item.appendChild(document.createTextNode(data));
+    this.container.appendChild(item);
+  },
+
+  _remove: function(evt) {
+    this.container.removeChild(evt.target);
+  },
+
+  _buildContainer: function() {
+    var container = document.createElement('ul');
+    container.id = 'messages';
+    document.body.appendChild(container);
+    return container;
   }
 
 };
@@ -1045,6 +1077,43 @@ Tile.prototype = {
   }
 
 };
+
+/**
+ * A lightweight guided tutorial helper that is attached to a specific
+ * event-emitting object, such as the cube. Displays helpful messages
+ * to teach the player how to play.
+ * @param {Object} target An event-emitting object to provide guidance for.
+ * @class
+ */
+function Tutorial(target) {
+  this.target = target;
+  this.step = 0;
+  this.maxStep = 5;
+}
+
+Tutorial.prototype = {
+
+  next: function() {
+    if (!this.isDone()) {
+      this.target.emit('message', Tutorial.stepMessages[this.step], 'info');
+      this.step++;
+    }
+    return this;
+  },
+
+  isDone: function() {
+    return this.step >= this.maxStep;
+  }
+
+};
+
+Tutorial.stepMessages = [
+  'Let\'s play! Click any tile to begin.',
+  'Rotate the cube using the arrow keys or WASD.',
+  'Great! Now, click a tile on an adjacent side.',
+  'Nice! A third tile was selected automatically for you.',
+  'Try to make a line on one side.'
+];
 
 (function(win) {
 

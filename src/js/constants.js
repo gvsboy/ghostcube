@@ -18,6 +18,8 @@ var Const = {
 
   // Messages
   MESSAGES: {
+    start: 'Let\'s play! Click any tile to begin.',
+
     claimed: 'This tile is already claimed!',
     targetClaimed: 'The attack target is already claimed!',
     sameSide: 'Same side! Choose a tile on a different side.',

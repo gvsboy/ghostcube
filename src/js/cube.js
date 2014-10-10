@@ -24,6 +24,8 @@ function Cube(el, size) {
   // Cross-selected tile for helping attacks.
   this._helperTile = null;
 
+  this.tutorial = new Tutorial(this);
+
   // EventEmitter constructor call.
   EventEmitter2.call(this);
 }
@@ -63,6 +65,9 @@ Cube.prototype = {
 
           // Let's go!
           el.dispatchEvent(new Event('init'));
+
+          // Start the tutorial.
+          self.tutorial.next().next();
         }
       });
     });
@@ -200,6 +205,10 @@ Cube.prototype = {
 
     }, this);
 
+    if (winLines.length) {
+      var modifier = winLines.length > 1 ? ' x' + winLines.length : '';
+      this.emit('message', 'YOU WIN' + modifier, 'info');
+    }
   },
 
   /**
@@ -264,6 +273,7 @@ Cube.prototype = {
       // If nothing has been selected yet, select the tile normally.
       if (!initialTile) {
         this.selectTile(tile);
+        this.tutorial.next();
       }
 
       // Otherwise, there must be a selected tile already.
@@ -299,6 +309,7 @@ Cube.prototype = {
             else {
               this.selectedTiles.push(tile, this._helperTile);
               this.claim();
+              this.tutorial.next().next();
             }
           }
         }
@@ -319,8 +330,8 @@ Cube.prototype = {
     });
   },
 
-  _sendMessage: function(type) {
-    this.emit('message', Const.MESSAGES[type]);
+  _sendMessage: function(message, type) {
+    this.emit('message', Const.MESSAGES[message], type);
   },
 
   _determineHelperHighlight: function(evt, callback) {

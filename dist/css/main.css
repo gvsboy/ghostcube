@@ -378,6 +378,82 @@
     -webkit-transform: translateZ(4em);
   }
 }
+@-webkit-keyframes message-add {
+  0% {
+    margin-left: -20em;
+    height: 1.5em;
+  }
+
+  10% {
+    margin-left: 0;
+    height: 1.5em;
+  }
+
+  80% {
+    height: 1.5em;
+  }
+
+  100% {
+    height: 0;
+  }
+}
+@-moz-keyframes message-add {
+  0% {
+    margin-left: -20em;
+    height: 1.5em;
+  }
+
+  10% {
+    margin-left: 0;
+    height: 1.5em;
+  }
+
+  80% {
+    height: 1.5em;
+  }
+
+  100% {
+    height: 0;
+  }
+}
+@-o-keyframes message-add {
+  0% {
+    margin-left: -20em;
+    height: 1.5em;
+  }
+
+  10% {
+    margin-left: 0;
+    height: 1.5em;
+  }
+
+  80% {
+    height: 1.5em;
+  }
+
+  100% {
+    height: 0;
+  }
+}
+@keyframes message-add {
+  0% {
+    margin-left: -20em;
+    height: 1.5em;
+  }
+
+  10% {
+    margin-left: 0;
+    height: 1.5em;
+  }
+
+  80% {
+    height: 1.5em;
+  }
+
+  100% {
+    height: 0;
+  }
+}
 html {
   font-size: 16px;
   /* Set base font size for em conversion */
@@ -464,6 +540,25 @@ h2 {
   position: absolute;
   top: 10px;
   left: 0;
+}
+
+#messages {
+  margin: 2em;
+  padding: 0;
+  list-style-type: none;
+}
+#messages li {
+  height: 1.5em;
+  font-size: 2em;
+  color: #fff;
+  overflow: hidden;
+  animation: message-add 4s forwards;
+  -o-animation: message-add 4s forwards;
+  -moz-animation: message-add 4s forwards;
+  -webkit-animation: message-add 4s forwards;
+}
+#messages li.info {
+  color: blue;
 }
 
 .cube {
