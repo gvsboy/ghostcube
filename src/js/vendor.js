@@ -2,6 +2,8 @@
 
   var STYLE = document.body.style,
 
+      TRANSFORM = 'transform',
+
       // Prefixes used for things like Transform.
       STYLE_PREFIXES = ['ms', 'O', 'Moz', 'Webkit', ''],
 
@@ -37,14 +39,14 @@
 
   // First, let's determine the style prefix.
   while (len--) {
-    if ((STYLE_PREFIXES[len] + Const.TRANSFORM) in STYLE) {
+    if ((STYLE_PREFIXES[len] + TRANSFORM) in STYLE) {
       stylePrefix = STYLE_PREFIXES[len];
       break;
     }
   }
 
   // Next, let's set some properties using the prefix.
-  vendor.JS.transform = stylePrefix + Const.TRANSFORM;
+  vendor.JS.transform = stylePrefix + TRANSFORM;
   vendor.CSS.transform = stylePrefix ? '-' + stylePrefix.toLowerCase() + '-transform' : 'transform';
 
   // Now, let's determine the event end name. So messed up.

@@ -30,6 +30,19 @@ function Cube(el, size) {
   EventEmitter2.call(this);
 }
 
+// Needs a home...
+Cube.ROTATE_X_PREFIX = 'rotateX(';
+Cube.ROTATE_Y_PREFIX = 'rotateY(';
+Cube.ROTATE_UNIT_SUFFIX = 'deg)';
+Cube.REVOLUTION = 360;
+Cube.ORIGIN = 0;
+Cube.MESSAGES = {
+  claimed: 'This tile is already claimed!',
+  targetClaimed: 'The attack target is already claimed!',
+  sameSide: 'Same side! Choose a tile on a different side.',
+  notNeighbor: 'Not a neighboring side! Choose a tile different side.'
+};
+
 Cube.prototype = {
 
   build: function() {
@@ -54,17 +67,17 @@ Cube.prototype = {
           // Listen for tile clicks.
           el.addEventListener('click', _.bind(self._handleClick, self));
 
-          // Listen for mouseovers.
+          // ...and mouseovers.
           el.addEventListener('mouseover', _.bind(self._handleMouseOver, self));
 
           // ...and mouseouts.
           el.addEventListener('mouseout', _.bind(self._handleMouseOut, self));
 
           // ...and render start.
-          el.addEventListener('renderstart', _.bind(self._handleRenderStart, self))
+          self.on('renderstart', _.bind(self._handleRenderStart, self));
 
           // Let's go!
-          el.dispatchEvent(new Event('init'));
+          self.emit('init');
 
           // Start the tutorial.
           self.tutorial.next().next();
@@ -75,12 +88,11 @@ Cube.prototype = {
   },
 
   rotate: function(x, y) {
-    var C = Const;
     this.x = this._calculateCoordinate(this.x, x);
     this.y = this._calculateCoordinate(this.y, y);
 
     this.style[Vendor.JS.transform] =
-      C.ROTATE_X_PREFIX + this.x + C.ROTATE_UNIT_SUFFIX + ' ' + C.ROTATE_Y_PREFIX + this.y + C.ROTATE_UNIT_SUFFIX;
+      Cube.ROTATE_X_PREFIX + this.x + Cube.ROTATE_UNIT_SUFFIX + ' ' + Cube.ROTATE_Y_PREFIX + this.y + Cube.ROTATE_UNIT_SUFFIX;
   },
 
   /**
@@ -331,7 +343,7 @@ Cube.prototype = {
   },
 
   _sendMessage: function(message, type) {
-    this.emit('message', Const.MESSAGES[message], type);
+    this.emit('message', Cube.MESSAGES[message], type);
   },
 
   _determineHelperHighlight: function(evt, callback) {
@@ -390,12 +402,12 @@ Cube.prototype = {
     if (isHorizontal) {
       // The row (starting at top-right and down).
       indexAt = origin - (origin % size);
-      rotatedLine = this.getLines(indexAt + (indexAt / size), Const.Y_COOR);
+      rotatedLine = this.getLines(indexAt + (indexAt / size), 1);
     }
     else {
       // The column (starting top-right and across).
       indexAt = origin % size;
-      rotatedLine = this.getLines(indexAt * size, Const.X_COOR);
+      rotatedLine = this.getLines(indexAt * size, 0);
     }
 
     return rotatedLine;
@@ -439,7 +451,7 @@ Cube.prototype = {
 
       // Determine the difference and get the calculated y line.
       diff = middle - indexAt;
-      flippedLine = this.getLines(middle + diff, Const.Y_COOR);
+      flippedLine = this.getLines(middle + diff, 1);
     }
 
     // Else, the line must be horizontal:
@@ -454,7 +466,7 @@ Cube.prototype = {
 
       // Determine the difference and get the calculated x line.
       diff = middle - indexAt;
-      flippedLine = this.getLines(middle + diff, Const.X_COOR);
+      flippedLine = this.getLines(middle + diff, 0);
     }
 
     return flippedLine;
@@ -479,13 +491,13 @@ Cube.prototype = {
    */
   _calculateCoordinate: function(current, difference) {
 
-    var REVOLUTION = Const.REVOLUTION,
+    var REVOLUTION = Cube.REVOLUTION,
         result = current + difference;
 
     if (result > REVOLUTION) {
       result = result - REVOLUTION;
     }
-    else if (result <= Const.ORIGIN) {
+    else if (result <= Cube.ORIGIN) {
       result = REVOLUTION - result;
     }
 

@@ -2,17 +2,14 @@ function App(containerId) {
   this.container = document.getElementById(containerId);
   this.cube = new Cube(this.container.getElementsByClassName('cube')[0]);
   this.messages = new Messages();
-  this.rendering = false;
-  this.listen();
+  this.renderer = new Renderer(this.cube);
 
   // Set when the game begins.
   this.players = null;
   this.turn = null;
 
-  // crap
-  this.moveX;
-  this.moveY;
-  this.moveCount = 0;
+  // Listen for user interactions.
+  this.listen();
 }
 
 App.prototype = {
@@ -32,8 +29,8 @@ App.prototype = {
         container.removeEventListener(Vendor.EVENT.animationEnd, beginGame);
 
         self.players = [
-          new Player(),
-          new Player()
+          new Player('Kevin', 'red'),
+          new Player('Jon', 'blue')
         ];
         self.turn = _.first(self.players);
 
@@ -48,87 +45,13 @@ App.prototype = {
       container.addEventListener(Vendor.EVENT.animationEnd, beginGame);
     }
 
-    function gameInitialized() {
-      self._attachKeyboard();
-    }
-
     cubeEl.addEventListener('click', cubeClicked);
-    cubeEl.addEventListener('init', gameInitialized);
+
+    // When the cube has initialized, start the rendering object.
+    cube.on('init', _.bind(this.renderer.initialize, this.renderer));
+
+    // The message box listens for messages to display.
     this.messages.listenTo(cube);
-  },
-
-  render: function() {
-
-    this.moveCount -= Const.CUBE_SPEED;
-    this.cube.rotate(this.moveX, this.moveY);
-
-    if (this.moveCount > 0 || this._setMovement()) {
-      this._loop();
-    }
-
-    // debug
-    else {
-      console.log('cube x y', this.cube.x, this.cube.y);
-    }
-  },
-
-  _loop: function() {
-    window.requestAnimationFrame(this.render.bind(this));
-  },
-
-  _attachKeyboard: function() {
-    this.keyboard = new Keyboard([
-      Keyboard.UP,
-      Keyboard.DOWN,
-      Keyboard.LEFT,
-      Keyboard.RIGHT,
-      Keyboard.W,
-      Keyboard.A,
-      Keyboard.S,
-      Keyboard.D
-    ]);
-    this.keyboard.listen(window, this._keyboardListener.bind(this));
-  },
-
-  _keyboardListener: function() {
-    if (this.moveCount === 0 && this._setMovement()) {
-      this._loop();
-      this.cube.el.dispatchEvent(new Event('renderstart'));
-    }
-  },
-
-  _setMovement: function() {
-
-    var KB = Keyboard,
-        keys = this.keyboard.keys;
-
-    // reset movex and movey
-    this.moveX = this.moveY = 0;
-
-    // Detect either up or down movement.
-    if (keys[KB.UP] || keys[KB.W]) {
-      this.moveX = Const.CUBE_SPEED;
-    }
-    else if (keys[KB.DOWN] || keys[KB.S]) {
-      this.moveX = -Const.CUBE_SPEED;
-    }
-
-    // Detect either left or right movement.
-    if (keys[KB.LEFT] || keys[KB.A]) {
-      this.moveY = Const.CUBE_SPEED;
-    }
-    else if (keys[KB.RIGHT] || keys[KB.D]) {
-      this.moveY = -Const.CUBE_SPEED;
-    }
-
-    // If there is movement, set moveCount and return true.
-    if (this.moveX !== 0 || this.moveY !== 0) {
-      this.moveCount = Const.CUBE_MOVE_UNIT;
-      return true;
-    }
-
-    // Movement was not set.
-    return false;
   }
 
 };

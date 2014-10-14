@@ -2,17 +2,14 @@ function App(containerId) {
   this.container = document.getElementById(containerId);
   this.cube = new Cube(this.container.getElementsByClassName('cube')[0]);
   this.messages = new Messages();
-  this.rendering = false;
-  this.listen();
+  this.renderer = new Renderer(this.cube);
 
   // Set when the game begins.
   this.players = null;
   this.turn = null;
 
-  // crap
-  this.moveX;
-  this.moveY;
-  this.moveCount = 0;
+  // Listen for user interactions.
+  this.listen();
 }
 
 App.prototype = {
@@ -32,8 +29,8 @@ App.prototype = {
         container.removeEventListener(Vendor.EVENT.animationEnd, beginGame);
 
         self.players = [
-          new Player(),
-          new Player()
+          new Player('Kevin', 'red'),
+          new Player('Jon', 'blue')
         ];
         self.turn = _.first(self.players);
 
@@ -48,119 +45,17 @@ App.prototype = {
       container.addEventListener(Vendor.EVENT.animationEnd, beginGame);
     }
 
-    function gameInitialized() {
-      self._attachKeyboard();
-    }
-
     cubeEl.addEventListener('click', cubeClicked);
-    cubeEl.addEventListener('init', gameInitialized);
+
+    // When the cube has initialized, start the rendering object.
+    cube.on('init', _.bind(this.renderer.initialize, this.renderer));
+
+    // The message box listens for messages to display.
     this.messages.listenTo(cube);
-  },
-
-  render: function() {
-
-    this.moveCount -= Const.CUBE_SPEED;
-    this.cube.rotate(this.moveX, this.moveY);
-
-    if (this.moveCount > 0 || this._setMovement()) {
-      this._loop();
-    }
-
-    // debug
-    else {
-      console.log('cube x y', this.cube.x, this.cube.y);
-    }
-  },
-
-  _loop: function() {
-    window.requestAnimationFrame(this.render.bind(this));
-  },
-
-  _attachKeyboard: function() {
-    this.keyboard = new Keyboard([
-      Keyboard.UP,
-      Keyboard.DOWN,
-      Keyboard.LEFT,
-      Keyboard.RIGHT,
-      Keyboard.W,
-      Keyboard.A,
-      Keyboard.S,
-      Keyboard.D
-    ]);
-    this.keyboard.listen(window, this._keyboardListener.bind(this));
-  },
-
-  _keyboardListener: function() {
-    if (this.moveCount === 0 && this._setMovement()) {
-      this._loop();
-      this.cube.el.dispatchEvent(new Event('renderstart'));
-    }
-  },
-
-  _setMovement: function() {
-
-    var KB = Keyboard,
-        keys = this.keyboard.keys;
-
-    // reset movex and movey
-    this.moveX = this.moveY = 0;
-
-    // Detect either up or down movement.
-    if (keys[KB.UP] || keys[KB.W]) {
-      this.moveX = Const.CUBE_SPEED;
-    }
-    else if (keys[KB.DOWN] || keys[KB.S]) {
-      this.moveX = -Const.CUBE_SPEED;
-    }
-
-    // Detect either left or right movement.
-    if (keys[KB.LEFT] || keys[KB.A]) {
-      this.moveY = Const.CUBE_SPEED;
-    }
-    else if (keys[KB.RIGHT] || keys[KB.D]) {
-      this.moveY = -Const.CUBE_SPEED;
-    }
-
-    // If there is movement, set moveCount and return true.
-    if (this.moveX !== 0 || this.moveY !== 0) {
-      this.moveCount = Const.CUBE_MOVE_UNIT;
-      return true;
-    }
-
-    // Movement was not set.
-    return false;
   }
 
 };
 
-var Const = {
-
-  // Game Logic
-  CUBE_SPEED: 5,
-  CUBE_MOVE_UNIT: 90,
-
-  // Display
-  TRANSFORM: 'Transform',
-  ROTATE_X_PREFIX: 'rotateX(',
-  ROTATE_Y_PREFIX: 'rotateY(',
-  ROTATE_UNIT_SUFFIX: 'deg)',
-  REVOLUTION: 360,
-  ORIGIN: 0,
-
-  // Coordinates
-  X_COOR: 0,
-  Y_COOR: 1,
-
-  // Messages
-  MESSAGES: {
-    start: 'Let\'s play! Click any tile to begin.',
-
-    claimed: 'This tile is already claimed!',
-    targetClaimed: 'The attack target is already claimed!',
-    sameSide: 'Same side! Choose a tile on a different side.',
-    notNeighbor: 'Not a neighboring side! Choose a tile different side.'
-  }
-};
 
 function Cube(el, size) {
 
@@ -194,6 +89,19 @@ function Cube(el, size) {
   EventEmitter2.call(this);
 }
 
+// Needs a home...
+Cube.ROTATE_X_PREFIX = 'rotateX(';
+Cube.ROTATE_Y_PREFIX = 'rotateY(';
+Cube.ROTATE_UNIT_SUFFIX = 'deg)';
+Cube.REVOLUTION = 360;
+Cube.ORIGIN = 0;
+Cube.MESSAGES = {
+  claimed: 'This tile is already claimed!',
+  targetClaimed: 'The attack target is already claimed!',
+  sameSide: 'Same side! Choose a tile on a different side.',
+  notNeighbor: 'Not a neighboring side! Choose a tile different side.'
+};
+
 Cube.prototype = {
 
   build: function() {
@@ -218,17 +126,17 @@ Cube.prototype = {
           // Listen for tile clicks.
           el.addEventListener('click', _.bind(self._handleClick, self));
 
-          // Listen for mouseovers.
+          // ...and mouseovers.
           el.addEventListener('mouseover', _.bind(self._handleMouseOver, self));
 
           // ...and mouseouts.
           el.addEventListener('mouseout', _.bind(self._handleMouseOut, self));
 
           // ...and render start.
-          el.addEventListener('renderstart', _.bind(self._handleRenderStart, self))
+          self.on('renderstart', _.bind(self._handleRenderStart, self));
 
           // Let's go!
-          el.dispatchEvent(new Event('init'));
+          self.emit('init');
 
           // Start the tutorial.
           self.tutorial.next().next();
@@ -239,12 +147,11 @@ Cube.prototype = {
   },
 
   rotate: function(x, y) {
-    var C = Const;
     this.x = this._calculateCoordinate(this.x, x);
     this.y = this._calculateCoordinate(this.y, y);
 
     this.style[Vendor.JS.transform] =
-      C.ROTATE_X_PREFIX + this.x + C.ROTATE_UNIT_SUFFIX + ' ' + C.ROTATE_Y_PREFIX + this.y + C.ROTATE_UNIT_SUFFIX;
+      Cube.ROTATE_X_PREFIX + this.x + Cube.ROTATE_UNIT_SUFFIX + ' ' + Cube.ROTATE_Y_PREFIX + this.y + Cube.ROTATE_UNIT_SUFFIX;
   },
 
   /**
@@ -495,7 +402,7 @@ Cube.prototype = {
   },
 
   _sendMessage: function(message, type) {
-    this.emit('message', Const.MESSAGES[message], type);
+    this.emit('message', Cube.MESSAGES[message], type);
   },
 
   _determineHelperHighlight: function(evt, callback) {
@@ -554,12 +461,12 @@ Cube.prototype = {
     if (isHorizontal) {
       // The row (starting at top-right and down).
       indexAt = origin - (origin % size);
-      rotatedLine = this.getLines(indexAt + (indexAt / size), Const.Y_COOR);
+      rotatedLine = this.getLines(indexAt + (indexAt / size), 1);
     }
     else {
       // The column (starting top-right and across).
       indexAt = origin % size;
-      rotatedLine = this.getLines(indexAt * size, Const.X_COOR);
+      rotatedLine = this.getLines(indexAt * size, 0);
     }
 
     return rotatedLine;
@@ -603,7 +510,7 @@ Cube.prototype = {
 
       // Determine the difference and get the calculated y line.
       diff = middle - indexAt;
-      flippedLine = this.getLines(middle + diff, Const.Y_COOR);
+      flippedLine = this.getLines(middle + diff, 1);
     }
 
     // Else, the line must be horizontal:
@@ -618,7 +525,7 @@ Cube.prototype = {
 
       // Determine the difference and get the calculated x line.
       diff = middle - indexAt;
-      flippedLine = this.getLines(middle + diff, Const.X_COOR);
+      flippedLine = this.getLines(middle + diff, 0);
     }
 
     return flippedLine;
@@ -643,13 +550,13 @@ Cube.prototype = {
    */
   _calculateCoordinate: function(current, difference) {
 
-    var REVOLUTION = Const.REVOLUTION,
+    var REVOLUTION = Cube.REVOLUTION,
         result = current + difference;
 
     if (result > REVOLUTION) {
       result = result - REVOLUTION;
     }
-    else if (result <= Const.ORIGIN) {
+    else if (result <= Cube.ORIGIN) {
       result = REVOLUTION - result;
     }
 
@@ -945,11 +852,115 @@ Messages.prototype = {
 
 };
 
-function Player() {
-  
+function Player(name, color) {
+  this.name = name;
+  this.color = color;
 }
 
 Player.prototype = {
+
+};
+
+function Renderer(cube) {
+
+  // A reference to the game cube.
+  this.cube = cube;
+
+  // The keyboard interface for desktop interactions.
+  this.keyboard = null;
+
+  // The speed to animate the X axis.
+  this.moveX = 0;
+
+  // The speed to animate the Y axis.
+  this.moveY = 0;
+
+  // The total number of steps to animate a rotation.
+  this.tickMax = 90;
+
+  // The number of rendering steps left to animate.
+  this.tick = 0;
+
+  // How fast each tick animates.
+  this.speed = 5;
+}
+
+Renderer.prototype = {
+
+  initialize: function() {
+
+    // Only account for desktop experiences for now.
+    this.keyboard = new Keyboard([
+      Keyboard.UP,
+      Keyboard.DOWN,
+      Keyboard.LEFT,
+      Keyboard.RIGHT,
+      Keyboard.W,
+      Keyboard.A,
+      Keyboard.S,
+      Keyboard.D
+    ]);
+
+    // Listen for keystrokes.
+    this.keyboard.listen(window, this._keyboardListener.bind(this));
+  },
+
+  draw: function() {
+
+    // Reduce the ticks and rotate the cube
+    this.tick -= this.speed;
+    this.cube.rotate(this.moveX, this.moveY);
+
+    // If there are ticks left or a key is down, keep looping.
+    if (this.tick > 0 || this._setMovement()) {
+      this._loop();
+    }
+  },
+
+  _loop: function() {
+    window.requestAnimationFrame(this.draw.bind(this));
+  },
+
+  _keyboardListener: function() {
+    if (this.tick === 0 && this._setMovement()) {
+      this._loop();
+      this.cube.emit('renderstart');
+    }
+  },
+
+  _setMovement: function() {
+
+    var KB = Keyboard,
+        keys = this.keyboard.keys;
+
+    // reset movex and movey
+    this.moveX = this.moveY = 0;
+
+    // Detect either up or down movement.
+    if (keys[KB.UP] || keys[KB.W]) {
+      this.moveX = this.speed;
+    }
+    else if (keys[KB.DOWN] || keys[KB.S]) {
+      this.moveX = -this.speed;
+    }
+
+    // Detect either left or right movement.
+    if (keys[KB.LEFT] || keys[KB.A]) {
+      this.moveY = this.speed;
+    }
+    else if (keys[KB.RIGHT] || keys[KB.D]) {
+      this.moveY = -this.speed;
+    }
+
+    // If there is movement, set tick and return true.
+    if (this.moveX !== 0 || this.moveY !== 0) {
+      this.tick = this.tickMax;
+      return true;
+    }
+
+    // Movement was not set.
+    return false;
+  }
 
 };
 
@@ -1119,6 +1130,8 @@ Tutorial.stepMessages = [
 
   var STYLE = document.body.style,
 
+      TRANSFORM = 'transform',
+
       // Prefixes used for things like Transform.
       STYLE_PREFIXES = ['ms', 'O', 'Moz', 'Webkit', ''],
 
@@ -1154,14 +1167,14 @@ Tutorial.stepMessages = [
 
   // First, let's determine the style prefix.
   while (len--) {
-    if ((STYLE_PREFIXES[len] + Const.TRANSFORM) in STYLE) {
+    if ((STYLE_PREFIXES[len] + TRANSFORM) in STYLE) {
       stylePrefix = STYLE_PREFIXES[len];
       break;
     }
   }
 
   // Next, let's set some properties using the prefix.
-  vendor.JS.transform = stylePrefix + Const.TRANSFORM;
+  vendor.JS.transform = stylePrefix + TRANSFORM;
   vendor.CSS.transform = stylePrefix ? '-' + stylePrefix.toLowerCase() + '-transform' : 'transform';
 
   // Now, let's determine the event end name. So messed up.
