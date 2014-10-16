@@ -18,30 +18,15 @@ function Cube(el, size) {
   // This will be set in beginGame.
   this._sides = null;
 
-  // The three selected tiles to place pieces on.
-  this.selectedTiles = [];
-
-  // Cross-selected tile for helping attacks.
-  this._helperTile = null;
-
-  this.tutorial = new Tutorial(this);
-
   // EventEmitter constructor call.
   EventEmitter2.call(this);
 }
 
-// Needs a home...
 Cube.ROTATE_X_PREFIX = 'rotateX(';
 Cube.ROTATE_Y_PREFIX = 'rotateY(';
 Cube.ROTATE_UNIT_SUFFIX = 'deg)';
 Cube.REVOLUTION = 360;
 Cube.ORIGIN = 0;
-Cube.MESSAGES = {
-  claimed: 'This tile is already claimed!',
-  targetClaimed: 'The attack target is already claimed!',
-  sameSide: 'Same side! Choose a tile on a different side.',
-  notNeighbor: 'Not a neighboring side! Choose a tile different side.'
-};
 
 Cube.prototype = {
 
@@ -59,28 +44,20 @@ Cube.prototype = {
       el.classList.add('transition');
       el.addEventListener(Vendor.EVENT.animationEnd, function animEnd(evt) {
         if (evt.target === el) {
+
+          // Remove the transition class and append the init class. Done!
           el.classList.remove('transition');
           el.classList.add('init');
-          self.x = 315;//TODO: make dynamic http://css-tricks.com/get-value-of-css-rotation-through-javascript/
-          self.y = 315;//TODO: make dynamic
 
-          // Listen for tile clicks.
-          el.addEventListener('click', _.bind(self._handleClick, self));
-
-          // ...and mouseovers.
-          el.addEventListener('mouseover', _.bind(self._handleMouseOver, self));
-
-          // ...and mouseouts.
-          el.addEventListener('mouseout', _.bind(self._handleMouseOut, self));
-
-          // ...and render start.
-          self.on('renderstart', _.bind(self._handleRenderStart, self));
+          // Set the initial rotated state. Would be cool to make these dynamic
+          // but probably not worth the trouble.
+          // http://css-tricks.com/get-value-of-css-rotation-through-javascript/
+          // http://stackoverflow.com/questions/8270612/get-element-moz-transformrotate-value-in-jquery
+          self.x = 315;
+          self.y = 315;
 
           // Let's go!
           self.emit('init');
-
-          // Start the tutorial.
-          self.tutorial.next().next();
         }
       });
     });
@@ -93,6 +70,11 @@ Cube.prototype = {
 
     this.style[Vendor.JS.transform] =
       Cube.ROTATE_X_PREFIX + this.x + Cube.ROTATE_UNIT_SUFFIX + ' ' + Cube.ROTATE_Y_PREFIX + this.y + Cube.ROTATE_UNIT_SUFFIX;
+  },
+
+  listenTo: function(eventName, callback, context) {
+    this.el.addEventListener(eventName, _.bind(callback, context || this));
+    return this;
   },
 
   /**
@@ -111,118 +93,6 @@ Cube.prototype = {
     return this._lineMap[index];
   },
 
-  selectTile: function(tile) {
-    tile.addClass('selected');
-    this.selectedTiles.push(tile);
-    this._updateAdjacentTiles(tile, function(tile) {
-      tile.addClass('highlighted');
-    });
-  },
-
-  deselectTile: function(tile) {
-    tile.removeClass('selected');
-    _.pull(this.selectedTiles, tile);
-    this._updateAdjacentTiles(tile, function(tile) {
-      tile.removeClass('highlighted');
-    });
-  },
-
-  clearHelperTile: function() {
-    if (this._helperTile) {
-      this._helperTile.removeClass('helper');
-    }
-    this._helperTile = null;
-  },
-
-  claim: function() {
-
-    // Set the selected tiles to the player's color.
-    _.forEach(this.selectedTiles, function(tile) {
-      tile.claim();//pass in the player
-    });
-
-    // Remove all helpers.
-    this.clearHelperTile();
-    this.deselectTile(_.first(this.selectedTiles));
-
-    // Move this out to App and implement eventing.
-    this.selectedTiles = [];
-
-    this.checkWin();
-  },
-
-  checkWin: function() {
-
-    var winLines = [];
-
-    // Loop through each cube side.
-    _.forEach(this._sides, function(side) {
-
-      // Find all the tiles claimed by this player.
-      var claimedTiles = _.filter(side.getTiles(), {claimedBy: true}),//truth check for now...
-          size = this.size,
-          map;
-
-      // If there are not enough tiles available for a line, exit immediately.
-      if (claimedTiles.length < size) {
-        return;
-      }
-
-      // Build an index map of the claimed tiles for faster lookup.
-      map = _.times(Math.pow(size, 2), function(i) {
-        return _.find(claimedTiles, {index: i});
-      });
-
-      // Check for vertical matches.
-      // Inspect each starting index from 0 and leftwards.
-      _.forEach(_.at(map, _.times(size)), function(tile) {
-        var line;
-
-        // If a tile exists at an index, begin searching rightwards.
-        if (tile) {
-          line = _.at(map, _.times(size - 1, function(i) {
-            return tile.index + ((i + 1) * size);
-          }));
-
-          // Push the original tile on the line stack.
-          line.push(tile);
-
-          // If the limit is reached, the line is complete. It's a win!
-          if (_.compact(line).length === size) {
-            winLines.push(line);
-          }
-        }
-      });
-      
-      // Check for horizontal matches.
-      // Inspect each starting index from 0 and downwards.
-      _.forEach(_.at(map, _.times(size, function(i) { return i * size })), function(tile) {
-        var line;
-
-        // If a tile exists at an index, begin searching rightwards.
-        if (tile) {
-          line = _.at(map, _.times(size - 1, function(i) {
-            return tile.index + (i + 1);
-          }));
-
-          // Push the original tile on the line stack.
-          line.push(tile);
-
-          // If the limit is reached, the line is complete. It's a win!
-          if (_.compact(line).length === size) {
-            winLines.push(line);
-          }
-        }
-      });
-
-    }, this);
-
-    if (winLines.length) {
-      var modifier = winLines.length > 1 ? ' x' + winLines.length : '';
-      this.emit('message', 'YOU WIN' + modifier, 'info');
-    }
-  },
-
   /**
    * Updates the passed tile and all related adjacent tiles with the
    * passed callback. This method is mostly used for highlighting tiles
@@ -230,7 +100,7 @@ Cube.prototype = {
    * @param  {DOMElement}   tile The selected tile as a raw DOM element.
    * @param  {Function}     callback   The method to invoke passing each tile as an argument.
    */
-  _updateAdjacentTiles: function(tile, callback) {
+  updateAdjacentTiles: function(tile, callback) {
 
     // The tile's side.
     var side = tile.side,
@@ -250,118 +120,7 @@ Cube.prototype = {
     }, this);
   },
 
-  // Potentially dangerous as this is hackable...
-  // Perhaps do a straigh-up element match too?
-  _getTileFromElement: function(el) {
-    var data;
-    if (el.classList.contains('tile')) {
-      data = el.id.split('-');
-      return this.getSide(data[0]).getTiles(data[1])[0];
-    }
-    return null;
-  },
-
-  _handleRenderStart: function() {
-    this.clearHelperTile();
-  },
-
-  _handleClick: function(evt) {
-
-    // Get the target element from the event.
-    var tile = this._getTileFromElement(evt.target),
-
-        // The first tile that has been selected.
-        initialTile = _.first(this.selectedTiles);
-
-    // If the target is a tile, let's figure out what to do with it.
-    if (tile) {
-
-      // If the tile is already claimed, get outta dodge.
-      if (tile.claimedBy) {
-        this._sendMessage('claimed');
-        return;
-      }
-
-      // If nothing has been selected yet, select the tile normally.
-      if (!initialTile) {
-        this.selectTile(tile);
-        this.tutorial.next();
-      }
-
-      // Otherwise, there must be a selected tile already.
-      else {
-
-        // Deselect the tile if it is the target.
-        if (tile === initialTile) {
-          this.deselectTile(tile);
-        }
-
-        // Otherwise, try and make a match.
-        else {
-
-          // If the same side was selected, display an error.
-          if (tile.side === initialTile.side) {
-            this._sendMessage('sameSide');
-          }
-
-          // Else if the side selected is not a neighbor, display an error.
-          else if (!initialTile.side.isNeighbor(tile.side)) {
-            this._sendMessage('notNeighbor');
-          }
-
-          // Otherwise, we're on a good side. Let's drill down further.
-          else {
-
-            // If the attack target is claimed, try another tile.
-            if (this._helperTile.claimedBy) {
-              this._sendMessage('targetClaimed');
-            }
-
-            // Otherwise, a valid selection has been made!
-            else {
-              this.selectedTiles.push(tile, this._helperTile);
-              this.claim();
-              this.tutorial.next().next();
-            }
-          }
-        }
-      }
-    };
-  },
-
-  _handleMouseOver: function(evt) {
-    this._determineHelperHighlight(evt, _.bind(function(tile) {
-      tile.addClass('helper');
-      this._helperTile = tile;
-    }, this));
-  },
-
-  _handleMouseOut: function(evt) {
-    this._determineHelperHighlight(evt, function(tile) {
-      tile.removeClass('helper');
-    });
-  },
-
-  _sendMessage: function(message, type) {
-    this.emit('message', Cube.MESSAGES[message], type);
-  },
-
-  _determineHelperHighlight: function(evt, callback) {
-
-    // The tile the user is interacting with.
-    var tile = this._getTileFromElement(evt.target),
-
-        // The first tile that has been selected.
-        initialTile = _.first(this.selectedTiles);
-
-    // If the user is hovering on a neighboring side of the initial tile,
-    // highlight some targeting help on a visible side.
-    if (tile && initialTile && initialTile.side.isNeighbor(tile.side)) {
-      this._updateHelperHighlight(tile, initialTile, callback);
-    }
-  },
-
-  _updateHelperHighlight: function(tile, initialTile, callback) {
+  updateHelperHighlight: function(tile, initialTile, callback) {
 
     // Get the raw neighbor sides (without their placement keys)
     // and exclude the selected side.

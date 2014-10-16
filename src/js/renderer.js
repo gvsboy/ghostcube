@@ -1,4 +1,4 @@
-function Renderer(cube) {
+function Renderer(cube, isMobile) {
 
   // A reference to the game cube.
   this.cube = cube;
@@ -20,6 +20,9 @@ function Renderer(cube) {
 
   // How fast each tick animates.
   this.speed = 5;
+
+  // Is the client a mobile device?
+  this.isMobile = isMobile;
 }
 
 Renderer.prototype = {

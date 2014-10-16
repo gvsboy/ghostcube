@@ -5,17 +5,23 @@
  * @param {Object} target An event-emitting object to provide guidance for.
  * @class
  */
-function Tutorial(target) {
-  this.target = target;
+function Tutorial() {
+
+  // What step is the tutorial on?
   this.step = 0;
+
+  // How many steps are there?
   this.maxStep = 5;
+
+  // EventEmitter constructor call.
+  EventEmitter2.call(this);
 }
 
 Tutorial.prototype = {
 
   next: function() {
     if (!this.isDone()) {
-      this.target.emit('message', Tutorial.stepMessages[this.step], 'info');
+      this.emit('message', Tutorial.stepMessages[this.step], 'info');
       this.step++;
     }
     return this;
@@ -27,6 +33,10 @@ Tutorial.prototype = {
 
 };
 
+// Mixin EventEmitter methods.
+_.assign(Tutorial.prototype, EventEmitter2.prototype);
+
+// List of step messages.
 Tutorial.stepMessages = [
   'Let\'s play! Click any tile to begin.',
   'Rotate the cube using the arrow keys or WASD.',

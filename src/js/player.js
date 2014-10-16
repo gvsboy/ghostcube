@@ -1,6 +1,6 @@
-function Player(name, color) {
+function Player(name, tileClass) {
   this.name = name;
-  this.color = color;
+  this.tileClass = tileClass;
 }
 
 Player.prototype = {

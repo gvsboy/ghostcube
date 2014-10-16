@@ -93,6 +93,11 @@ h2 {
     &.info {
       color: blue;
     }
+
+    &.alert {
+      font-size: 4em;
+      color: yellow;
+    }
   }
 
 }

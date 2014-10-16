@@ -26,9 +26,9 @@ Tile.prototype = {
   },
 
   claim: function(player) {
-    this.claimedBy = true;//player;
+    this.claimedBy = player;
     this.addClass('claimed');
-    this.addClass('player1');//testing!
+    this.addClass(player.tileClass);
   },
 
   addClass: function(name) {

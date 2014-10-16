@@ -9,5 +9,8 @@
     "**/.*",
     "node_modules",
     "bower_components"
-  ]
+  ],
+  "devDependencies": {
+    "hammerjs": "~2.0.4"
+  }
 }

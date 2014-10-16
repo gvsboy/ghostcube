@@ -47,17 +47,6 @@ Keyboard.prototype = {
       }
     });
 
-  },
-
-  isAnyKeyDown: function() {
-    var keys = this.keys,
-        key;
-    for (key in keys) {
-      if (keys[key]) {
-        return true;
-      }
-    }
-    return false;
   }
 
 };
@@ -71,3 +60,4 @@ Keyboard.A = '65';
 Keyboard.S = '83';
 Keyboard.D = '68';
 Keyboard.SPACE = '32';
+Keyboard.ESCAPE = '27';

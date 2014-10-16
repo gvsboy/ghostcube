@@ -1,12 +1,32 @@
 function App(containerId) {
-  this.container = document.getElementById(containerId);
-  this.cube = new Cube(this.container.getElementsByClassName('cube')[0]);
-  this.messages = new Messages();
-  this.renderer = new Renderer(this.cube);
 
-  // Set when the game begins.
+  // The site container which houses the cube and intro text.
+  this.container = document.getElementById(containerId);
+
+  // Check if the client is on a mobile device.
+  this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent);
+
+  // The fun part!
+  this.cube = new Cube(this.container.getElementsByClassName('cube')[0]);
+
+  // UI for displaying various messages.
+  this.messages = new Messages();
+
+  // An object that detects user interaction to manipulate the cube.
+  this.renderer = new Renderer(this.cube, this.isMobile);
+
+  // In-game players.
   this.players = null;
-  this.turn = null;
+  this.currentPlayer = null;
+
+  // The three selected tiles to place pieces on.
+  this.selectedTiles = [];
+
+  // Cross-selected tile for helping attacks.
+  this._helperTile = null;
+
+  // Step-by-step instruction component.
+  this.tutorial = new Tutorial();
 
   // Listen for user interactions.
   this.listen();
@@ -14,7 +34,7 @@ function App(containerId) {
 
 App.prototype = {
 
-  // I hate everything in here but it's ok for now.
+  // I hate everything in here...
   listen: function() {
 
     var self = this,
@@ -27,13 +47,6 @@ App.prototype = {
       // so let's react to only one of them.
       if (evt.target === container) {
         container.removeEventListener(Vendor.EVENT.animationEnd, beginGame);
-
-        self.players = [
-          new Player('Kevin', 'red'),
-          new Player('Jon', 'blue')
-        ];
-        self.turn = _.first(self.players);
-
         cube.build();
       }
     }
@@ -48,132 +61,46 @@ App.prototype = {
     cubeEl.addEventListener('click', cubeClicked);
 
     // When the cube has initialized, start the rendering object.
-    cube.on('init', _.bind(this.renderer.initialize, this.renderer));
+    cube.on('init', _.bind(this._realListen, this));
 
     // The message box listens for messages to display.
-    this.messages.listenTo(cube);
-  }
-
-};
-
-
-function Cube(el, size) {
-
-  // The HTML element representing the cube.
-  this.el                     = el;
-
-  // The cube's size regarding tiles across a side. Default to 3.
-  this.size                   = size || 3;
-
-  // Cached reference to the style object.
-  this.style                  = this.el.style;
-
-  // Maps out the lines (x, y) that should be highlighted per index click.
-  this._lineMap = this._buildLineMap();
-
-  // Translates highlighted lines to different sides, normalizing the coordinate system.
-  this._translationMap = this._buildTranslationMap();
-
-  // This will be set in beginGame.
-  this._sides = null;
-
-  // The three selected tiles to place pieces on.
-  this.selectedTiles = [];
-
-  // Cross-selected tile for helping attacks.
-  this._helperTile = null;
-
-  this.tutorial = new Tutorial(this);
-
-  // EventEmitter constructor call.
-  EventEmitter2.call(this);
-}
-
-// Needs a home...
-Cube.ROTATE_X_PREFIX = 'rotateX(';
-Cube.ROTATE_Y_PREFIX = 'rotateY(';
-Cube.ROTATE_UNIT_SUFFIX = 'deg)';
-Cube.REVOLUTION = 360;
-Cube.ORIGIN = 0;
-Cube.MESSAGES = {
-  claimed: 'This tile is already claimed!',
-  targetClaimed: 'The attack target is already claimed!',
-  sameSide: 'Same side! Choose a tile on a different side.',
-  notNeighbor: 'Not a neighboring side! Choose a tile different side.'
-};
-
-Cube.prototype = {
-
-  build: function() {
-
-    // Create the game sides.
-    this._sides = this._buildSides(this.size);
-
-    // Initialize the game.
-    // Slow down the cube to a stop, display instructions.
-    var el = this.el,
-        self = this;
-
-    el.addEventListener(Vendor.EVENT.animationIteration, function() {
-      el.classList.add('transition');
-      el.addEventListener(Vendor.EVENT.animationEnd, function animEnd(evt) {
-        if (evt.target === el) {
-          el.classList.remove('transition');
-          el.classList.add('init');
-          self.x = 315;//TODO: make dynamic http://css-tricks.com/get-value-of-css-rotation-through-javascript/
-          self.y = 315;//TODO: make dynamic
-
-          // Listen for tile clicks.
-          el.addEventListener('click', _.bind(self._handleClick, self));
-
-          // ...and mouseovers.
-          el.addEventListener('mouseover', _.bind(self._handleMouseOver, self));
-
-          // ...and mouseouts.
-          el.addEventListener('mouseout', _.bind(self._handleMouseOut, self));
-
-          // ...and render start.
-          self.on('renderstart', _.bind(self._handleRenderStart, self));
-
-          // Let's go!
-          self.emit('init');
-
-          // Start the tutorial.
-          self.tutorial.next().next();
-        }
-      });
-    });
-
+    this.messages.listenTo(this.tutorial);
   },
 
-  rotate: function(x, y) {
-    this.x = this._calculateCoordinate(this.x, x);
-    this.y = this._calculateCoordinate(this.y, y);
+  // This is where the cube's listeners are created. For reals.
+  _realListen: function() {
 
-    this.style[Vendor.JS.transform] =
-      Cube.ROTATE_X_PREFIX + this.x + Cube.ROTATE_UNIT_SUFFIX + ' ' + Cube.ROTATE_Y_PREFIX + this.y + Cube.ROTATE_UNIT_SUFFIX;
+    var cube = this.cube;
+
+    // Create the players and set the first one as current.
+    this.players = [
+      new Player('Kevin', 'player1'),
+      new Player('Jon', 'player2')
+    ];
+    this.setCurrentPlayer(_.first(this.players));
+
+    // Begin the rendering.
+    this.renderer.initialize();
+
+    cube
+      .listenTo('click', this._handleClick, this)
+      .listenTo('mouseover', this._handleMouseOver, this)
+      .listenTo('mouseout', this._handleMouseOut, this);
+
+    cube.on('renderstart', _.bind(this.clearHelperTile, this));
+
+    this.tutorial.next().next();
   },
 
-  /**
-   * Fetches a cube side by name (e.g. 'top')
-   * @param  {String} name The name of the side you want.
-   * @return {Side}      The Side object by name.
-   */
-  getSide: function(name) {
-    return this._sides[name];
-  },
-
-  getLines: function(index, coordinate) {
-    if (_.isNumber(coordinate)) {
-      return this._lineMap[index][coordinate];
-    }
-    return this._lineMap[index];
+  setCurrentPlayer: function(player) {
+    this.currentPlayer = player;
+    this.messages.add(player.name + '\'s turn!', 'alert');
   },
 
   selectTile: function(tile) {
     tile.addClass('selected');
     this.selectedTiles.push(tile);
-    this._updateAdjacentTiles(tile, function(tile) {
+    this.cube.updateAdjacentTiles(tile, function(tile) {
       tile.addClass('highlighted');
     });
   },
@@ -181,7 +108,7 @@ Cube.prototype = {
   deselectTile: function(tile) {
     tile.removeClass('selected');
     _.pull(this.selectedTiles, tile);
-    this._updateAdjacentTiles(tile, function(tile) {
+    this.cube.updateAdjacentTiles(tile, function(tile) {
       tile.removeClass('highlighted');
     });
   },
@@ -197,8 +124,8 @@ Cube.prototype = {
 
     // Set the selected tiles to the player's color.
     _.forEach(this.selectedTiles, function(tile) {
-      tile.claim();//pass in the player
-    });
+      tile.claim(this.currentPlayer);
+    }, this);
 
     // Remove all helpers.
     this.clearHelperTile();
@@ -207,19 +134,20 @@ Cube.prototype = {
     // Move this out to App and implement eventing.
     this.selectedTiles = [];
 
-    this.checkWin();
+    this._endTurn();
   },
 
   checkWin: function() {
 
-    var winLines = [];
+    var winLines = [],
+        size = this.cube.size,
+        player = this.currentPlayer;
 
     // Loop through each cube side.
-    _.forEach(this._sides, function(side) {
+    _.forEach(this.cube._sides, function(side) {
 
       // Find all the tiles claimed by this player.
-      var claimedTiles = _.filter(side.getTiles(), {claimedBy: true}),//truth check for now...
-          size = this.size,
+      var claimedTiles = _.filter(side.getTiles(), {claimedBy: player}),
           map;
 
       // If there are not enough tiles available for a line, exit immediately.
@@ -274,39 +202,27 @@ Cube.prototype = {
         }
       });
 
-    }, this);
+    });
 
-    if (winLines.length) {
-      var modifier = winLines.length > 1 ? ' x' + winLines.length : '';
-      this.emit('message', 'YOU WIN' + modifier, 'info');
-    }
+    // Return the number of winning lines (or 0 if no win).
+    return winLines.length;
   },
 
-  /**
-   * Updates the passed tile and all related adjacent tiles with the
-   * passed callback. This method is mostly used for highlighting tiles
-   * to help the user make strategy decisions easier.
-   * @param  {DOMElement}   tile The selected tile as a raw DOM element.
-   * @param  {Function}     callback   The method to invoke passing each tile as an argument.
-   */
-  _updateAdjacentTiles: function(tile, callback) {
+  _endTurn: function() {
 
-    // The tile's side.
-    var side = tile.side,
+    var winBy = this.checkWin(),
+        player = this.currentPlayer,
+        modifier;
 
-        // The highlightable lines related to the origin tile's index.
-        lines = this.getLines(tile.index);
+    // If a player wins, display a message and exit.
+    if (winBy) {
+      modifier = winBy > 1 ? ' x' + winBy + '!' : '!';
+      this.messages.add(player.name + ' wins' + modifier, 'alert');
+      return;// just return for now. should set a win state.
+    }
 
-    // Update all the appropriate tiles on the origin tile's side.
-    _.forEach(side.getTiles(lines), callback);
-
-    // For each neighbor, pass in the side and the orientation id (e.g. 'left').
-    _.forEach(side.getNeighbors(), function(neighbor) {
-
-      // Get all the translated tiles based on the origin tile and update.
-      _.forEach(neighbor.getTiles(this._translate(lines, neighbor.id, side.id)), callback);
-
-    }, this);
+    // Else, switch players and continue.
+    this.setCurrentPlayer(this.players[this.players.indexOf(player) === 1 ? 0 : 1]);
   },
 
   // Potentially dangerous as this is hackable...
@@ -315,13 +231,24 @@ Cube.prototype = {
     var data;
     if (el.classList.contains('tile')) {
       data = el.id.split('-');
-      return this.getSide(data[0]).getTiles(data[1])[0];
+      return this.cube.getSide(data[0]).getTiles(data[1])[0];
     }
     return null;
   },
 
-  _handleRenderStart: function() {
-    this.clearHelperTile();
+  _determineHelperHighlight: function(evt, callback) {
+
+    // The tile the user is interacting with.
+    var tile = this._getTileFromElement(evt.target),
+
+        // The first tile that has been selected.
+        initialTile = _.first(this.selectedTiles);
+
+    // If the user is hovering on a neighboring side of the initial tile,
+    // highlight some targeting help on a visible side.
+    if (tile && initialTile && initialTile.side.isNeighbor(tile.side)) {
+      this.cube.updateHelperHighlight(tile, initialTile, callback);
+    }
   },
 
   _handleClick: function(evt) {
@@ -337,7 +264,7 @@ Cube.prototype = {
 
       // If the tile is already claimed, get outta dodge.
       if (tile.claimedBy) {
-        this._sendMessage('claimed');
+        this.messages.add('claimed');
         return;
       }
 
@@ -360,12 +287,12 @@ Cube.prototype = {
 
           // If the same side was selected, display an error.
           if (tile.side === initialTile.side) {
-            this._sendMessage('sameSide');
+            this.messages.add('sameSide');
           }
 
           // Else if the side selected is not a neighbor, display an error.
           else if (!initialTile.side.isNeighbor(tile.side)) {
-            this._sendMessage('notNeighbor');
+            this.messages.add('notNeighbor');
           }
 
           // Otherwise, we're on a good side. Let's drill down further.
@@ -373,7 +300,7 @@ Cube.prototype = {
 
             // If the attack target is claimed, try another tile.
             if (this._helperTile.claimedBy) {
-              this._sendMessage('targetClaimed');
+              this.messages.add('targetClaimed');
             }
 
             // Otherwise, a valid selection has been made!
@@ -399,28 +326,133 @@ Cube.prototype = {
     this._determineHelperHighlight(evt, function(tile) {
       tile.removeClass('helper');
     });
+  }
+
+};
+
+function Cube(el, size) {
+
+  // The HTML element representing the cube.
+  this.el                     = el;
+
+  // The cube's size regarding tiles across a side. Default to 3.
+  this.size                   = size || 3;
+
+  // Cached reference to the style object.
+  this.style                  = this.el.style;
+
+  // Maps out the lines (x, y) that should be highlighted per index click.
+  this._lineMap = this._buildLineMap();
+
+  // Translates highlighted lines to different sides, normalizing the coordinate system.
+  this._translationMap = this._buildTranslationMap();
+
+  // This will be set in beginGame.
+  this._sides = null;
+
+  // EventEmitter constructor call.
+  EventEmitter2.call(this);
+}
+
+Cube.ROTATE_X_PREFIX = 'rotateX(';
+Cube.ROTATE_Y_PREFIX = 'rotateY(';
+Cube.ROTATE_UNIT_SUFFIX = 'deg)';
+Cube.REVOLUTION = 360;
+Cube.ORIGIN = 0;
+
+Cube.prototype = {
+
+  build: function() {
+
+    // Create the game sides.
+    this._sides = this._buildSides(this.size);
+
+    // Initialize the game.
+    // Slow down the cube to a stop, display instructions.
+    var el = this.el,
+        self = this;
+
+    el.addEventListener(Vendor.EVENT.animationIteration, function() {
+      el.classList.add('transition');
+      el.addEventListener(Vendor.EVENT.animationEnd, function animEnd(evt) {
+        if (evt.target === el) {
+
+          // Remove the transition class and append the init class. Done!
+          el.classList.remove('transition');
+          el.classList.add('init');
+
+          // Set the initial rotated state. Would be cool to make these dynamic
+          // but probably not worth the trouble.
+          // http://css-tricks.com/get-value-of-css-rotation-through-javascript/
+          // http://stackoverflow.com/questions/8270612/get-element-moz-transformrotate-value-in-jquery
+          self.x = 315;
+          self.y = 315;
+
+          // Let's go!
+          self.emit('init');
+        }
+      });
+    });
+
   },
 
-  _sendMessage: function(message, type) {
-    this.emit('message', Cube.MESSAGES[message], type);
+  rotate: function(x, y) {
+    this.x = this._calculateCoordinate(this.x, x);
+    this.y = this._calculateCoordinate(this.y, y);
+
+    this.style[Vendor.JS.transform] =
+      Cube.ROTATE_X_PREFIX + this.x + Cube.ROTATE_UNIT_SUFFIX + ' ' + Cube.ROTATE_Y_PREFIX + this.y + Cube.ROTATE_UNIT_SUFFIX;
   },
 
-  _determineHelperHighlight: function(evt, callback) {
+  listenTo: function(eventName, callback, context) {
+    this.el.addEventListener(eventName, _.bind(callback, context || this));
+    return this;
+  },
 
-    // The tile the user is interacting with.
-    var tile = this._getTileFromElement(evt.target),
+  /**
+   * Fetches a cube side by name (e.g. 'top')
+   * @param  {String} name The name of the side you want.
+   * @return {Side}      The Side object by name.
+   */
+  getSide: function(name) {
+    return this._sides[name];
+  },
 
-        // The first tile that has been selected.
-        initialTile = _.first(this.selectedTiles);
-
-    // If the user is hovering on a neighboring side of the initial tile,
-    // highlight some targeting help on a visible side.
-    if (tile && initialTile && initialTile.side.isNeighbor(tile.side)) {
-      this._updateHelperHighlight(tile, initialTile, callback);
+  getLines: function(index, coordinate) {
+    if (_.isNumber(coordinate)) {
+      return this._lineMap[index][coordinate];
     }
+    return this._lineMap[index];
   },
 
-  _updateHelperHighlight: function(tile, initialTile, callback) {
+  /**
+   * Updates the passed tile and all related adjacent tiles with the
+   * passed callback. This method is mostly used for highlighting tiles
+   * to help the user make strategy decisions easier.
+   * @param  {DOMElement}   tile The selected tile as a raw DOM element.
+   * @param  {Function}     callback   The method to invoke passing each tile as an argument.
+   */
+  updateAdjacentTiles: function(tile, callback) {
+
+    // The tile's side.
+    var side = tile.side,
+
+        // The highlightable lines related to the origin tile's index.
+        lines = this.getLines(tile.index);
+
+    // Update all the appropriate tiles on the origin tile's side.
+    _.forEach(side.getTiles(lines), callback);
+
+    // For each neighbor, pass in the side and the orientation id (e.g. 'left').
+    _.forEach(side.getNeighbors(), function(neighbor) {
+
+      // Get all the translated tiles based on the origin tile and update.
+      _.forEach(neighbor.getTiles(this._translate(lines, neighbor.id, side.id)), callback);
+
+    }, this);
+  },
+
+  updateHelperHighlight: function(tile, initialTile, callback) {
 
     // Get the raw neighbor sides (without their placement keys)
     // and exclude the selected side.
@@ -794,17 +826,6 @@ Keyboard.prototype = {
       }
     });
 
-  },
-
-  isAnyKeyDown: function() {
-    var keys = this.keys,
-        key;
-    for (key in keys) {
-      if (keys[key]) {
-        return true;
-      }
-    }
-    return false;
   }
 
 };
@@ -818,8 +839,11 @@ Keyboard.A = '65';
 Keyboard.S = '83';
 Keyboard.D = '68';
 Keyboard.SPACE = '32';
+Keyboard.ESCAPE = '27';
 
 function Messages() {
+  this.delay = 100;
+  this.queue = [];
   this.container = this._buildContainer();
   this.container.addEventListener(Vendor.EVENT.animationEnd, _.bind(this._remove, this));
 }
@@ -830,13 +854,32 @@ Messages.prototype = {
     source.on('message', _.bind(this.add, this));
   },
 
-  add: function(data, type) {
+  add: function(message, type) {
     var item = document.createElement('li');
     if (type) {
       item.className = type;
     }
-    item.appendChild(document.createTextNode(data));
-    this.container.appendChild(item);
+    if (message.split(' ').length === 1) {
+      message = Messages.LIST[message];
+    }
+    item.appendChild(document.createTextNode(message));
+    this._enqueue(item);
+  },
+
+  _enqueue: function(item) {
+
+    var container = this.container,
+        queue = this.queue,
+        delay = queue.length * this.delay;
+
+    queue.push(item);
+
+    _.delay(function(i) {
+      container.appendChild(item);
+      if (_.last(queue) === i) {
+        queue.length = 0;
+      }
+    }, delay, item);
   },
 
   _remove: function(evt) {
@@ -852,16 +895,23 @@ Messages.prototype = {
 
 };
 
-function Player(name, color) {
+Messages.LIST = {
+  claimed: 'This tile is already claimed!',
+  targetClaimed: 'The attack target is already claimed!',
+  sameSide: 'Same side! Choose a tile on a different side.',
+  notNeighbor: 'Not a neighboring side! Choose a tile different side.'
+};
+
+function Player(name, tileClass) {
   this.name = name;
-  this.color = color;
+  this.tileClass = tileClass;
 }
 
 Player.prototype = {
 
 };
 
-function Renderer(cube) {
+function Renderer(cube, isMobile) {
 
   // A reference to the game cube.
   this.cube = cube;
@@ -883,6 +933,9 @@ function Renderer(cube) {
 
   // How fast each tick animates.
   this.speed = 5;
+
+  // Is the client a mobile device?
+  this.isMobile = isMobile;
 }
 
 Renderer.prototype = {
@@ -1070,9 +1123,9 @@ Tile.prototype = {
   },
 
   claim: function(player) {
-    this.claimedBy = true;//player;
+    this.claimedBy = player;
     this.addClass('claimed');
-    this.addClass('player1');//testing!
+    this.addClass(player.tileClass);
   },
 
   addClass: function(name) {
@@ -1096,17 +1149,23 @@ Tile.prototype = {
  * @param {Object} target An event-emitting object to provide guidance for.
  * @class
  */
-function Tutorial(target) {
-  this.target = target;
+function Tutorial() {
+
+  // What step is the tutorial on?
   this.step = 0;
+
+  // How many steps are there?
   this.maxStep = 5;
+
+  // EventEmitter constructor call.
+  EventEmitter2.call(this);
 }
 
 Tutorial.prototype = {
 
   next: function() {
     if (!this.isDone()) {
-      this.target.emit('message', Tutorial.stepMessages[this.step], 'info');
+      this.emit('message', Tutorial.stepMessages[this.step], 'info');
       this.step++;
     }
     return this;
@@ -1118,6 +1177,10 @@ Tutorial.prototype = {
 
 };
 
+// Mixin EventEmitter methods.
+_.assign(Tutorial.prototype, EventEmitter2.prototype);
+
+// List of step messages.
 Tutorial.stepMessages = [
   'Let\'s play! Click any tile to begin.',
   'Rotate the cube using the arrow keys or WASD.',
