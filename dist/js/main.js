@@ -777,70 +777,6 @@ Cube.prototype = {
 // Ditch when we migrate to Browserify.
 _.assign(Cube.prototype, EventEmitter2.prototype);
 
-/**
- * A software interface for determining which keyboard keys are pressed.
- *
- * @param {Array || String} keyCodes A collection of all the (string) keyCodes used.
- */
-function Keyboard(keyCodes) {
-
-  this.keys = {};
-
-  if (typeof keyCodes === 'string') {
-    keyCodes = keyCodes.split(' ');
-  }
-  while (keyCodes.length) {
-    this.keys[keyCodes.pop()] = false;
-  }
-
-}
-
-Keyboard.prototype = { 
-
-  listen: function(win, callback) {
-
-    var UNDEFINED = 'undefined',
-        keys = this.keys;
-        
-    if (!win) {
-      win = window;
-    }
-
-    win.addEventListener('keydown', function(evt) {
-      var keyCode = evt.keyCode;
-      if (typeof keys[keyCode] !== UNDEFINED && !keys[keyCode]) {
-        keys[keyCode] = true;
-        if (callback) {
-          callback();
-        }
-      }
-    });
-
-    win.addEventListener('keyup', function(evt) {
-      var keyCode = evt.keyCode;
-      if (keys[keyCode]) {
-        keys[keyCode] = false;
-        if (callback) {
-          callback();
-        }
-      }
-    });
-
-  }
-
-};
-
-Keyboard.UP = '38';
-Keyboard.DOWN = '40';
-Keyboard.LEFT = '37';
-Keyboard.RIGHT = '39';
-Keyboard.W = '87';
-Keyboard.A = '65';
-Keyboard.S = '83';
-Keyboard.D = '68';
-Keyboard.SPACE = '32';
-Keyboard.ESCAPE = '27';
-
 function Messages() {
   this.delay = 100;
   this.queue = [];
@@ -911,6 +847,70 @@ Player.prototype = {
 
 };
 
+/**
+ * A software interface for determining which keyboard keys are pressed.
+ *
+ * @param {Array || String} keyCodes A collection of all the (string) keyCodes used.
+ */
+function Keyboard(keyCodes) {
+
+  this.keys = {};
+
+  if (typeof keyCodes === 'string') {
+    keyCodes = keyCodes.split(' ');
+  }
+  while (keyCodes.length) {
+    this.keys[keyCodes.pop()] = false;
+  }
+
+}
+
+Keyboard.prototype = { 
+
+  listen: function(win, callback) {
+
+    var UNDEFINED = 'undefined',
+        keys = this.keys;
+        
+    if (!win) {
+      win = window;
+    }
+
+    win.addEventListener('keydown', function(evt) {
+      var keyCode = evt.keyCode;
+      if (typeof keys[keyCode] !== UNDEFINED && !keys[keyCode]) {
+        keys[keyCode] = true;
+        if (callback) {
+          callback();
+        }
+      }
+    });
+
+    win.addEventListener('keyup', function(evt) {
+      var keyCode = evt.keyCode;
+      if (keys[keyCode]) {
+        keys[keyCode] = false;
+        if (callback) {
+          callback();
+        }
+      }
+    });
+
+  }
+
+};
+
+Keyboard.UP = '38';
+Keyboard.DOWN = '40';
+Keyboard.LEFT = '37';
+Keyboard.RIGHT = '39';
+Keyboard.W = '87';
+Keyboard.A = '65';
+Keyboard.S = '83';
+Keyboard.D = '68';
+Keyboard.SPACE = '32';
+Keyboard.ESCAPE = '27';
+
 function Renderer(cube, isMobile) {
 
   // A reference to the game cube.
@@ -918,6 +918,9 @@ function Renderer(cube, isMobile) {
 
   // The keyboard interface for desktop interactions.
   this.keyboard = null;
+
+  // And this is for touch interactions.
+  this.touch = null;
 
   // The speed to animate the X axis.
   this.moveX = 0;
@@ -941,21 +944,12 @@ function Renderer(cube, isMobile) {
 Renderer.prototype = {
 
   initialize: function() {
-
-    // Only account for desktop experiences for now.
-    this.keyboard = new Keyboard([
-      Keyboard.UP,
-      Keyboard.DOWN,
-      Keyboard.LEFT,
-      Keyboard.RIGHT,
-      Keyboard.W,
-      Keyboard.A,
-      Keyboard.S,
-      Keyboard.D
-    ]);
-
-    // Listen for keystrokes.
-    this.keyboard.listen(window, this._keyboardListener.bind(this));
+    if (this.isMobile) {
+      this._listenForTouch();
+    }
+    else {
+      this._listenForKeyboard();
+    }
   },
 
   draw: function() {
@@ -970,11 +964,33 @@ Renderer.prototype = {
     }
   },
 
+  _listenForKeyboard: function() {
+
+    this.keyboard = new Keyboard([
+      Keyboard.UP,
+      Keyboard.DOWN,
+      Keyboard.LEFT,
+      Keyboard.RIGHT,
+      Keyboard.W,
+      Keyboard.A,
+      Keyboard.S,
+      Keyboard.D
+    ]);
+
+    // Listen for keystrokes.
+    this.keyboard.listen(window, this._movementListener.bind(this));
+  },
+
+  _listenForTouch: function() {
+    this.touch = new Touch();
+    this.touch.listen(document.body, this._movementListener.bind(this));
+  },
+
   _loop: function() {
     window.requestAnimationFrame(this.draw.bind(this));
   },
 
-  _keyboardListener: function() {
+  _movementListener: function() {
     if (this.tick === 0 && this._setMovement()) {
       this._loop();
       this.cube.emit('renderstart');
@@ -983,11 +999,31 @@ Renderer.prototype = {
 
   _setMovement: function() {
 
-    var KB = Keyboard,
-        keys = this.keyboard.keys;
-
     // reset movex and movey
     this.moveX = this.moveY = 0;
+
+    // Set the movement direction depending on the environment.
+    if (this.isMobile) {
+      this._setTouchMovement();
+    }
+    else {
+      this._setKeyboardMovement();
+    }
+
+    // If there is movement, set tick and return true.
+    if (this.moveX !== 0 || this.moveY !== 0) {
+      this.tick = this.tickMax;
+      return true;
+    }
+
+    // Movement was not set.
+    return false;
+  },
+
+  _setKeyboardMovement: function() {
+
+    var KB = Keyboard,
+        keys = this.keyboard.keys;
 
     // Detect either up or down movement.
     if (keys[KB.UP] || keys[KB.W]) {
@@ -1004,18 +1040,57 @@ Renderer.prototype = {
     else if (keys[KB.RIGHT] || keys[KB.D]) {
       this.moveY = -this.speed;
     }
+  },
 
-    // If there is movement, set tick and return true.
-    if (this.moveX !== 0 || this.moveY !== 0) {
-      this.tick = this.tickMax;
-      return true;
+  _setTouchMovement: function() {
+
+    var movement = this.touch.queue.shift();
+
+    switch (movement) {
+      case Touch.UP:
+        console.log('up!');
+        break;
+      case Touch.DOWN:
+        console.log('down!');
+        break;
+      case Touch.LEFT:
+        console.log('left...');
+        this.moveY = this.speed;
+        break;
+      case Touch.RIGHT:
+        console.log('right...');
+        this.moveY = -this.speed;
+        break;
     }
-
-    // Movement was not set.
-    return false;
   }
 
 };
+
+function Touch() {
+  this.queue = [];
+}
+
+Touch.prototype = {
+
+  listen: function(context, callback) {
+
+    var iface = new Hammer(context || document.body),
+        queue = this.queue;
+
+    iface.on('swipe', function(evt) {
+      queue.push(evt.offsetDirection);
+      if (callback) {
+        callback();
+      }
+    });
+  }
+
+};
+
+Touch.UP = Hammer.DIRECTION_UP;
+Touch.DOWN = Hammer.DIRECTION_DOWN;
+Touch.LEFT = Hammer.DIRECTION_LEFT;
+Touch.RIGHT = Hammer.DIRECTION_RIGHT;
 
 function Side(el, size) {
 
@@ -1193,10 +1268,10 @@ Tutorial.stepMessages = [
 
   var STYLE = document.body.style,
 
-      TRANSFORM = 'transform',
+      TRANSFORM = 'Transform',
 
       // Prefixes used for things like Transform.
-      STYLE_PREFIXES = ['ms', 'O', 'Moz', 'Webkit', ''],
+      STYLE_PREFIXES = ['ms', 'O', 'Moz', 'Webkit'],
 
       // Animation end events. Not quite perfect as IE10+
       // actually uses 'animation' -> 'MSAnimationEnd'
@@ -1234,6 +1309,11 @@ Tutorial.stepMessages = [
       stylePrefix = STYLE_PREFIXES[len];
       break;
     }
+  }
+
+  // If there isn't a proper prefix, use the standard transform.
+  if (!stylePrefix) {
+    stylePrefix = TRANSFORM.toLowerCase();
   }
 
   // Next, let's set some properties using the prefix.

@@ -2,10 +2,10 @@
 
   var STYLE = document.body.style,
 
-      TRANSFORM = 'transform',
+      TRANSFORM = 'Transform',
 
       // Prefixes used for things like Transform.
-      STYLE_PREFIXES = ['ms', 'O', 'Moz', 'Webkit', ''],
+      STYLE_PREFIXES = ['ms', 'O', 'Moz', 'Webkit'],
 
       // Animation end events. Not quite perfect as IE10+
       // actually uses 'animation' -> 'MSAnimationEnd'
@@ -43,6 +43,11 @@
       stylePrefix = STYLE_PREFIXES[len];
       break;
     }
+  }
+
+  // If there isn't a proper prefix, use the standard transform.
+  if (!stylePrefix) {
+    stylePrefix = TRANSFORM.toLowerCase();
   }
 
   // Next, let's set some properties using the prefix.
