@@ -1048,17 +1048,15 @@ Renderer.prototype = {
 
     switch (movement) {
       case Touch.UP:
-        console.log('up!');
+        this.moveX = -this.speed;
         break;
       case Touch.DOWN:
-        console.log('down!');
+        this.moveX = this.speed;
         break;
       case Touch.LEFT:
-        console.log('left...');
         this.moveY = this.speed;
         break;
       case Touch.RIGHT:
-        console.log('right...');
         this.moveY = -this.speed;
         break;
     }
@@ -1076,6 +1074,14 @@ Touch.prototype = {
 
     var iface = new Hammer(context || document.body),
         queue = this.queue;
+
+    iface
+      .get('swipe')
+      .set({
+        direction: Hammer.DIRECTION_ALL,
+        threshold: 0.1,
+        velocity: 0.1
+      });
 
     iface.on('swipe', function(evt) {
       queue.push(evt.offsetDirection);

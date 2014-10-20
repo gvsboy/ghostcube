@@ -9,6 +9,14 @@ Touch.prototype = {
     var iface = new Hammer(context || document.body),
         queue = this.queue;
 
+    iface
+      .get('swipe')
+      .set({
+        direction: Hammer.DIRECTION_ALL,
+        threshold: 0.1,
+        velocity: 0.1
+      });
+
     iface.on('swipe', function(evt) {
       queue.push(evt.offsetDirection);
       if (callback) {

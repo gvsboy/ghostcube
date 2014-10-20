@@ -135,17 +135,15 @@ Renderer.prototype = {
 
     switch (movement) {
       case Touch.UP:
-        console.log('up!');
+        this.moveX = -this.speed;
         break;
       case Touch.DOWN:
-        console.log('down!');
+        this.moveX = this.speed;
         break;
       case Touch.LEFT:
-        console.log('left...');
         this.moveY = this.speed;
         break;
       case Touch.RIGHT:
-        console.log('right...');
         this.moveY = -this.speed;
         break;
     }
