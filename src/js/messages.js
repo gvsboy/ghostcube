@@ -54,7 +54,7 @@ Messages.prototype = {
 
 Messages.LIST = {
   claimed: 'This tile is already claimed!',
-  targetClaimed: 'The attack target is already claimed!',
+  targetClaimed: 'The attack target is already claimed by you!',
   sameSide: 'Same side! Choose a tile on a different side.',
   notNeighbor: 'Not a neighboring side! Choose a tile different side.'
 };

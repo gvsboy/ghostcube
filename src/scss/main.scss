@@ -169,7 +169,6 @@ h2 {
   height: $tile-size;
   border: 2px solid $cube-color;
   background-color: #000;
-  color: #fff; /* DEBUG */
   @include transform(translateZ(0.01em));
 
   &.highlighted {
@@ -188,18 +187,18 @@ h2 {
     background-color: $tile-helper;
   }
 
-  &.claimed {
-    &.player1 {
-      background-color: red;
-    }
-    &.player2 {
-      background-color: blue;
-    }
-  }
-
   &.init {
     display: block;
     @include animation(tile-start $game-speed forwards);
+  }
+
+  &.claimed {
+    &.player1 {
+      @include animation(tile-claimed-player1 0.5s forwards);
+    }
+    &.player2 {
+      @include animation(tile-claimed-player2 0.5s forwards);
+    }
   }
 }
 

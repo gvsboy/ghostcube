@@ -285,9 +285,10 @@ App.prototype = {
         // Otherwise, try and make a match.
         else {
 
-          // If the same side was selected, display an error.
+          // If the same side was selected, deselect the initial and select the new.
           if (tile.side === initialTile.side) {
-            this.messages.add('sameSide');
+            this.deselectTile(initialTile);
+            this.selectTile(tile);
           }
 
           // Else if the side selected is not a neighbor, display an error.
@@ -298,8 +299,8 @@ App.prototype = {
           // Otherwise, we're on a good side. Let's drill down further.
           else {
 
-            // If the attack target is claimed, try another tile.
-            if (this._helperTile.claimedBy) {
+            // If the attack target is claimed by the current player, don't claim it again!
+            if (this._helperTile.claimedBy === this.currentPlayer) {
               this.messages.add('targetClaimed');
             }
 

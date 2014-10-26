@@ -23,6 +23,10 @@ $tile-highlighted: darkgreen;
 $tile-helper: lightgreen;
 $tile-available: #cdefab;
 
+/* Player Vars */
+$player1-color: red;
+$player2-color: blue;
+
 /* Header Vars */
 $header-pad: 5em;
 $header-offset: $cube-size + $header-pad;
@@ -88,7 +92,7 @@ $header-width: 54em;
 
 /*----------------------------------------------
 
-  Cube Game Start Mixins
+  Complext Animation Mixins
 
 ----------------------------------------------*/
 
@@ -96,15 +100,12 @@ $header-width: 54em;
   @include animation($name $game-speed forwards);
 }
 
-
-
 /*----------------------------------------------
 
   Animations
 
 ----------------------------------------------*/
 
-/* Animations */
 @include keyframes(cube-rotate) {
   0%    { @include transform(rotateX(1deg) rotateY(1deg)); }
   100%  { @include transform(rotateX(360deg) rotateY(360deg)); }
@@ -148,4 +149,34 @@ $header-width: 54em;
   10%   { margin-left: 0; height: 1.5em }
   80%   { height: 1.5em; }
   100%  { height: 0; }
+}
+
+@include keyframes(tile-claimed-player1) {
+  0%    { background-color: black; }
+  20%   { background-color: $player1-color; }
+  40%   { background-color: black; }
+  60%   { background-color: $player1-color; }
+  80%   { background-color: black; }
+  100%  { background-color: $player1-color; }
+}
+
+@include keyframes(tile-claimed-player2) {
+  0%    { background-color: black; }
+  20%   { background-color: $player2-color; }
+  40%   { background-color: black; }
+  60%   { background-color: $player2-color; }
+  80%   { background-color: black; }
+  100%  { background-color: $player2-color; }
+}
+
+@include keyframes(attack-player1) {
+  0%   { background-color: $player1-color; }
+  50%  { background-color: $tile-selected; }
+  100% { background-color: $player1-color; }
+}
+
+@include keyframes(attack-player2) {
+  0%   { background-color: $player2-color; }
+  50%  { background-color: $tile-selected; }
+  100% { background-color: $player2-color; }
 }
