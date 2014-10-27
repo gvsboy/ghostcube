@@ -19,27 +19,38 @@ Tile.prototype = {
     el.className = 'tile';
 
     // debug
-    var idData = id.split('-');
+    //var idData = id.split('-');
     //el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
 
     return el;
   },
 
   claim: function(player) {
-    if (this.claimedBy) {
-      this.removeClass(this.claimedBy.tileClass);
+    var self = this;
+    if (self.claimedBy) {
+      self.removeClass(self.claimedBy.tileClass);
     }
-    this.claimedBy = player;
-    this.addClass('claimed');
-    this.addClass(player.tileClass);
+    self.claimedBy = player;
+    self
+      .addClass('preclaimed')
+      .addClass(player.tileClass);
+
+    self.el.addEventListener(Vendor.EVENT.animationEnd, function animEnd(evt) {
+      self
+        .removeClass('preclaimed')
+        .addClass('claimed')
+        .el.removeEventListener(Vendor.EVENT.animationEnd, animEnd);
+    });
   },
 
   addClass: function(name) {
     this.el.classList.add(name);
+    return this;
   },
 
   removeClass: function(name) {
     this.el.classList.remove(name);
+    return this;
   },
 
   hasClass: function(name) {

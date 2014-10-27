@@ -93,6 +93,11 @@ App.prototype = {
   },
 
   setCurrentPlayer: function(player) {
+    var cubeEl = this.cube.el;
+    cubeEl.classList.add(player.tileClass + '-turn');
+    if (this.currentPlayer) {
+      cubeEl.classList.remove(this.currentPlayer.tileClass + '-turn');
+    }
     this.currentPlayer = player;
     this.messages.add(player.name + '\'s turn!', 'alert');
   },

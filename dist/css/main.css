@@ -1006,17 +1006,41 @@ h2 {
   -moz-animation: tile-start 0.05s forwards;
   -webkit-animation: tile-start 0.05s forwards;
 }
-.tile.claimed.player1 {
+.tile.preclaimed.player1 {
   animation: tile-claimed-player1 0.5s forwards;
   -o-animation: tile-claimed-player1 0.5s forwards;
   -moz-animation: tile-claimed-player1 0.5s forwards;
   -webkit-animation: tile-claimed-player1 0.5s forwards;
 }
-.tile.claimed.player2 {
+.tile.preclaimed.player2 {
   animation: tile-claimed-player2 0.5s forwards;
   -o-animation: tile-claimed-player2 0.5s forwards;
   -moz-animation: tile-claimed-player2 0.5s forwards;
   -webkit-animation: tile-claimed-player2 0.5s forwards;
+}
+.tile.claimed {
+  animation: none;
+  -o-animation: none;
+  -moz-animation: none;
+  -webkit-animation: none;
+}
+.tile.claimed.player1 {
+  background-color: red;
+}
+.player2-turn .tile.claimed.player1.helper {
+  animation: attack-player1 0.25s infinite;
+  -o-animation: attack-player1 0.25s infinite;
+  -moz-animation: attack-player1 0.25s infinite;
+  -webkit-animation: attack-player1 0.25s infinite;
+}
+.tile.claimed.player2 {
+  background-color: blue;
+}
+.player1-turn .tile.claimed.player2.helper {
+  animation: attack-player2 0.25s infinite;
+  -o-animation: attack-player2 0.25s infinite;
+  -moz-animation: attack-player2 0.25s infinite;
+  -webkit-animation: attack-player2 0.25s infinite;
 }
 
 .tile:nth-child(1) {

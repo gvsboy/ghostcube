@@ -192,12 +192,28 @@ h2 {
     @include animation(tile-start $game-speed forwards);
   }
 
-  &.claimed {
+  &.preclaimed {
     &.player1 {
       @include animation(tile-claimed-player1 0.5s forwards);
     }
     &.player2 {
       @include animation(tile-claimed-player2 0.5s forwards);
+    }
+  }
+
+  &.claimed {
+    @include animation(none);
+    &.player1 {
+      background-color: $player1-color;
+      .player2-turn &.helper {
+        @include animation(attack-player1 0.25s infinite);
+      }
+    }
+    &.player2 {
+      background-color: $player2-color;
+      .player1-turn &.helper {
+        @include animation(attack-player2 0.25s infinite);
+      }
     }
   }
 }
