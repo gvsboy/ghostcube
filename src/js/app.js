@@ -75,9 +75,13 @@ App.prototype = {
     // Create the players and set the first one as current.
     this.players = [
       new Player('Kevin', 'player1'),
-      new Player('Jon', 'player2')
+      //new Player('Jon', 'player2')
+      new Bot('CPU', 'player2')
     ];
     this.setCurrentPlayer(_.first(this.players));
+
+    console.log('player1 bot?', this.players[0].isBot());
+    console.log('player2 bot?', this.players[1].isBot());
 
     // Begin the rendering.
     this.renderer.initialize();
@@ -136,7 +140,6 @@ App.prototype = {
     this.clearHelperTile();
     this.deselectTile(_.first(this.selectedTiles));
 
-    // Move this out to App and implement eventing.
     this.selectedTiles = [];
 
     this._endTurn();
@@ -305,11 +308,19 @@ App.prototype = {
           else {
 
             // If the attack target is claimed by the current player, don't claim it again!
-            if (this._helperTile.claimedBy === this.currentPlayer) {
-              this.messages.add('targetClaimed');
+            if (this._helperTile.claimedBy) {
+              if (this._helperTile.claimedBy === this.currentPlayer) {
+                this.messages.add('targetClaimed');
+              }
+              // Otherwise, cancel the two tiles out.
+              else {
+                this._helperTile.release();
+                this.selectedTiles.push(tile);
+                this.claim();
+              }
             }
 
-            // Otherwise, a valid selection has been made!
+            // Otherwise, a valid selection has been made! Claim both.
             else {
               this.selectedTiles.push(tile, this._helperTile);
               this.claim();

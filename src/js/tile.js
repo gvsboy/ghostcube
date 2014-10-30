@@ -32,6 +32,7 @@ Tile.prototype = {
     }
     self.claimedBy = player;
     self
+      .removeClass('unclaimed')
       .addClass('preclaimed')
       .addClass(player.tileClass);
 
@@ -41,6 +42,17 @@ Tile.prototype = {
         .addClass('claimed')
         .el.removeEventListener(Vendor.EVENT.animationEnd, animEnd);
     });
+  },
+
+  release: function() {
+    var self = this;
+    if (self.claimedBy) {
+      self.removeClass(self.claimedBy.tileClass);
+      self.claimedBy = null;
+      self
+        .addClass('unclaimed')
+        .removeClass('claimed');
+    }
   },
 
   addClass: function(name) {

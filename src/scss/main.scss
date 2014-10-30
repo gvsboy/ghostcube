@@ -201,6 +201,10 @@ h2 {
     }
   }
 
+  &.unclaimed {
+    @include animation(none);
+  }
+
   &.claimed {
     @include animation(none);
     &.player1 {
