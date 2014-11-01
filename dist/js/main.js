@@ -73,15 +73,14 @@ App.prototype = {
     var cube = this.cube;
 
     // Create the players and set the first one as current.
+    var human = new Player('Kevin', 'player1', cube);
+    var bot = new Bot('CPU', 'player2', cube, human);
     this.players = [
-      new Player('Kevin', 'player1'),
-      //new Player('Jon', 'player2')
-      new Bot('CPU', 'player2')
+      human,
+      //new Player('Jon', 'player2', cube)
+      bot
     ];
     this.setCurrentPlayer(_.first(this.players));
-
-    console.log('player1 bot?', this.players[0].isBot());
-    console.log('player2 bot?', this.players[1].isBot());
 
     // Begin the rendering.
     this.renderer.initialize();
@@ -133,7 +132,7 @@ App.prototype = {
 
     // Set the selected tiles to the player's color.
     _.forEach(this.selectedTiles, function(tile) {
-      tile.claim(this.currentPlayer);
+      this.currentPlayer.claim(tile);
     }, this);
 
     // Remove all helpers.
@@ -314,7 +313,7 @@ App.prototype = {
               }
               // Otherwise, cancel the two tiles out.
               else {
-                this._helperTile.release();
+                this.currentPlayer.release(this._helperTile);
                 this.selectedTiles.push(tile);
                 this.claim();
               }
@@ -347,11 +346,30 @@ App.prototype = {
 
 };
 
-function Bot(name, tileClass) {
-  Player.call(this, name, tileClass);
+function Bot(name, tileClass, cube, opponent) {
+  Player.call(this, name, tileClass, cube);
+  this.opponent = opponent;
 }
 
 Bot.prototype = {
+
+  play: function() {
+
+    /*
+      First, gather all the Bot's tiles to see if a win is possible this turn
+      (there are lines that are missing one tile).
+      If so, attempt to claim those tiles.
+
+      If no win is possible, gather the opponent's tiles to see if a win is possible.
+      If so, see which method can block:
+
+        - Neutralizing a tile?
+        - Claiming the missing tile?
+
+
+     */
+
+  }
 
 };
 
@@ -802,6 +820,35 @@ Cube.prototype = {
 // Ditch when we migrate to Browserify.
 _.assign(Cube.prototype, EventEmitter2.prototype);
 
+function CubeCache(cube) {
+
+  // The size to check completed lines against.
+  this._cubeSize = cube.size;
+
+  // Create an object keyed by side id with array values containing
+  // Tile objects by index.
+  this._sideMap = _.reduce(cube._sides, function(sides, side, id) {
+    sides[id] = [];
+    return sides;
+  }, {});
+}
+
+CubeCache.prototype = {
+
+  add: function(tile) {
+    this._setTile(tile, tile);
+  },
+
+  remove: function(tile) {
+    this._setTile(tile, null);
+  },
+
+  _setTile: function(tile, value) {
+    this._sideMap[tile.side.id][tile.index] = value;
+  }
+
+}
+
 function Messages() {
   this.delay = 100;
   this.queue = [];
@@ -863,15 +910,26 @@ Messages.LIST = {
   notNeighbor: 'Not a neighboring side! Choose a tile different side.'
 };
 
-function Player(name, tileClass) {
+function Player(name, tileClass, cube) {
   this.name = name;
   this.tileClass = tileClass;
+  this._cubeCache = new CubeCache(cube);
 }
 
 Player.prototype = {
 
   isBot: function() {
     return this instanceof Bot;
+  },
+
+  claim: function(tile) {
+    tile.claim(this);
+    this._cubeCache.add(tile);
+  },
+
+  release: function(tile) {
+    tile.release();
+    this._cubeCache.remove(tile);
   }
 
 };

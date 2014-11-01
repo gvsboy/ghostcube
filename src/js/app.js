@@ -73,15 +73,14 @@ App.prototype = {
     var cube = this.cube;
 
     // Create the players and set the first one as current.
+    var human = new Player('Kevin', 'player1', cube);
+    var bot = new Bot('CPU', 'player2', cube, human);
     this.players = [
-      new Player('Kevin', 'player1'),
-      //new Player('Jon', 'player2')
-      new Bot('CPU', 'player2')
+      human,
+      //new Player('Jon', 'player2', cube)
+      bot
     ];
     this.setCurrentPlayer(_.first(this.players));
-
-    console.log('player1 bot?', this.players[0].isBot());
-    console.log('player2 bot?', this.players[1].isBot());
 
     // Begin the rendering.
     this.renderer.initialize();
@@ -133,7 +132,7 @@ App.prototype = {
 
     // Set the selected tiles to the player's color.
     _.forEach(this.selectedTiles, function(tile) {
-      tile.claim(this.currentPlayer);
+      this.currentPlayer.claim(tile);
     }, this);
 
     // Remove all helpers.
@@ -314,7 +313,7 @@ App.prototype = {
               }
               // Otherwise, cancel the two tiles out.
               else {
-                this._helperTile.release();
+                this.currentPlayer.release(this._helperTile);
                 this.selectedTiles.push(tile);
                 this.claim();
               }
