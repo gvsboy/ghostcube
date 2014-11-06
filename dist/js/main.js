@@ -103,6 +103,10 @@ App.prototype = {
     }
     this.currentPlayer = player;
     this.messages.add(player.name + '\'s turn!', 'alert');
+
+    //debug
+    console.log('+++ cubeCache:', player.name, player._cubeCache._sideMap);
+    console.log('ooo lineMap:', player.name, player._cubeCache._lineMap);
   },
 
   selectTile: function(tile) {
@@ -147,25 +151,11 @@ App.prototype = {
   checkWin: function() {
 
     var winLines = [],
-        size = this.cube.size,
-        player = this.currentPlayer;
+        size = this.cube.size;
 
     // Loop through each cube side.
-    _.forEach(this.cube._sides, function(side) {
-
-      // Find all the tiles claimed by this player.
-      var claimedTiles = _.filter(side.getTiles(), {claimedBy: player}),
-          map;
-
-      // If there are not enough tiles available for a line, exit immediately.
-      if (claimedTiles.length < size) {
-        return;
-      }
-
-      // Build an index map of the claimed tiles for faster lookup.
-      map = _.times(Math.pow(size, 2), function(i) {
-        return _.find(claimedTiles, {index: i});
-      });
+    // Testing out CubeCache...
+    _.forEach(this.currentPlayer._cubeCache._sideMap, function(map) {
 
       // Check for vertical matches.
       // Inspect each starting index from 0 and leftwards.
@@ -225,7 +215,7 @@ App.prototype = {
     if (winBy) {
       modifier = winBy > 1 ? ' x' + winBy + '!' : '!';
       this.messages.add(player.name + ' wins' + modifier, 'alert');
-      return;// just return for now. should set a win state.
+      //return;// just return for now. should set a win state.
     }
 
     // Else, switch players and continue.
@@ -264,7 +254,10 @@ App.prototype = {
     var tile = this._getTileFromElement(evt.target),
 
         // The first tile that has been selected.
-        initialTile = _.first(this.selectedTiles);
+        initialTile = _.first(this.selectedTiles),
+
+        // The union of the first and potential second tile.
+        helperTile = this._helperTile;
 
     // If the target is a tile, let's figure out what to do with it.
     if (tile) {
@@ -307,13 +300,13 @@ App.prototype = {
           else {
 
             // If the attack target is claimed by the current player, don't claim it again!
-            if (this._helperTile.claimedBy) {
-              if (this._helperTile.claimedBy === this.currentPlayer) {
+            if (helperTile.claimedBy) {
+              if (helperTile.claimedBy === this.currentPlayer) {
                 this.messages.add('targetClaimed');
               }
               // Otherwise, cancel the two tiles out.
               else {
-                this.currentPlayer.release(this._helperTile);
+                helperTile.claimedBy.release(helperTile);
                 this.selectedTiles.push(tile);
                 this.claim();
               }
@@ -321,7 +314,7 @@ App.prototype = {
 
             // Otherwise, a valid selection has been made! Claim both.
             else {
-              this.selectedTiles.push(tile, this._helperTile);
+              this.selectedTiles.push(tile, helperTile);
               this.claim();
               this.tutorial.next().next();
             }
@@ -825,29 +818,128 @@ function CubeCache(cube) {
   // The size to check completed lines against.
   this._cubeSize = cube.size;
 
-  // Create an object keyed by side id with array values containing
-  // Tile objects by index.
-  this._sideMap = _.reduce(cube._sides, function(sides, side, id) {
-    sides[id] = [];
-    return sides;
-  }, {});
+  // A collection of lines created by side.
+  this._lineMap = this._buildCollection(cube);
+
+  // A collection of the tiles claimed by side.
+  this._sideMap = this._buildCollection(cube);
 }
 
 CubeCache.prototype = {
 
   add: function(tile) {
-    this._setTile(tile, tile);
+
+    var side = this._getSideByTile(tile),
+        index = tile.index;
+
+    side[index] = tile;
+    this._growLine(this._getXTiles(side, index));
+    this._growLine(this._getYTiles(side, index));
   },
 
   remove: function(tile) {
-    this._setTile(tile, null);
+
+    var side = this._getSideByTile(tile),
+        index = tile.index;
+
+    side[index] = null;
+    this._shrinkLine(this._getXTiles(side, index));
+    this._shrinkLine(this._getYTiles(side, index));
   },
 
-  _setTile: function(tile, value) {
-    this._sideMap[tile.side.id][tile.index] = value;
+  getLines: function() {
+    return this._lines;
+  },
+
+  /**
+   * Create an object keyed by cube side id with array values for containing
+   * various Tile data objects.
+   * @param  {Cube} cube The Cube object to base the collection on.
+   * @return {Object}    An object representation of the cube, keyed by side id.
+   */
+  _buildCollection: function(cube) {
+    return _.reduce(cube._sides, function(sides, side, id) {
+      sides[id] = [];
+      return sides;
+    }, {});
+  },
+
+  _getSideByTile: function(tile) {
+    return this._sideMap[tile.side.id];
+  },
+
+  _getXTiles: function(side, index) {
+    var start = index - (index % this._cubeSize);
+    return _.compact(_.at(side, _.range(start, start + this._cubeSize)));
+  },
+
+  _getYTiles: function(side, index) {
+    var size = this._cubeSize,
+        start = index % size;
+    return _.compact(_.at(side, _.range(start, Math.pow(size, 2), size)));
+  },
+
+  _growLine: function(tiles) {
+
+    var side, line;
+
+    if (tiles.length > 1) {
+
+      side = this._lineMap[_.first(tiles).side.id];
+      line = _.find(side, function(ln) {
+        return ln.matches(tiles);
+      });
+
+      if (line) {
+        line.update(tiles);
+      }
+      else {
+        side.push(new Line(tiles));
+      }
+    }
+  },
+
+  _shrinkLine: function(tiles) {
+
+    var side = this._lineMap[_.first(tiles).side.id];
+        line = _.find(side, function(ln) {
+          return ln.matches(tiles);
+        });
+
+    if (line) {
+
+    }
   }
 
+};
+
+/**
+ * Lines represent tiles in either a horizontal or vertical row
+ * which serve as points or win states.
+ * @param {Array} tiles  A collection of tiles that compose the line.
+ */
+function Line(tiles) {
+  this.sideId = _.first(tiles).side.id;
+  this.update(tiles);
 }
+
+Line.prototype = {
+
+  /**
+   * Checks to see if the line contains some or all of the passed tiles.
+   * If so, it is a match.
+   * @param  {Array} tiles The tiles to check.
+   * @return {Boolean}     Does the line contain the passed tiles?
+   */
+  matches: function(tiles) {
+    return !!_.intersection(tiles, this._tiles).length;
+  },
+
+  update: function(tiles) {
+    this._tiles = tiles;
+  }
+
+};
 
 function Messages() {
   this.delay = 100;
@@ -930,6 +1022,10 @@ Player.prototype = {
   release: function(tile) {
     tile.release();
     this._cubeCache.remove(tile);
+  },
+
+  getLines: function() {
+    return this._cubeCache.getLines();
   }
 
 };
@@ -1288,8 +1384,8 @@ Tile.prototype = {
     el.className = 'tile';
 
     // debug
-    //var idData = id.split('-');
-    //el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
+    var idData = id.split('-');
+    el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
 
     return el;
   },

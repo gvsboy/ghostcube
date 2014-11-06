@@ -986,6 +986,7 @@ h2 {
   -ms-transform: translateZ(0.01em);
   -moz-transform: translateZ(0.01em);
   -webkit-transform: translateZ(0.01em);
+  color: #fff;
 }
 .tile.highlighted {
   background-color: darkgreen;

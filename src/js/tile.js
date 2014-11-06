@@ -19,8 +19,8 @@ Tile.prototype = {
     el.className = 'tile';
 
     // debug
-    //var idData = id.split('-');
-    //el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
+    var idData = id.split('-');
+    el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
 
     return el;
   },

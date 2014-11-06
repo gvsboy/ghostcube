@@ -171,6 +171,8 @@ h2 {
   background-color: #000;
   @include transform(translateZ(0.01em));
 
+  color: #fff;//debug
+
   &.highlighted {
     background-color: $tile-highlighted;
   }

@@ -103,6 +103,10 @@ App.prototype = {
     }
     this.currentPlayer = player;
     this.messages.add(player.name + '\'s turn!', 'alert');
+
+    //debug
+    console.log('+++ cubeCache:', player.name, player._cubeCache._sideMap);
+    console.log('ooo lineMap:', player.name, player._cubeCache._lineMap);
   },
 
   selectTile: function(tile) {
@@ -147,25 +151,11 @@ App.prototype = {
   checkWin: function() {
 
     var winLines = [],
-        size = this.cube.size,
-        player = this.currentPlayer;
+        size = this.cube.size;
 
     // Loop through each cube side.
-    _.forEach(this.cube._sides, function(side) {
-
-      // Find all the tiles claimed by this player.
-      var claimedTiles = _.filter(side.getTiles(), {claimedBy: player}),
-          map;
-
-      // If there are not enough tiles available for a line, exit immediately.
-      if (claimedTiles.length < size) {
-        return;
-      }
-
-      // Build an index map of the claimed tiles for faster lookup.
-      map = _.times(Math.pow(size, 2), function(i) {
-        return _.find(claimedTiles, {index: i});
-      });
+    // Testing out CubeCache...
+    _.forEach(this.currentPlayer._cubeCache._sideMap, function(map) {
 
       // Check for vertical matches.
       // Inspect each starting index from 0 and leftwards.
@@ -225,7 +215,7 @@ App.prototype = {
     if (winBy) {
       modifier = winBy > 1 ? ' x' + winBy + '!' : '!';
       this.messages.add(player.name + ' wins' + modifier, 'alert');
-      return;// just return for now. should set a win state.
+      //return;// just return for now. should set a win state.
     }
 
     // Else, switch players and continue.
@@ -264,7 +254,10 @@ App.prototype = {
     var tile = this._getTileFromElement(evt.target),
 
         // The first tile that has been selected.
-        initialTile = _.first(this.selectedTiles);
+        initialTile = _.first(this.selectedTiles),
+
+        // The union of the first and potential second tile.
+        helperTile = this._helperTile;
 
     // If the target is a tile, let's figure out what to do with it.
     if (tile) {
@@ -307,13 +300,13 @@ App.prototype = {
           else {
 
             // If the attack target is claimed by the current player, don't claim it again!
-            if (this._helperTile.claimedBy) {
-              if (this._helperTile.claimedBy === this.currentPlayer) {
+            if (helperTile.claimedBy) {
+              if (helperTile.claimedBy === this.currentPlayer) {
                 this.messages.add('targetClaimed');
               }
               // Otherwise, cancel the two tiles out.
               else {
-                this.currentPlayer.release(this._helperTile);
+                helperTile.claimedBy.release(helperTile);
                 this.selectedTiles.push(tile);
                 this.claim();
               }
@@ -321,7 +314,7 @@ App.prototype = {
 
             // Otherwise, a valid selection has been made! Claim both.
             else {
-              this.selectedTiles.push(tile, this._helperTile);
+              this.selectedTiles.push(tile, helperTile);
               this.claim();
               this.tutorial.next().next();
             }

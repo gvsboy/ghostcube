@@ -18,6 +18,10 @@ Player.prototype = {
   release: function(tile) {
     tile.release();
     this._cubeCache.remove(tile);
+  },
+
+  getLines: function() {
+    return this._cubeCache.getLines();
   }
 
 };
