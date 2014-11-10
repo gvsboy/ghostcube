@@ -72,7 +72,7 @@ CubeCache.prototype = {
 
       side = this._lineMap[_.first(tiles).side.id];
       line = _.find(side, function(ln) {
-        return ln.matches(tiles);
+        return ln && ln.all(tiles);
       });
 
       if (line) {
@@ -86,13 +86,28 @@ CubeCache.prototype = {
 
   _shrinkLine: function(tiles) {
 
-    var side = this._lineMap[_.first(tiles).side.id];
-        line = _.find(side, function(ln) {
-          return ln.matches(tiles);
-        });
+    var side, line;
 
-    if (line) {
+    if (tiles.length) {
 
+      side = this._lineMap[_.first(tiles).side.id];
+      line = _.find(side, function(ln) {
+        return ln && ln.some(tiles);
+      });
+
+      // Line should exist but just in case...
+      if (line) {
+
+        // If there's only one tile, it's not a line. Clear it.
+        if (tiles.length === 1) {
+          side[side.indexOf(line)] = null;
+        }
+
+        // Otherwise, update the line with the remaining tiles.
+        else {
+          line.update(tiles);
+        }
+      }
     }
   }
 

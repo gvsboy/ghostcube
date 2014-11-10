@@ -11,12 +11,15 @@ function Line(tiles) {
 Line.prototype = {
 
   /**
-   * Checks to see if the line contains some or all of the passed tiles.
-   * If so, it is a match.
+   * Checks to see if the line contains all of the passed tiles.
    * @param  {Array} tiles The tiles to check.
    * @return {Boolean}     Does the line contain the passed tiles?
    */
-  matches: function(tiles) {
+  all: function(tiles) {
+    return _.intersection(tiles, this._tiles).length >= this._tiles.length;
+  },
+
+  some: function(tiles) {
     return !!_.intersection(tiles, this._tiles).length;
   },
 

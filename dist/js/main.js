@@ -887,7 +887,7 @@ CubeCache.prototype = {
 
       side = this._lineMap[_.first(tiles).side.id];
       line = _.find(side, function(ln) {
-        return ln.matches(tiles);
+        return ln && ln.all(tiles);
       });
 
       if (line) {
@@ -901,13 +901,28 @@ CubeCache.prototype = {
 
   _shrinkLine: function(tiles) {
 
-    var side = this._lineMap[_.first(tiles).side.id];
-        line = _.find(side, function(ln) {
-          return ln.matches(tiles);
-        });
+    var side, line;
 
-    if (line) {
+    if (tiles.length) {
 
+      side = this._lineMap[_.first(tiles).side.id];
+      line = _.find(side, function(ln) {
+        return ln && ln.some(tiles);
+      });
+
+      // Line should exist but just in case...
+      if (line) {
+
+        // If there's only one tile, it's not a line. Clear it.
+        if (tiles.length === 1) {
+          side[side.indexOf(line)] = null;
+        }
+
+        // Otherwise, update the line with the remaining tiles.
+        else {
+          line.update(tiles);
+        }
+      }
     }
   }
 
@@ -926,12 +941,15 @@ function Line(tiles) {
 Line.prototype = {
 
   /**
-   * Checks to see if the line contains some or all of the passed tiles.
-   * If so, it is a match.
+   * Checks to see if the line contains all of the passed tiles.
    * @param  {Array} tiles The tiles to check.
    * @return {Boolean}     Does the line contain the passed tiles?
    */
-  matches: function(tiles) {
+  all: function(tiles) {
+    return _.intersection(tiles, this._tiles).length >= this._tiles.length;
+  },
+
+  some: function(tiles) {
     return !!_.intersection(tiles, this._tiles).length;
   },
 
