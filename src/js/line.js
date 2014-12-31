@@ -28,19 +28,17 @@ Line.prototype = {
   },
 
   /**
+   * @return {Array} A collection of tiles that compose the line.
+   */
+  getTiles: function() {
+    return this._tiles;
+  },
+
+  /**
    * @return {Number} The number of tiles in the line.
    */
   length: function() {
     return this._tiles.length;
-  },
-
-  /**
-   * @return {Array} A collection of the tile indicies composing the line.
-   */
-  getIndicies: function() {
-    return _.map(this._tiles, function(tile) {
-      return tile.index;
-    });
   },
 
   /**
@@ -50,19 +48,19 @@ Line.prototype = {
    */
   missing: function(cube) {
 
-    var indicies = this.getIndicies(),
-        diff = _.last(indicies) - _.first(indicies);
+    // First, get the side this line resides on.
+    var side = cube.getSide(this.sideId),
 
-    // If the line is horizontal, mod will be zero.
-    if (diff % cube.size) {
+        // Next, get the line pair for the first tile in this line.
+        pair = side.getLinePair(_.first(this.getTiles())),
 
-    }
+        // Find the line in the pair that corresponds to this line.
+        matchedLine = _.find(pair, function(line) {
+          return this.all(line.getTiles());
+        }, this);
 
-    // Otherwise, it's a vertical line.
-    else {
-      
-    }
-
+    // Now we can figure out which tiles are missing by diffing the two lines.
+    return _.xor(this.getTiles(), matchedLine.getTiles());
   }
 
 };

@@ -11,6 +11,8 @@ function Side(el, size) {
 
   // An array of all the tiles by index.
   this._tiles = this._buildTiles(size);
+
+  this._lines = this._buildLines(size, this._tiles);
 }
 
 Side.prototype = {
@@ -53,6 +55,31 @@ Side.prototype = {
     return this._tiles;
   },
 
+  /**
+   * Gets an x/y line pair that intersect at the given tile.
+   * @param  {Tile} tile The reference tile.
+   * @return {Array}     The x and y lines that intersect at the tile.
+   */
+  getLinePair: function(tile) {
+    return this._lines[tile.index];
+  },
+
+  /**
+   * Selects the x and y lines at the index intersection and
+   * performs the callback function on each tile.
+   * @param  {Tile}     tile    The tile that dictates which lines to select.
+   * @param  {Function} callback A method to invoke on each tile.
+   */
+  updateLines: function(tile, callback) {
+    _.chain(this.getLinePair(tile))
+      .map(function(line) {
+        return line.getTiles();
+      })
+      .flatten()
+      .uniq()
+      .forEach(callback);
+  },
+
   _buildTiles: function(size) {
 
     var DELAY_MAX = 2000,
@@ -72,6 +99,37 @@ Side.prototype = {
     }, delay);
 
     return tile;
+  },
+
+  _buildLines: function(size, tiles) {
+
+    // Let's build some lines.
+    var xLines = _.times(size, function(n) {
+      return new Line(tiles.slice(n * size, (n + 1) * size));
+    });
+
+    var yLines = _.times(size, function(n) {
+      var arr = _.times(size, function(i) {
+        return n + i * size;
+      });
+      return new Line(_.at(tiles, arr));
+    });
+
+    var lines = {
+      x: xLines,
+      y: yLines
+    };
+
+    return _.map(tiles, function(tile, index) {
+
+      // Holds two lines: x and y.
+      var mod = index % size;
+
+      return [
+        lines.x[(index - mod) / size],
+        lines.y[mod]
+      ];
+    });
   }
 
 };

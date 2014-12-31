@@ -383,8 +383,13 @@ Bot.prototype = {
     // If the bot has some winning moves, try some scenarios out.
     _.forEach(botWinningMoves, function(line) {
 
-      // Find out which tiles are missing from the line.
-      var missing = line.missing(cube);
+      // Find out which tiles are missing from the line and
+      // loop through them to determine which ones can be captured.
+      _.forEach(line.missing(cube), function(tile) {
+
+        console.log('# missing tile:', tile);
+      });
+
     });
   }
 
@@ -501,7 +506,7 @@ Cube.prototype = {
         lines = this.getLines(tile.index);
 
     // Update all the appropriate tiles on the origin tile's side.
-    _.forEach(side.getTiles(lines), callback);
+    side.updateLines(tile, callback);
 
     // For each neighbor, pass in the side and the orientation id (e.g. 'left').
     _.forEach(side.getNeighbors(), function(neighbor) {
@@ -997,19 +1002,17 @@ Line.prototype = {
   },
 
   /**
+   * @return {Array} A collection of tiles that compose the line.
+   */
+  getTiles: function() {
+    return this._tiles;
+  },
+
+  /**
    * @return {Number} The number of tiles in the line.
    */
   length: function() {
     return this._tiles.length;
-  },
-
-  /**
-   * @return {Array} A collection of the tile indicies composing the line.
-   */
-  getIndicies: function() {
-    return _.map(this._tiles, function(tile) {
-      return tile.index;
-    });
   },
 
   /**
@@ -1019,19 +1022,19 @@ Line.prototype = {
    */
   missing: function(cube) {
 
-    var indicies = this.getIndicies(),
-        diff = _.last(indicies) - _.first(indicies);
+    // First, get the side this line resides on.
+    var side = cube.getSide(this.sideId),
 
-    // If the line is horizontal, mod will be zero.
-    if (diff % cube.size) {
+        // Next, get the line pair for the first tile in this line.
+        pair = side.getLinePair(_.first(this.getTiles())),
 
-    }
+        // Find the line in the pair that corresponds to this line.
+        matchedLine = _.find(pair, function(line) {
+          return this.all(line.getTiles());
+        }, this);
 
-    // Otherwise, it's a vertical line.
-    else {
-      
-    }
-
+    // Now we can figure out which tiles are missing by diffing the two lines.
+    return _.xor(this.getTiles(), matchedLine.getTiles());
   }
 
 };
@@ -1393,6 +1396,8 @@ function Side(el, size) {
 
   // An array of all the tiles by index.
   this._tiles = this._buildTiles(size);
+
+  this._lines = this._buildLines(size, this._tiles);
 }
 
 Side.prototype = {
@@ -1435,6 +1440,31 @@ Side.prototype = {
     return this._tiles;
   },
 
+  /**
+   * Gets an x/y line pair that intersect at the given tile.
+   * @param  {Tile} tile The reference tile.
+   * @return {Array}     The x and y lines that intersect at the tile.
+   */
+  getLinePair: function(tile) {
+    return this._lines[tile.index];
+  },
+
+  /**
+   * Selects the x and y lines at the index intersection and
+   * performs the callback function on each tile.
+   * @param  {Tile}     tile    The tile that dictates which lines to select.
+   * @param  {Function} callback A method to invoke on each tile.
+   */
+  updateLines: function(tile, callback) {
+    _.chain(this.getLinePair(tile))
+      .map(function(line) {
+        return line.getTiles();
+      })
+      .flatten()
+      .uniq()
+      .forEach(callback);
+  },
+
   _buildTiles: function(size) {
 
     var DELAY_MAX = 2000,
@@ -1454,6 +1484,37 @@ Side.prototype = {
     }, delay);
 
     return tile;
+  },
+
+  _buildLines: function(size, tiles) {
+
+    // Let's build some lines.
+    var xLines = _.times(size, function(n) {
+      return new Line(tiles.slice(n * size, (n + 1) * size));
+    });
+
+    var yLines = _.times(size, function(n) {
+      var arr = _.times(size, function(i) {
+        return n + i * size;
+      });
+      return new Line(_.at(tiles, arr));
+    });
+
+    var lines = {
+      x: xLines,
+      y: yLines
+    };
+
+    return _.map(tiles, function(tile, index) {
+
+      // Holds two lines: x and y.
+      var mod = index % size;
+
+      return [
+        lines.x[(index - mod) / size],
+        lines.y[mod]
+      ];
+    });
   }
 
 };

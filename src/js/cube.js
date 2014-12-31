@@ -109,7 +109,7 @@ Cube.prototype = {
         lines = this.getLines(tile.index);
 
     // Update all the appropriate tiles on the origin tile's side.
-    _.forEach(side.getTiles(lines), callback);
+    side.updateLines(tile, callback);
 
     // For each neighbor, pass in the side and the orientation id (e.g. 'left').
     _.forEach(side.getNeighbors(), function(neighbor) {

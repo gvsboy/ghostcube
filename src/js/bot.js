@@ -38,8 +38,13 @@ Bot.prototype = {
     // If the bot has some winning moves, try some scenarios out.
     _.forEach(botWinningMoves, function(line) {
 
-      // Find out which tiles are missing from the line.
-      var missing = line.missing(cube);
+      // Find out which tiles are missing from the line and
+      // loop through them to determine which ones can be captured.
+      _.forEach(line.missing(cube), function(tile) {
+
+        console.log('# missing tile:', tile);
+      });
+
     });
   }
 
