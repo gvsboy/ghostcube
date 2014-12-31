@@ -1,5 +1,8 @@
 function CubeCache(cube) {
 
+  // A reference to the cube.
+  this._cube = cube;
+
   // The size to check completed lines against.
   this._cubeSize = cube.size;
 
@@ -32,8 +35,20 @@ CubeCache.prototype = {
     this._shrinkLine(this._getYTiles(side, index));
   },
 
+  /**
+   * Retrieves all the lines, sorted by the number of tiles contained
+   * in each line.
+   * @return {Array} A collection of lines.
+   */
   getLines: function() {
-    return this._lines;
+    return _.chain(this._lineMap)
+      .values()
+      .flatten()
+      .compact()
+      .sortBy(function(line) {
+        return line._tiles.length;
+      })
+      .value();
   },
 
   /**

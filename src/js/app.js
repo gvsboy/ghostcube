@@ -104,9 +104,13 @@ App.prototype = {
     this.currentPlayer = player;
     this.messages.add(player.name + '\'s turn!', 'alert');
 
+    if (player.isBot()) {
+      player.play();
+    }
+
     //debug
-    console.log('+++ cubeCache:', player.name, player._cubeCache._sideMap);
-    console.log('ooo lineMap:', player.name, player._cubeCache._lineMap);
+    //console.log('+++ cubeCache:', player.name, player._cubeCache._sideMap);
+    //console.log('ooo lineMap:', player.name, player._cubeCache._lineMap);
   },
 
   selectTile: function(tile) {

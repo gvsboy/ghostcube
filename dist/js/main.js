@@ -104,9 +104,13 @@ App.prototype = {
     this.currentPlayer = player;
     this.messages.add(player.name + '\'s turn!', 'alert');
 
+    if (player.isBot()) {
+      player.play();
+    }
+
     //debug
-    console.log('+++ cubeCache:', player.name, player._cubeCache._sideMap);
-    console.log('ooo lineMap:', player.name, player._cubeCache._lineMap);
+    //console.log('+++ cubeCache:', player.name, player._cubeCache._sideMap);
+    //console.log('ooo lineMap:', player.name, player._cubeCache._lineMap);
   },
 
   selectTile: function(tile) {
@@ -358,10 +362,30 @@ Bot.prototype = {
 
         - Neutralizing a tile?
         - Claiming the missing tile?
-
-
      */
+    var cube = this._cubeCache._cube;
 
+    console.log('============== BOT MOVE ==============');
+
+    var lines = this.getLines(),
+        playerLines = this.opponent.getLines();
+
+    console.log('= bot lines:', lines);
+    console.log('= player lines:', playerLines);
+
+    // Check if the bot is about to win:
+    var size = this._cubeCache._cubeSize;
+    var botWinningMoves = _.filter(lines, function(line) {
+      return line.length() === size - 1;
+    });
+    console.log('= bot winning moves:', botWinningMoves);
+
+    // If the bot has some winning moves, try some scenarios out.
+    _.forEach(botWinningMoves, function(line) {
+
+      // Find out which tiles are missing from the line.
+      var missing = line.missing(cube);
+    });
   }
 
 };
@@ -379,7 +403,7 @@ function Cube(el, size) {
 
   // Maps out the lines (x, y) that should be highlighted per index click.
   this._lineMap = this._buildLineMap();
-
+console.log(this._lineMap);
   // Translates highlighted lines to different sides, normalizing the coordinate system.
   this._translationMap = this._buildTranslationMap();
 
@@ -783,7 +807,7 @@ Cube.prototype = {
     return _.times(Math.pow(size, 2), function(i) {
 
       // Holds two arrays: x tiles and y tiles
-      var lines = [],
+      var pair = [],
 
           // Starting at the left, how far are we down x-wise?
           mod = i % size,
@@ -793,17 +817,17 @@ Cube.prototype = {
           yStart = mod;
 
       // Collect the x line, left to right.
-      lines.push(_.times(size, function(x) {
+      pair.push(_.times(size, function(x) {
         return xStart + x;
       })),
 
       // Collect the y line, top to bottom.
-      lines.push(_.times(size, function(y) {
+      pair.push(_.times(size, function(y) {
         return yStart + (y * size);
       }));
 
       // Return this tile config.
-      return lines;
+      return pair;
     });
   }
 
@@ -814,6 +838,9 @@ Cube.prototype = {
 _.assign(Cube.prototype, EventEmitter2.prototype);
 
 function CubeCache(cube) {
+
+  // A reference to the cube.
+  this._cube = cube;
 
   // The size to check completed lines against.
   this._cubeSize = cube.size;
@@ -847,8 +874,20 @@ CubeCache.prototype = {
     this._shrinkLine(this._getYTiles(side, index));
   },
 
+  /**
+   * Retrieves all the lines, sorted by the number of tiles contained
+   * in each line.
+   * @return {Array} A collection of lines.
+   */
   getLines: function() {
-    return this._lines;
+    return _.chain(this._lineMap)
+      .values()
+      .flatten()
+      .compact()
+      .sortBy(function(line) {
+        return line._tiles.length;
+      })
+      .value();
   },
 
   /**
@@ -946,7 +985,7 @@ Line.prototype = {
    * @return {Boolean}     Does the line contain the passed tiles?
    */
   all: function(tiles) {
-    return _.intersection(tiles, this._tiles).length >= this._tiles.length;
+    return _.intersection(tiles, this._tiles).length >= this.length();
   },
 
   some: function(tiles) {
@@ -955,6 +994,44 @@ Line.prototype = {
 
   update: function(tiles) {
     this._tiles = tiles;
+  },
+
+  /**
+   * @return {Number} The number of tiles in the line.
+   */
+  length: function() {
+    return this._tiles.length;
+  },
+
+  /**
+   * @return {Array} A collection of the tile indicies composing the line.
+   */
+  getIndicies: function() {
+    return _.map(this._tiles, function(tile) {
+      return tile.index;
+    });
+  },
+
+  /**
+   * Given a reference cube, returns the tiles missing from the line.
+   * @param  {Number} length The number of tiles to match against.
+   * @return {Array}         A collection of the misisng tiles.
+   */
+  missing: function(cube) {
+
+    var indicies = this.getIndicies(),
+        diff = _.last(indicies) - _.first(indicies);
+
+    // If the line is horizontal, mod will be zero.
+    if (diff % cube.size) {
+
+    }
+
+    // Otherwise, it's a vertical line.
+    else {
+      
+    }
+
   }
 
 };

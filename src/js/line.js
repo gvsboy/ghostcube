@@ -16,7 +16,7 @@ Line.prototype = {
    * @return {Boolean}     Does the line contain the passed tiles?
    */
   all: function(tiles) {
-    return _.intersection(tiles, this._tiles).length >= this._tiles.length;
+    return _.intersection(tiles, this._tiles).length >= this.length();
   },
 
   some: function(tiles) {
@@ -25,6 +25,44 @@ Line.prototype = {
 
   update: function(tiles) {
     this._tiles = tiles;
+  },
+
+  /**
+   * @return {Number} The number of tiles in the line.
+   */
+  length: function() {
+    return this._tiles.length;
+  },
+
+  /**
+   * @return {Array} A collection of the tile indicies composing the line.
+   */
+  getIndicies: function() {
+    return _.map(this._tiles, function(tile) {
+      return tile.index;
+    });
+  },
+
+  /**
+   * Given a reference cube, returns the tiles missing from the line.
+   * @param  {Number} length The number of tiles to match against.
+   * @return {Array}         A collection of the misisng tiles.
+   */
+  missing: function(cube) {
+
+    var indicies = this.getIndicies(),
+        diff = _.last(indicies) - _.first(indicies);
+
+    // If the line is horizontal, mod will be zero.
+    if (diff % cube.size) {
+
+    }
+
+    // Otherwise, it's a vertical line.
+    else {
+      
+    }
+
   }
 
 };

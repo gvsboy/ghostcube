@@ -11,7 +11,7 @@ function Cube(el, size) {
 
   // Maps out the lines (x, y) that should be highlighted per index click.
   this._lineMap = this._buildLineMap();
-
+console.log(this._lineMap);
   // Translates highlighted lines to different sides, normalizing the coordinate system.
   this._translationMap = this._buildTranslationMap();
 
@@ -415,7 +415,7 @@ Cube.prototype = {
     return _.times(Math.pow(size, 2), function(i) {
 
       // Holds two arrays: x tiles and y tiles
-      var lines = [],
+      var pair = [],
 
           // Starting at the left, how far are we down x-wise?
           mod = i % size,
@@ -425,17 +425,17 @@ Cube.prototype = {
           yStart = mod;
 
       // Collect the x line, left to right.
-      lines.push(_.times(size, function(x) {
+      pair.push(_.times(size, function(x) {
         return xStart + x;
       })),
 
       // Collect the y line, top to bottom.
-      lines.push(_.times(size, function(y) {
+      pair.push(_.times(size, function(y) {
         return yStart + (y * size);
       }));
 
       // Return this tile config.
-      return lines;
+      return pair;
     });
   }
 
