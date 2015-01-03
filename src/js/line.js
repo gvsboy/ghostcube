@@ -4,7 +4,7 @@
  * @param {Array} tiles  A collection of tiles that compose the line.
  */
 function Line(tiles) {
-  this.sideId = _.first(tiles).side.id;
+  this.side = _.first(tiles).side;
   this.update(tiles);
 }
 
@@ -34,7 +34,7 @@ Line.prototype = {
    */
   isHorizontal: function() {
     var tiles = this.getTiles();
-    return tiles[1].index = tiles[0].index + 1;
+    return tiles[1].index === tiles[0].index + 1;
   },
 
   /**

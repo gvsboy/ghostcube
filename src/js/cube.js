@@ -9,9 +9,6 @@ function Cube(el, size) {
   // Cached reference to the style object.
   this.style                  = this.el.style;
 
-  // Maps out the lines (x, y) that should be highlighted per index click.
-  this._lineMap = this._buildLineMap();
-
   // Translates highlighted lines to different sides, normalizing the coordinate system.
   this._translationMap = this._buildTranslationMap();
 
@@ -86,13 +83,6 @@ Cube.prototype = {
     return this._sides[name];
   },
 
-  getLines: function(index, coordinate) {
-    if (_.isNumber(coordinate)) {
-      return this._lineMap[index][coordinate];
-    }
-    return this._lineMap[index];
-  },
-
   /**
    * Updates the passed tile and all related adjacent tiles with the
    * passed callback. This method is mostly used for highlighting tiles
@@ -149,11 +139,11 @@ Cube.prototype = {
         line = _.first(translation) === 'x' ? tile.xLine : tile.yLine;
 
     // Run through each translation method (flip, rotate) and return the result.
-    var indicies = _.reduce(_.rest(translation), function(transformedLine, method) {
+    var newLine = _.reduce(_.rest(translation), function(transformedLine, method) {
       return method(transformedLine);
-    }, line.indicies());
+    }, line);
 
-    return toSide.getTiles(indicies);
+    return toSide.getTiles(newLine.indicies());
   },
 
   // Rotate in place, like a Tetrad. For instance:
@@ -162,29 +152,26 @@ Cube.prototype = {
   // xoo      ooo
   _rotateLine: function(line) {
 
-    // Cache the cube size.
-    var size = this.size,
+    // Cache the line length.
+    var size = line.length(),
 
         // Where the line begins, starting from top-left.
-        origin = line[0],
-
-        // Horizontal lines contain points that increment by one.
-        isHorizontal = line[1] === origin + 1,
+        origin = line.indicies()[0],
 
         // The transformed line.
         rotatedLine,
 
         indexAt;
 
-    if (isHorizontal) {
+    if (line.isHorizontal()) {
       // The row (starting at top-right and down).
       indexAt = origin - (origin % size);
-      rotatedLine = this.getLines(indexAt + (indexAt / size), 1);
+      rotatedLine = line.side.getTiles(indexAt + (indexAt / size))[0].yLine;
     }
     else {
       // The column (starting top-right and across).
       indexAt = origin % size;
-      rotatedLine = this.getLines(indexAt * size, 0);
+      rotatedLine = line.side.getTiles(indexAt * size)[0].xLine;
     }
 
     return rotatedLine;
@@ -196,14 +183,11 @@ Cube.prototype = {
   //    xoo      oox
   _flipLine: function(line) {
 
-    // Cache the cube size.
-    var size = this.size,
+    // Cache the line length.
+    var size = line.length(),
 
         // Where the line begins, starting from top-left.
-        origin = line[0],
-
-        // Horizontal lines contain points that increment by one.
-        isHorizontal = line[1] === origin + 1,
+        origin = line.indicies()[0],
 
         // The transformed line.
         flippedLine,
@@ -218,7 +202,7 @@ Cube.prototype = {
         diff;
 
     // If the line is vertical:
-    if (!isHorizontal) {
+    if (!line.isHorizontal()) {
 
       // The column (starting at top-left and across).
       indexAt = origin % size;
@@ -228,7 +212,7 @@ Cube.prototype = {
 
       // Determine the difference and get the calculated y line.
       diff = middle - indexAt;
-      flippedLine = this.getLines(middle + diff, 1);
+      flippedLine = line.side.getTiles(middle + diff)[0].yLine;
     }
 
     // Else, the line must be horizontal:
@@ -243,7 +227,7 @@ Cube.prototype = {
 
       // Determine the difference and get the calculated x line.
       diff = middle - indexAt;
-      flippedLine = this.getLines(middle + diff, 0);
+      flippedLine = line.side.getTiles(middle + diff)[0].xLine;
     }
 
     return flippedLine;
@@ -410,40 +394,6 @@ Cube.prototype = {
         back:     [X]                 // right
       }
     };
-  },
-
-  _buildLineMap: function() {
-
-    // Loop through each tile index and calculate the two rows (x, y) each one generates.
-    // Base it on the size (3 tiles, 4 tiles, etc.)
-    var size = this.size;
-
-    // For each index, generate the x and y lines that should be highlighted.
-    return _.times(Math.pow(size, 2), function(i) {
-
-      // Holds two arrays: x tiles and y tiles
-      var pair = [],
-
-          // Starting at the left, how far are we down x-wise?
-          mod = i % size,
-
-          // We want to start at top left.
-          xStart = i - mod,
-          yStart = mod;
-
-      // Collect the x line, left to right.
-      pair.push(_.times(size, function(x) {
-        return xStart + x;
-      })),
-
-      // Collect the y line, top to bottom.
-      pair.push(_.times(size, function(y) {
-        return yStart + (y * size);
-      }));
-
-      // Return this tile config.
-      return pair;
-    });
   }
 
 };
