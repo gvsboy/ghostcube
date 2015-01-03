@@ -6,6 +6,8 @@ function Tile(side, index) {
   this.index = index;
 
   this.claimedBy = null;
+  this.xLine = null;
+  this.yLine = null;
 
   // Append the tile's element to the side.
   side.el.appendChild(this.el);
@@ -67,6 +69,11 @@ Tile.prototype = {
 
   hasClass: function(name) {
     return this.el.classList.contains(name);
+  },
+
+  updateLines: function(x, y) {
+    this.xLine = x;
+    this.yLine = y;
   }
 
 };

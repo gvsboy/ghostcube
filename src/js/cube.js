@@ -11,7 +11,7 @@ function Cube(el, size) {
 
   // Maps out the lines (x, y) that should be highlighted per index click.
   this._lineMap = this._buildLineMap();
-console.log(this._lineMap);
+
   // Translates highlighted lines to different sides, normalizing the coordinate system.
   this._translationMap = this._buildTranslationMap();
 
@@ -102,20 +102,16 @@ Cube.prototype = {
    */
   updateAdjacentTiles: function(tile, callback) {
 
-    // The tile's side.
-    var side = tile.side,
-
-        // The highlightable lines related to the origin tile's index.
-        lines = this.getLines(tile.index);
-
-    // Update all the appropriate tiles on the origin tile's side.
-    side.updateLines(tile, callback);
+    tile.side.updateLines(tile, callback);
 
     // For each neighbor, pass in the side and the orientation id (e.g. 'left').
-    _.forEach(side.getNeighbors(), function(neighbor) {
+    _.forEach(tile.side.getNeighbors(), function(neighbor) {
 
-      // Get all the translated tiles based on the origin tile and update.
-      _.forEach(neighbor.getTiles(this._translate(lines, neighbor.id, side.id)), callback);
+      // Find the translated indicies.
+      var tiles = this._translate(tile, neighbor);
+
+      // Run the callback on each tile.
+      _.forEach(tiles, callback);
 
     }, this);
   },
@@ -129,13 +125,35 @@ Cube.prototype = {
     _.forEach(neighbors, function(neighbor) {
 
       if (neighbor.isVisible(this.x, this.y)) {
-        var highlightTiles = neighbor.getTiles(this._translate(this.getLines(tile.index), neighbor.id, tile.side.id));
+
+        var highlightTiles = this._translate(tile, neighbor);
+
         var helperTile = _.find(highlightTiles, function(ti) {
           return ti.hasClass('highlighted');
         });
+
         callback(helperTile);
       }
     }, this);
+  },
+
+  _translate: function(tile, toSide) {
+
+    // A translation is a recipe for morphing one line into another.
+    // It looks like this: [1, flip]
+    // Where: The first index is the coordinate to use in a line pair
+    //        The remaining indicies are methods to invoke on the line
+    var translation = this._translationMap[tile.side.id][toSide.id],
+
+        // The line from the line pair to use.
+        line = _.first(translation) === 'x' ? tile.xLine : tile.yLine;
+
+    // Run through each translation method (flip, rotate) and return the result.
+    var indicies = _.reduce(_.rest(translation), function(transformedLine, method) {
+      return method(transformedLine);
+    }, line.indicies());
+
+    return toSide.getTiles(indicies);
   },
 
   // Rotate in place, like a Tetrad. For instance:
@@ -229,15 +247,6 @@ Cube.prototype = {
     }
 
     return flippedLine;
-  },
-
-  _translate: function(lines, id, originId) {
-
-    var translation = this._translationMap[originId][id];
-
-    return _.reduce(_.rest(translation), function(line, method) {
-      return method(line);
-    }, lines[_.first(translation)]);
   },
 
   /**
@@ -353,54 +362,52 @@ Cube.prototype = {
     var flip = _.bind(this._flipLine, this),
         rotate = _.bind(this._rotateLine, this);
 
-    // Line coordinate mapping to side id (1 = x, 0 = y)
-    // follows format:
-    // top
-    // bottom
-    // left
-    // right
+    var X = 'x', Y = 'y';
+
+    // Line coordinate mapping to side id.
+    // [coordinate, methods...]
     return {
 
       front: {
-        top:      [1],
-        bottom:   [1],
-        left:     [0],
-        right:    [0]
+        top:      [Y],                // top
+        bottom:   [Y],                // bottom
+        left:     [X],                // left
+        right:    [X]                 // right
       },
 
       back: {
-        bottom:   [1, flip],
-        top:      [1, flip],
-        left:     [0],
-        right:    [0]
+        bottom:   [Y, flip],          // top
+        top:      [Y, flip],          // bottom
+        left:     [X],                // left
+        right:    [X]                 // right
       },
 
       top: {
-        back:     [1, flip],
-        front:    [1],
-        left:     [0, rotate],
-        right:    [0, flip, rotate],
+        back:     [Y, flip],          // top
+        front:    [Y],                // bottom
+        left:     [X, rotate],        // left
+        right:    [X, flip, rotate],  // right
       },
 
       bottom: {
-        front:    [1],
-        back:     [1, flip],
-        left:     [0, flip, rotate],
-        right:    [0, rotate]
+        front:    [Y],                // top
+        back:     [Y, flip],          // bottom
+        left:     [X, flip, rotate],  // left
+        right:    [X, rotate]         // right
       },
 
       left: {
-        top:      [1, rotate],
-        bottom:   [1, flip, rotate],
-        back:     [0],
-        front:    [0]
+        top:      [Y, rotate],        // top
+        bottom:   [Y, flip, rotate],  // bottom
+        back:     [X],                // left
+        front:    [X]                 // right
       },
 
       right: {
-        top:      [1, flip, rotate],
-        bottom:   [1, rotate],
-        front:    [0],
-        back:     [0]
+        top:      [Y, flip, rotate],  // top
+        bottom:   [Y, rotate],        // bottom
+        front:    [X],                // left
+        back:     [X]                 // right
       }
     };
   },

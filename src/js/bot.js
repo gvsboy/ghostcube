@@ -40,7 +40,7 @@ Bot.prototype = {
 
       // Find out which tiles are missing from the line and
       // loop through them to determine which ones can be captured.
-      _.forEach(line.missing(cube), function(tile) {
+      _.forEach(line.missingTiles(), function(tile) {
 
         console.log('# missing tile:', tile);
       });

@@ -70,7 +70,7 @@ Side.prototype = {
    * @param  {Tile}     tile    The tile that dictates which lines to select.
    * @param  {Function} callback A method to invoke on each tile.
    */
-  updateLines: function(tile, callback) {
+  updateLines: function(tile, callback, translate) {
     _.chain(this.getLinePair(tile))
       .map(function(line) {
         return line.getTiles();
@@ -78,6 +78,14 @@ Side.prototype = {
       .flatten()
       .uniq()
       .forEach(callback);
+  },
+
+  rotateLine: function(line) {
+
+  },
+
+  flipLine: function(line) {
+
   },
 
   _buildTiles: function(size) {
@@ -103,7 +111,7 @@ Side.prototype = {
 
   _buildLines: function(size, tiles) {
 
-    // Let's build some lines.
+    // Let's build some lines. OK!
     var xLines = _.times(size, function(n) {
       return new Line(tiles.slice(n * size, (n + 1) * size));
     });
@@ -125,10 +133,13 @@ Side.prototype = {
       // Holds two lines: x and y.
       var mod = index % size;
 
-      return [
-        lines.x[(index - mod) / size],
-        lines.y[mod]
-      ];
+      // temp place for my lines!!
+      var xLine = lines.x[(index - mod) / size],
+          yLine = lines.y[mod];
+
+      tile.updateLines(xLine, yLine);
+
+      return [xLine, yLine];
     });
   }
 

@@ -28,6 +28,16 @@ Line.prototype = {
   },
 
   /**
+   * Reports whether or not the line is horizontal by checking the
+   * index difference between two adjacent tiles.
+   * @return {Boolean} Is this line horizontal?
+   */
+  isHorizontal: function() {
+    var tiles = this.getTiles();
+    return tiles[1].index = tiles[0].index + 1;
+  },
+
+  /**
    * @return {Array} A collection of tiles that compose the line.
    */
   getTiles: function() {
@@ -42,25 +52,26 @@ Line.prototype = {
   },
 
   /**
-   * Given a reference cube, returns the tiles missing from the line.
-   * @param  {Number} length The number of tiles to match against.
-   * @return {Array}         A collection of the misisng tiles.
+   * @return {Array} The indicies of all the tiles.
    */
-  missing: function(cube) {
+  indicies: function() {
+    return _.map(this.getTiles(), function(tile) {
+      return tile.index;
+    });
+  },
 
-    // First, get the side this line resides on.
-    var side = cube.getSide(this.sideId),
+  /**
+   * @return {Array} A collection of the missing tiles.
+   */
+  missingTiles: function() {
 
-        // Next, get the line pair for the first tile in this line.
-        pair = side.getLinePair(_.first(this.getTiles())),
+    var tiles = this.getTiles(),
 
-        // Find the line in the pair that corresponds to this line.
-        matchedLine = _.find(pair, function(line) {
-          return this.all(line.getTiles());
-        }, this);
+        // Are we matching against a horizontal or vertical line?
+        matchedLine = this.isHorizontal() ? _.first(tiles).xLine : _.first(tiles).yLine;
 
     // Now we can figure out which tiles are missing by diffing the two lines.
-    return _.xor(this.getTiles(), matchedLine.getTiles());
+    return _.xor(tiles, matchedLine.getTiles());
   }
 
 };
