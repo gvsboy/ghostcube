@@ -406,9 +406,6 @@ function Cube(el, size) {
   // Cached reference to the style object.
   this.style                  = this.el.style;
 
-  // Translates highlighted lines to different sides, normalizing the coordinate system.
-  this._translationMap = this._buildTranslationMap();
-
   // This will be set in beginGame.
   this._sides = null;
 
@@ -489,13 +486,14 @@ Cube.prototype = {
    */
   updateAdjacentTiles: function(tile, callback) {
 
-    tile.side.updateLines(tile, callback);
+    tile.xLine.updateTiles(callback);
+    tile.yLine.updateTiles(callback);
 
     // For each neighbor, pass in the side and the orientation id (e.g. 'left').
     _.forEach(tile.side.getNeighbors(), function(neighbor) {
 
       // Find the translated indicies.
-      var tiles = this._translate(tile, neighbor);
+      var tiles = tile.translate(neighbor);
 
       // Run the callback on each tile.
       _.forEach(tiles, callback);
@@ -513,7 +511,7 @@ Cube.prototype = {
 
       if (neighbor.isVisible(this.x, this.y)) {
 
-        var highlightTiles = this._translate(tile, neighbor);
+        var highlightTiles = tile.translate(neighbor);
 
         var helperTile = _.find(highlightTiles, function(ti) {
           return ti.hasClass('highlighted');
@@ -522,112 +520,6 @@ Cube.prototype = {
         callback(helperTile);
       }
     }, this);
-  },
-
-  _translate: function(tile, toSide) {
-
-    // A translation is a recipe for morphing one line into another.
-    // It looks like this: [1, flip]
-    // Where: The first index is the coordinate to use in a line pair
-    //        The remaining indicies are methods to invoke on the line
-    var translation = this._translationMap[tile.side.id][toSide.id],
-
-        // The line from the line pair to use.
-        line = _.first(translation) === 'x' ? tile.xLine : tile.yLine;
-
-    // Run through each translation method (flip, rotate) and return the result.
-    var newLine = _.reduce(_.rest(translation), function(transformedLine, method) {
-      return method(transformedLine);
-    }, line);
-
-    return toSide.getTiles(newLine.indicies());
-  },
-
-  // Rotate in place, like a Tetrad. For instance:
-  // xoo      xxx
-  // xoo  ->  ooo
-  // xoo      ooo
-  _rotateLine: function(line) {
-
-    // Cache the line length.
-    var size = line.length(),
-
-        // Where the line begins, starting from top-left.
-        origin = line.indicies()[0],
-
-        // The transformed line.
-        rotatedLine,
-
-        indexAt;
-
-    if (line.isHorizontal()) {
-      // The row (starting at top-right and down).
-      indexAt = origin - (origin % size);
-      rotatedLine = line.side.getTiles(indexAt + (indexAt / size))[0].yLine;
-    }
-    else {
-      // The column (starting top-right and across).
-      indexAt = origin % size;
-      rotatedLine = line.side.getTiles(indexAt * size)[0].xLine;
-    }
-
-    return rotatedLine;
-  },
-
-  // Flip across a median. For instance:
-  //    xoo      oox
-  //    xoo  ->  oox
-  //    xoo      oox
-  _flipLine: function(line) {
-
-    // Cache the line length.
-    var size = line.length(),
-
-        // Where the line begins, starting from top-left.
-        origin = line.indicies()[0],
-
-        // The transformed line.
-        flippedLine,
-
-        // The row or column the line is in.
-        indexAt,
-
-        // The middle line.
-        middle,
-
-        // Distance difference between the index and middle.
-        diff;
-
-    // If the line is vertical:
-    if (!line.isHorizontal()) {
-
-      // The column (starting at top-left and across).
-      indexAt = origin % size;
-
-      // The middle column.
-      middle = (size - 1) / 2;
-
-      // Determine the difference and get the calculated y line.
-      diff = middle - indexAt;
-      flippedLine = line.side.getTiles(middle + diff)[0].yLine;
-    }
-
-    // Else, the line must be horizontal:
-    else {
-
-      // The row (starting at top-right and down).
-      indexAt = origin - (origin % size);
-
-      // The middle row, which is the size squared cut in half and floored.
-      // NOTE: This could be buggy with other sizes!
-      middle = Math.floor((Math.pow(size, 2) / 2) - 1);
-
-      // Determine the difference and get the calculated x line.
-      diff = middle - indexAt;
-      flippedLine = line.side.getTiles(middle + diff)[0].xLine;
-    }
-
-    return flippedLine;
   },
 
   /**
@@ -652,18 +544,6 @@ Cube.prototype = {
 
     return result;
   },
-
-
-
-
-
-// ------------------------------------------------------------------------------------------------------
-// ---------------------------------------------- MAPPINGS ----------------------------------------------
-// ------------------------------------------------------------------------------------------------------
-
-
-
-
 
   _buildSides: function(size) {
 
@@ -736,61 +616,6 @@ Cube.prototype = {
       side.setNeighbors(neighborMap[side.id]);
       side.setVisibilityMap(visibilityMap[side.id]);
     });
-  },
-
-  _buildTranslationMap: function() {
-
-    var flip = _.bind(this._flipLine, this),
-        rotate = _.bind(this._rotateLine, this);
-
-    var X = 'x', Y = 'y';
-
-    // Line coordinate mapping to side id.
-    // [coordinate, methods...]
-    return {
-
-      front: {
-        top:      [Y],                // top
-        bottom:   [Y],                // bottom
-        left:     [X],                // left
-        right:    [X]                 // right
-      },
-
-      back: {
-        bottom:   [Y, flip],          // top
-        top:      [Y, flip],          // bottom
-        left:     [X],                // left
-        right:    [X]                 // right
-      },
-
-      top: {
-        back:     [Y, flip],          // top
-        front:    [Y],                // bottom
-        left:     [X, rotate],        // left
-        right:    [X, flip, rotate],  // right
-      },
-
-      bottom: {
-        front:    [Y],                // top
-        back:     [Y, flip],          // bottom
-        left:     [X, flip, rotate],  // left
-        right:    [X, rotate]         // right
-      },
-
-      left: {
-        top:      [Y, rotate],        // top
-        bottom:   [Y, flip, rotate],  // bottom
-        back:     [X],                // left
-        front:    [X]                 // right
-      },
-
-      right: {
-        top:      [Y, flip, rotate],  // top
-        bottom:   [Y, rotate],        // bottom
-        front:    [X],                // left
-        back:     [X]                 // right
-      }
-    };
   }
 
 };
@@ -975,6 +800,12 @@ Line.prototype = {
     return this._tiles;
   },
 
+  updateTiles: function(callback) {
+    _.each(this.getTiles(), function(tile) {
+      callback(tile);
+    });
+  },
+
   /**
    * @return {Number} The number of tiles in the line.
    */
@@ -1003,6 +834,93 @@ Line.prototype = {
 
     // Now we can figure out which tiles are missing by diffing the two lines.
     return _.xor(tiles, matchedLine.getTiles());
+  },
+
+  // Rotate in place, like a Tetrad. For instance:
+  // xoo      xxx
+  // xoo  ->  ooo
+  // xoo      ooo
+  rotate: function() {
+
+    // Cache the line length.
+    var length = this.length(),
+
+        // Where the line begins, starting from top-left.
+        origin = this.indicies()[0],
+
+        // The transformed line.
+        newLine,
+
+        indexAt;
+
+    if (this.isHorizontal()) {
+      // The row (starting at top-right and down).
+      indexAt = origin - (origin % length);
+      newLine = this.side.getTiles(indexAt + (indexAt / length))[0].yLine;
+    }
+    else {
+      // The column (starting top-right and across).
+      indexAt = origin % length;
+      newLine = this.side.getTiles(indexAt * length)[0].xLine;
+    }
+
+    return newLine;
+  },
+
+  // Flip across a median. For instance:
+  //    xoo      oox
+  //    xoo  ->  oox
+  //    xoo      oox
+  flip: function() {
+
+    // Cache the line length.
+    var length = this.length(),
+
+        // Where the line begins, starting from top-left.
+        origin = this.indicies()[0],
+
+        // The transformed line.
+        newLine,
+
+        // The row or column the line is in.
+        indexAt,
+
+        // The middle line.
+        middle,
+
+        // Distance difference between the index and middle.
+        diff;
+
+    // If the line is vertical:
+    if (!this.isHorizontal()) {
+
+      // The column (starting at top-left and across).
+      indexAt = origin % length;
+
+      // The middle column.
+      middle = (length - 1) / 2;
+
+      // Determine the difference and get the calculated y line.
+      diff = middle - indexAt;
+      newLine = this.side.getTiles(middle + diff)[0].yLine;
+    }
+
+    // Else, the line must be horizontal:
+    else {
+
+      // The row (starting at top-right and down).
+      indexAt = origin - (origin % length);
+
+      // The middle row, which is the size squared cut in half and floored.
+      // NOTE: This could be buggy with other sizes!
+      middle = Math.floor((Math.pow(length, 2) / 2) - 1);
+
+      // Determine the difference and get the calculated x line.
+      diff = middle - indexAt;
+      newLine = this.side.getTiles(middle + diff)[0].xLine;
+    }
+
+    return newLine;
   }
 
 };
@@ -1364,8 +1282,6 @@ function Side(el, size) {
 
   // An array of all the tiles by index.
   this._tiles = this._buildTiles(size);
-
-  this._lines = this._buildLines(size, this._tiles);
 }
 
 Side.prototype = {
@@ -1408,92 +1324,55 @@ Side.prototype = {
     return this._tiles;
   },
 
-  /**
-   * Gets an x/y line pair that intersect at the given tile.
-   * @param  {Tile} tile The reference tile.
-   * @return {Array}     The x and y lines that intersect at the tile.
-   */
-  getLinePair: function(tile) {
-    return this._lines[tile.index];
-  },
-
-  /**
-   * Selects the x and y lines at the index intersection and
-   * performs the callback function on each tile.
-   * @param  {Tile}     tile    The tile that dictates which lines to select.
-   * @param  {Function} callback A method to invoke on each tile.
-   */
-  updateLines: function(tile, callback, translate) {
-    _.chain(this.getLinePair(tile))
-      .map(function(line) {
-        return line.getTiles();
-      })
-      .flatten()
-      .uniq()
-      .forEach(callback);
-  },
-
-  rotateLine: function(line) {
-
-  },
-
-  flipLine: function(line) {
-
-  },
-
   _buildTiles: function(size) {
 
-    var DELAY_MAX = 2000,
-        numberOfTiles = Math.pow(size, 2);
+    var tiles, lines;
 
-    return _.times(numberOfTiles, function(index) {
-      return this._placeTile(index, Math.random() * DELAY_MAX);
+    // First let's create an array of tiles based on the cube size.
+    tiles = _.times(Math.pow(size, 2), function(index) {
+      return this._placeTile(index);
     }, this);
+
+    // Now we'll create lines from the tiles.
+    lines = {
+
+      // Creating x coordinate lines.
+      x: _.times(size, function(n) {
+          return new Line(tiles.slice(n * size, (n + 1) * size));
+        }),
+
+      // Creating y coordinate lines.
+      y: _.times(size, function(n) {
+          var arr = _.times(size, function(i) {
+            return n + i * size;
+          });
+          return new Line(_.at(tiles, arr));
+        })
+    };
+
+    // For each tile, assign the correct lines.
+    _.each(tiles, function(tile, index) {
+
+      var mod = index % size;
+          xLine = lines.x[(index - mod) / size],
+          yLine = lines.y[mod];
+
+      tile.updateLines(xLine, yLine);
+    });
+
+    // Return the tiles.
+    return tiles;
   },
 
-  _placeTile: function(index, delay) {
+  _placeTile: function(index) {
 
     var tile = new Tile(this, index);
 
     window.setTimeout(function() {
       tile.addClass('init');
-    }, delay);
+    }, Math.random() * 2000);
 
     return tile;
-  },
-
-  _buildLines: function(size, tiles) {
-
-    // Let's build some lines. OK!
-    var xLines = _.times(size, function(n) {
-      return new Line(tiles.slice(n * size, (n + 1) * size));
-    });
-
-    var yLines = _.times(size, function(n) {
-      var arr = _.times(size, function(i) {
-        return n + i * size;
-      });
-      return new Line(_.at(tiles, arr));
-    });
-
-    var lines = {
-      x: xLines,
-      y: yLines
-    };
-
-    return _.map(tiles, function(tile, index) {
-
-      // Holds two lines: x and y.
-      var mod = index % size;
-
-      // temp place for my lines!!
-      var xLine = lines.x[(index - mod) / size],
-          yLine = lines.y[mod];
-
-      tile.updateLines(xLine, yLine);
-
-      return [xLine, yLine];
-    });
   }
 
 };
@@ -1574,9 +1453,84 @@ Tile.prototype = {
   updateLines: function(x, y) {
     this.xLine = x;
     this.yLine = y;
+  },
+
+  translate: function(toSide) {
+
+    // A translation is a recipe for morphing one line into another.
+    // It looks like this: [1, flip]
+    // Where: The first index is the coordinate to use in a line pair
+    //        The remaining indicies are methods to invoke on the line
+    var translation = Tile.translationMap[this.side.id][toSide.id],
+
+        // The line from the line pair to use.
+        line = _.first(translation) === 'x' ? this.xLine : this.yLine;
+
+    // Run through each translation method (flip, rotate) and return the result.
+    var newLine = _.reduce(_.rest(translation), function(transformedLine, method) {
+      return transformedLine[method]();
+    }, line);
+
+    return toSide.getTiles(newLine.indicies());
   }
 
 };
+
+Tile.translationMap = (function() {
+
+  var X = 'x',
+      Y = 'y',
+      FLIP = 'flip',
+      ROTATE = 'rotate';
+
+  // Line coordinate mapping to side id.
+  // [coordinate, methods...]
+  return {
+
+    front: {
+      top:      [Y],                // top
+      bottom:   [Y],                // bottom
+      left:     [X],                // left
+      right:    [X]                 // right
+    },
+
+    back: {
+      bottom:   [Y, FLIP],          // top
+      top:      [Y, FLIP],          // bottom
+      left:     [X],                // left
+      right:    [X]                 // right
+    },
+
+    top: {
+      back:     [Y, FLIP],          // top
+      front:    [Y],                // bottom
+      left:     [X, ROTATE],        // left
+      right:    [X, FLIP, ROTATE],  // right
+    },
+
+    bottom: {
+      front:    [Y],                // top
+      back:     [Y, FLIP],          // bottom
+      left:     [X, FLIP, ROTATE],  // left
+      right:    [X, ROTATE]         // right
+    },
+
+    left: {
+      top:      [Y, ROTATE],        // top
+      bottom:   [Y, FLIP, ROTATE],    // bottom
+      back:     [X],                // left
+      front:    [X]                 // right
+    },
+
+    right: {
+      top:      [Y, FLIP, ROTATE],  // top
+      bottom:   [Y, ROTATE],        // bottom
+      front:    [X],                // left
+      back:     [X]                 // right
+    }
+  };
+
+}());
 
 /**
  * A lightweight guided tutorial helper that is attached to a specific

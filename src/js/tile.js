@@ -74,6 +74,81 @@ Tile.prototype = {
   updateLines: function(x, y) {
     this.xLine = x;
     this.yLine = y;
+  },
+
+  translate: function(toSide) {
+
+    // A translation is a recipe for morphing one line into another.
+    // It looks like this: [1, flip]
+    // Where: The first index is the coordinate to use in a line pair
+    //        The remaining indicies are methods to invoke on the line
+    var translation = Tile.translationMap[this.side.id][toSide.id],
+
+        // The line from the line pair to use.
+        line = _.first(translation) === 'x' ? this.xLine : this.yLine;
+
+    // Run through each translation method (flip, rotate) and return the result.
+    var newLine = _.reduce(_.rest(translation), function(transformedLine, method) {
+      return transformedLine[method]();
+    }, line);
+
+    return toSide.getTiles(newLine.indicies());
   }
 
 };
+
+Tile.translationMap = (function() {
+
+  var X = 'x',
+      Y = 'y',
+      FLIP = 'flip',
+      ROTATE = 'rotate';
+
+  // Line coordinate mapping to side id.
+  // [coordinate, methods...]
+  return {
+
+    front: {
+      top:      [Y],                // top
+      bottom:   [Y],                // bottom
+      left:     [X],                // left
+      right:    [X]                 // right
+    },
+
+    back: {
+      bottom:   [Y, FLIP],          // top
+      top:      [Y, FLIP],          // bottom
+      left:     [X],                // left
+      right:    [X]                 // right
+    },
+
+    top: {
+      back:     [Y, FLIP],          // top
+      front:    [Y],                // bottom
+      left:     [X, ROTATE],        // left
+      right:    [X, FLIP, ROTATE],  // right
+    },
+
+    bottom: {
+      front:    [Y],                // top
+      back:     [Y, FLIP],          // bottom
+      left:     [X, FLIP, ROTATE],  // left
+      right:    [X, ROTATE]         // right
+    },
+
+    left: {
+      top:      [Y, ROTATE],        // top
+      bottom:   [Y, FLIP, ROTATE],    // bottom
+      back:     [X],                // left
+      front:    [X]                 // right
+    },
+
+    right: {
+      top:      [Y, FLIP, ROTATE],  // top
+      bottom:   [Y, ROTATE],        // bottom
+      front:    [X],                // left
+      back:     [X]                 // right
+    }
+  };
+
+}());

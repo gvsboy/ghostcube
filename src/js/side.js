@@ -11,8 +11,6 @@ function Side(el, size) {
 
   // An array of all the tiles by index.
   this._tiles = this._buildTiles(size);
-
-  this._lines = this._buildLines(size, this._tiles);
 }
 
 Side.prototype = {
@@ -55,92 +53,55 @@ Side.prototype = {
     return this._tiles;
   },
 
-  /**
-   * Gets an x/y line pair that intersect at the given tile.
-   * @param  {Tile} tile The reference tile.
-   * @return {Array}     The x and y lines that intersect at the tile.
-   */
-  getLinePair: function(tile) {
-    return this._lines[tile.index];
-  },
-
-  /**
-   * Selects the x and y lines at the index intersection and
-   * performs the callback function on each tile.
-   * @param  {Tile}     tile    The tile that dictates which lines to select.
-   * @param  {Function} callback A method to invoke on each tile.
-   */
-  updateLines: function(tile, callback, translate) {
-    _.chain(this.getLinePair(tile))
-      .map(function(line) {
-        return line.getTiles();
-      })
-      .flatten()
-      .uniq()
-      .forEach(callback);
-  },
-
-  rotateLine: function(line) {
-
-  },
-
-  flipLine: function(line) {
-
-  },
-
   _buildTiles: function(size) {
 
-    var DELAY_MAX = 2000,
-        numberOfTiles = Math.pow(size, 2);
+    var tiles, lines;
 
-    return _.times(numberOfTiles, function(index) {
-      return this._placeTile(index, Math.random() * DELAY_MAX);
+    // First let's create an array of tiles based on the cube size.
+    tiles = _.times(Math.pow(size, 2), function(index) {
+      return this._placeTile(index);
     }, this);
+
+    // Now we'll create lines from the tiles.
+    lines = {
+
+      // Creating x coordinate lines.
+      x: _.times(size, function(n) {
+          return new Line(tiles.slice(n * size, (n + 1) * size));
+        }),
+
+      // Creating y coordinate lines.
+      y: _.times(size, function(n) {
+          var arr = _.times(size, function(i) {
+            return n + i * size;
+          });
+          return new Line(_.at(tiles, arr));
+        })
+    };
+
+    // For each tile, assign the correct lines.
+    _.each(tiles, function(tile, index) {
+
+      var mod = index % size;
+          xLine = lines.x[(index - mod) / size],
+          yLine = lines.y[mod];
+
+      tile.updateLines(xLine, yLine);
+    });
+
+    // Return the tiles.
+    return tiles;
   },
 
-  _placeTile: function(index, delay) {
+  _placeTile: function(index) {
 
     var tile = new Tile(this, index);
 
     window.setTimeout(function() {
       tile.addClass('init');
-    }, delay);
+    }, Math.random() * 2000);
 
     return tile;
-  },
-
-  _buildLines: function(size, tiles) {
-
-    // Let's build some lines. OK!
-    var xLines = _.times(size, function(n) {
-      return new Line(tiles.slice(n * size, (n + 1) * size));
-    });
-
-    var yLines = _.times(size, function(n) {
-      var arr = _.times(size, function(i) {
-        return n + i * size;
-      });
-      return new Line(_.at(tiles, arr));
-    });
-
-    var lines = {
-      x: xLines,
-      y: yLines
-    };
-
-    return _.map(tiles, function(tile, index) {
-
-      // Holds two lines: x and y.
-      var mod = index % size;
-
-      // temp place for my lines!!
-      var xLine = lines.x[(index - mod) / size],
-          yLine = lines.y[mod];
-
-      tile.updateLines(xLine, yLine);
-
-      return [xLine, yLine];
-    });
   }
 
 };
