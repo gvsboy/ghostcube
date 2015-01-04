@@ -624,6 +624,399 @@ Cube.prototype = {
 // Ditch when we migrate to Browserify.
 _.assign(Cube.prototype, EventEmitter2.prototype);
 
+/**
+ * Lines represent tiles in either a horizontal or vertical row
+ * which serve as points or win states.
+ * @param {Array} tiles  A collection of tiles that compose the line.
+ */
+function Line(tiles) {
+  this.side = _.first(tiles).side;
+  this.update(tiles);
+}
+
+Line.prototype = {
+
+  /**
+   * Checks to see if the line contains all of the passed tiles.
+   * @param  {Array} tiles The tiles to check.
+   * @return {Boolean}     Does the line contain the passed tiles?
+   */
+  all: function(tiles) {
+    return _.intersection(tiles, this._tiles).length >= this.length();
+  },
+
+  some: function(tiles) {
+    return !!_.intersection(tiles, this._tiles).length;
+  },
+
+  update: function(tiles) {
+    this._tiles = tiles;
+  },
+
+  /**
+   * Reports whether or not the line is horizontal by checking the
+   * index difference between two adjacent tiles.
+   * @return {Boolean} Is this line horizontal?
+   */
+  isHorizontal: function() {
+    var tiles = this.getTiles();
+    return tiles[1].index === tiles[0].index + 1;
+  },
+
+  /**
+   * @return {Array} A collection of tiles that compose the line.
+   */
+  getTiles: function() {
+    return this._tiles;
+  },
+
+  updateTiles: function(callback) {
+    _.each(this.getTiles(), function(tile) {
+      callback(tile);
+    });
+  },
+
+  /**
+   * @return {Number} The number of tiles in the line.
+   */
+  length: function() {
+    return this._tiles.length;
+  },
+
+  /**
+   * @return {Array} The indicies of all the tiles.
+   * NOTE: Useful? Not sure. Check usage.
+   */
+  indicies: function() {
+    return _.map(this.getTiles(), function(tile) {
+      return tile.index;
+    });
+  },
+
+  /**
+   * @return {Array} A collection of the missing tiles.
+   */
+  missingTiles: function() {
+
+    var tiles = this.getTiles(),
+
+        // Are we matching against a horizontal or vertical line?
+        matchedLine = this.isHorizontal() ? _.first(tiles).xLine : _.first(tiles).yLine;
+
+    // Now we can figure out which tiles are missing by diffing the two lines.
+    return _.xor(tiles, matchedLine.getTiles());
+  },
+
+  // Rotate in place, like a Tetrad. For instance:
+  // xoo      xxx
+  // xoo  ->  ooo
+  // xoo      ooo
+  rotate: function() {
+
+    // Where the line begins, starting from top-left.
+    var originIndex = _.first(this.getTiles()).index;
+
+    if (this.isHorizontal()) {
+      return this.side.getTiles(originIndex + (originIndex / this.length()))[0].yLine;
+    }
+
+    return this.side.getTiles(originIndex * this.length())[0].xLine;
+  },
+
+  // Flip across a median. For instance:
+  //    xoo      oox
+  //    xoo  ->  oox
+  //    xoo      oox
+  flip: function() {
+
+    // Where the line begins, starting from top-left.
+    var originIndex = _.first(this.getTiles()).index,
+
+        // The middle line.
+        middle;
+
+    if (this.isHorizontal()) {
+
+      // The middle row, which is the size squared cut in half and floored.
+      // NOTE: This could be buggy with other sizes!
+      middle = Math.floor((Math.pow(this.length(), 2) / 2) - 1);
+
+      // Determine the difference and get the calculated x line.
+      return this.side.getTiles(middle * 2 - originIndex)[0].xLine;
+    }
+
+    // The middle column.
+    middle = (this.length() - 1) / 2;
+
+    // Determine the difference and get the calculated y line.
+    return this.side.getTiles(middle * 2 - originIndex)[0].yLine;
+  }
+
+};
+
+function Side(el, size) {
+
+  // HTML element representing the side.
+  this.el = el;
+
+  // The face id (top, bottom, front, back, left, right).
+  this.id = el.id;
+
+  // This will be set using setNeighbors().
+  this._neighbors = {};
+
+  // An array of all the tiles by index.
+  this._tiles = this._buildTiles(size);
+}
+
+Side.prototype = {
+
+  getNeighbors: function() {
+    return this._neighbors;
+  },
+
+  setNeighbors: function(sides) {
+    this._neighbors = sides;
+  },
+
+  /**
+   * A check to determine if the passed side is one of this side's neighbors.
+   * @param  {Side}  side The side object to check.
+   * @return {Boolean}      Is the passed side a neighbor?
+   */
+  isNeighbor: function(side) {
+    return _.contains(this._neighbors, side);
+  },
+
+  setVisibilityMap: function(map) {
+    this._visibilityMap = map;
+  },
+
+  isVisible: function(cubeX, cubeY) {
+    return _.contains(this._visibilityMap[cubeX], cubeY);
+  },
+
+  /**
+   * Fetches specific tiles referenced by the passed indicies,
+   * or all tiles if indicies are not passed.
+   * @param  {[String|Number|Number[]]} indicies An array of indicies.
+   * @return {Tile[]}          An array of selected tiles.
+   */
+  getTiles: function(indicies) {
+    if (indicies) {
+      return _.at(this._tiles, _.isArray(indicies) ? _.uniq(_.flatten(indicies)) : +indicies);
+    }
+    return this._tiles;
+  },
+
+  _buildTiles: function(size) {
+
+    var tiles, lines;
+
+    // First let's create an array of tiles based on the cube size.
+    tiles = _.times(Math.pow(size, 2), function(index) {
+      return this._placeTile(index);
+    }, this);
+
+    // Now we'll create lines from the tiles.
+    lines = {
+
+      // Creating x coordinate lines.
+      x: _.times(size, function(n) {
+          return new Line(tiles.slice(n * size, (n + 1) * size));
+        }),
+
+      // Creating y coordinate lines.
+      y: _.times(size, function(n) {
+          var arr = _.times(size, function(i) {
+            return n + i * size;
+          });
+          return new Line(_.at(tiles, arr));
+        })
+    };
+
+    // For each tile, assign the correct lines.
+    _.each(tiles, function(tile, index) {
+
+      var mod = index % size;
+          xLine = lines.x[(index - mod) / size],
+          yLine = lines.y[mod];
+
+      tile.updateLines(xLine, yLine);
+    });
+
+    // Return the tiles.
+    return tiles;
+  },
+
+  _placeTile: function(index) {
+
+    var tile = new Tile(this, index);
+
+    window.setTimeout(function() {
+      tile.addClass('init');
+    }, Math.random() * 2000);
+
+    return tile;
+  }
+
+};
+
+function Tile(side, index) {
+
+  // Set properties.
+  this.el = this.build(side.id + '-' + index);
+  this.side = side;
+  this.index = index;
+
+  this.claimedBy = null;
+  this.xLine = null;
+  this.yLine = null;
+
+  // Append the tile's element to the side.
+  side.el.appendChild(this.el);
+}
+
+Tile.prototype = {
+
+  build: function(id) {
+    var el = document.createElement('div');
+    el.id = id;
+    el.className = 'tile';
+
+    // debug
+    var idData = id.split('-');
+    el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
+
+    return el;
+  },
+
+  claim: function(player) {
+    var self = this;
+    if (self.claimedBy) {
+      self.removeClass(self.claimedBy.tileClass);
+    }
+    self.claimedBy = player;
+    self
+      .removeClass('unclaimed')
+      .addClass('preclaimed')
+      .addClass(player.tileClass);
+
+    self.el.addEventListener(Vendor.EVENT.animationEnd, function animEnd(evt) {
+      self
+        .removeClass('preclaimed')
+        .addClass('claimed')
+        .el.removeEventListener(Vendor.EVENT.animationEnd, animEnd);
+    });
+  },
+
+  release: function() {
+    var self = this;
+    if (self.claimedBy) {
+      self.removeClass(self.claimedBy.tileClass);
+      self.claimedBy = null;
+      self
+        .addClass('unclaimed')
+        .removeClass('claimed');
+    }
+  },
+
+  addClass: function(name) {
+    this.el.classList.add(name);
+    return this;
+  },
+
+  removeClass: function(name) {
+    this.el.classList.remove(name);
+    return this;
+  },
+
+  hasClass: function(name) {
+    return this.el.classList.contains(name);
+  },
+
+  updateLines: function(x, y) {
+    this.xLine = x;
+    this.yLine = y;
+  },
+
+  translate: function(toSide) {
+
+    // A translation is a recipe for morphing one line into another.
+    // It looks like this: [1, flip]
+    // Where: The first index is the coordinate to use in a line pair
+    //        The remaining indicies are methods to invoke on the line
+    var translation = Tile.translationMap[this.side.id][toSide.id],
+
+        // The line from the line pair to use.
+        line = _.first(translation) === 'x' ? this.xLine : this.yLine;
+
+    // Run through each translation method (flip, rotate) and return the result.
+    var newLine = _.reduce(_.rest(translation), function(transformedLine, method) {
+      return transformedLine[method]();
+    }, line);
+
+    return toSide.getTiles(newLine.indicies());
+  }
+
+};
+
+Tile.translationMap = (function() {
+
+  var X = 'x',
+      Y = 'y',
+      FLIP = 'flip',
+      ROTATE = 'rotate';
+
+  // Line coordinate mapping to side id.
+  // [coordinate, methods...]
+  return {
+
+    front: {
+      top:      [Y],                // top
+      bottom:   [Y],                // bottom
+      left:     [X],                // left
+      right:    [X]                 // right
+    },
+
+    back: {
+      bottom:   [Y, FLIP],          // top
+      top:      [Y, FLIP],          // bottom
+      left:     [X],                // left
+      right:    [X]                 // right
+    },
+
+    top: {
+      back:     [Y, FLIP],          // top
+      front:    [Y],                // bottom
+      left:     [X, ROTATE],        // left
+      right:    [X, FLIP, ROTATE],  // right
+    },
+
+    bottom: {
+      front:    [Y],                // top
+      back:     [Y, FLIP],          // bottom
+      left:     [X, FLIP, ROTATE],  // left
+      right:    [X, ROTATE]         // right
+    },
+
+    left: {
+      top:      [Y, ROTATE],        // top
+      bottom:   [Y, FLIP, ROTATE],    // bottom
+      back:     [X],                // left
+      front:    [X]                 // right
+    },
+
+    right: {
+      top:      [Y, FLIP, ROTATE],  // top
+      bottom:   [Y, ROTATE],        // bottom
+      front:    [X],                // left
+      back:     [X]                 // right
+    }
+  };
+
+}());
+
 function CubeCache(cube) {
 
   // A reference to the cube.
@@ -750,177 +1143,6 @@ CubeCache.prototype = {
         }
       }
     }
-  }
-
-};
-
-/**
- * Lines represent tiles in either a horizontal or vertical row
- * which serve as points or win states.
- * @param {Array} tiles  A collection of tiles that compose the line.
- */
-function Line(tiles) {
-  this.side = _.first(tiles).side;
-  this.update(tiles);
-}
-
-Line.prototype = {
-
-  /**
-   * Checks to see if the line contains all of the passed tiles.
-   * @param  {Array} tiles The tiles to check.
-   * @return {Boolean}     Does the line contain the passed tiles?
-   */
-  all: function(tiles) {
-    return _.intersection(tiles, this._tiles).length >= this.length();
-  },
-
-  some: function(tiles) {
-    return !!_.intersection(tiles, this._tiles).length;
-  },
-
-  update: function(tiles) {
-    this._tiles = tiles;
-  },
-
-  /**
-   * Reports whether or not the line is horizontal by checking the
-   * index difference between two adjacent tiles.
-   * @return {Boolean} Is this line horizontal?
-   */
-  isHorizontal: function() {
-    var tiles = this.getTiles();
-    return tiles[1].index === tiles[0].index + 1;
-  },
-
-  /**
-   * @return {Array} A collection of tiles that compose the line.
-   */
-  getTiles: function() {
-    return this._tiles;
-  },
-
-  updateTiles: function(callback) {
-    _.each(this.getTiles(), function(tile) {
-      callback(tile);
-    });
-  },
-
-  /**
-   * @return {Number} The number of tiles in the line.
-   */
-  length: function() {
-    return this._tiles.length;
-  },
-
-  /**
-   * @return {Array} The indicies of all the tiles.
-   */
-  indicies: function() {
-    return _.map(this.getTiles(), function(tile) {
-      return tile.index;
-    });
-  },
-
-  /**
-   * @return {Array} A collection of the missing tiles.
-   */
-  missingTiles: function() {
-
-    var tiles = this.getTiles(),
-
-        // Are we matching against a horizontal or vertical line?
-        matchedLine = this.isHorizontal() ? _.first(tiles).xLine : _.first(tiles).yLine;
-
-    // Now we can figure out which tiles are missing by diffing the two lines.
-    return _.xor(tiles, matchedLine.getTiles());
-  },
-
-  // Rotate in place, like a Tetrad. For instance:
-  // xoo      xxx
-  // xoo  ->  ooo
-  // xoo      ooo
-  rotate: function() {
-
-    // Cache the line length.
-    var length = this.length(),
-
-        // Where the line begins, starting from top-left.
-        origin = this.indicies()[0],
-
-        // The transformed line.
-        newLine,
-
-        indexAt;
-
-    if (this.isHorizontal()) {
-      // The row (starting at top-right and down).
-      indexAt = origin - (origin % length);
-      newLine = this.side.getTiles(indexAt + (indexAt / length))[0].yLine;
-    }
-    else {
-      // The column (starting top-right and across).
-      indexAt = origin % length;
-      newLine = this.side.getTiles(indexAt * length)[0].xLine;
-    }
-
-    return newLine;
-  },
-
-  // Flip across a median. For instance:
-  //    xoo      oox
-  //    xoo  ->  oox
-  //    xoo      oox
-  flip: function() {
-
-    // Cache the line length.
-    var length = this.length(),
-
-        // Where the line begins, starting from top-left.
-        origin = this.indicies()[0],
-
-        // The transformed line.
-        newLine,
-
-        // The row or column the line is in.
-        indexAt,
-
-        // The middle line.
-        middle,
-
-        // Distance difference between the index and middle.
-        diff;
-
-    // If the line is vertical:
-    if (!this.isHorizontal()) {
-
-      // The column (starting at top-left and across).
-      indexAt = origin % length;
-
-      // The middle column.
-      middle = (length - 1) / 2;
-
-      // Determine the difference and get the calculated y line.
-      diff = middle - indexAt;
-      newLine = this.side.getTiles(middle + diff)[0].yLine;
-    }
-
-    // Else, the line must be horizontal:
-    else {
-
-      // The row (starting at top-right and down).
-      indexAt = origin - (origin % length);
-
-      // The middle row, which is the size squared cut in half and floored.
-      // NOTE: This could be buggy with other sizes!
-      middle = Math.floor((Math.pow(length, 2) / 2) - 1);
-
-      // Determine the difference and get the calculated x line.
-      diff = middle - indexAt;
-      newLine = this.side.getTiles(middle + diff)[0].xLine;
-    }
-
-    return newLine;
   }
 
 };
@@ -1268,269 +1490,6 @@ Touch.UP = Hammer.DIRECTION_UP;
 Touch.DOWN = Hammer.DIRECTION_DOWN;
 Touch.LEFT = Hammer.DIRECTION_LEFT;
 Touch.RIGHT = Hammer.DIRECTION_RIGHT;
-
-function Side(el, size) {
-
-  // HTML element representing the side.
-  this.el = el;
-
-  // The face id (top, bottom, front, back, left, right).
-  this.id = el.id;
-
-  // This will be set using setNeighbors().
-  this._neighbors = {};
-
-  // An array of all the tiles by index.
-  this._tiles = this._buildTiles(size);
-}
-
-Side.prototype = {
-
-  getNeighbors: function() {
-    return this._neighbors;
-  },
-
-  setNeighbors: function(sides) {
-    this._neighbors = sides;
-  },
-
-  /**
-   * A check to determine if the passed side is one of this side's neighbors.
-   * @param  {Side}  side The side object to check.
-   * @return {Boolean}      Is the passed side a neighbor?
-   */
-  isNeighbor: function(side) {
-    return _.contains(this._neighbors, side);
-  },
-
-  setVisibilityMap: function(map) {
-    this._visibilityMap = map;
-  },
-
-  isVisible: function(cubeX, cubeY) {
-    return _.contains(this._visibilityMap[cubeX], cubeY);
-  },
-
-  /**
-   * Fetches specific tiles referenced by the passed indicies,
-   * or all tiles if indicies are not passed.
-   * @param  {[String|Number|Number[]]} indicies An array of indicies.
-   * @return {Tile[]}          An array of selected tiles.
-   */
-  getTiles: function(indicies) {
-    if (indicies) {
-      return _.at(this._tiles, _.isArray(indicies) ? _.uniq(_.flatten(indicies)) : +indicies);
-    }
-    return this._tiles;
-  },
-
-  _buildTiles: function(size) {
-
-    var tiles, lines;
-
-    // First let's create an array of tiles based on the cube size.
-    tiles = _.times(Math.pow(size, 2), function(index) {
-      return this._placeTile(index);
-    }, this);
-
-    // Now we'll create lines from the tiles.
-    lines = {
-
-      // Creating x coordinate lines.
-      x: _.times(size, function(n) {
-          return new Line(tiles.slice(n * size, (n + 1) * size));
-        }),
-
-      // Creating y coordinate lines.
-      y: _.times(size, function(n) {
-          var arr = _.times(size, function(i) {
-            return n + i * size;
-          });
-          return new Line(_.at(tiles, arr));
-        })
-    };
-
-    // For each tile, assign the correct lines.
-    _.each(tiles, function(tile, index) {
-
-      var mod = index % size;
-          xLine = lines.x[(index - mod) / size],
-          yLine = lines.y[mod];
-
-      tile.updateLines(xLine, yLine);
-    });
-
-    // Return the tiles.
-    return tiles;
-  },
-
-  _placeTile: function(index) {
-
-    var tile = new Tile(this, index);
-
-    window.setTimeout(function() {
-      tile.addClass('init');
-    }, Math.random() * 2000);
-
-    return tile;
-  }
-
-};
-
-function Tile(side, index) {
-
-  // Set properties.
-  this.el = this.build(side.id + '-' + index);
-  this.side = side;
-  this.index = index;
-
-  this.claimedBy = null;
-  this.xLine = null;
-  this.yLine = null;
-
-  // Append the tile's element to the side.
-  side.el.appendChild(this.el);
-}
-
-Tile.prototype = {
-
-  build: function(id) {
-    var el = document.createElement('div');
-    el.id = id;
-    el.className = 'tile';
-
-    // debug
-    var idData = id.split('-');
-    el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
-
-    return el;
-  },
-
-  claim: function(player) {
-    var self = this;
-    if (self.claimedBy) {
-      self.removeClass(self.claimedBy.tileClass);
-    }
-    self.claimedBy = player;
-    self
-      .removeClass('unclaimed')
-      .addClass('preclaimed')
-      .addClass(player.tileClass);
-
-    self.el.addEventListener(Vendor.EVENT.animationEnd, function animEnd(evt) {
-      self
-        .removeClass('preclaimed')
-        .addClass('claimed')
-        .el.removeEventListener(Vendor.EVENT.animationEnd, animEnd);
-    });
-  },
-
-  release: function() {
-    var self = this;
-    if (self.claimedBy) {
-      self.removeClass(self.claimedBy.tileClass);
-      self.claimedBy = null;
-      self
-        .addClass('unclaimed')
-        .removeClass('claimed');
-    }
-  },
-
-  addClass: function(name) {
-    this.el.classList.add(name);
-    return this;
-  },
-
-  removeClass: function(name) {
-    this.el.classList.remove(name);
-    return this;
-  },
-
-  hasClass: function(name) {
-    return this.el.classList.contains(name);
-  },
-
-  updateLines: function(x, y) {
-    this.xLine = x;
-    this.yLine = y;
-  },
-
-  translate: function(toSide) {
-
-    // A translation is a recipe for morphing one line into another.
-    // It looks like this: [1, flip]
-    // Where: The first index is the coordinate to use in a line pair
-    //        The remaining indicies are methods to invoke on the line
-    var translation = Tile.translationMap[this.side.id][toSide.id],
-
-        // The line from the line pair to use.
-        line = _.first(translation) === 'x' ? this.xLine : this.yLine;
-
-    // Run through each translation method (flip, rotate) and return the result.
-    var newLine = _.reduce(_.rest(translation), function(transformedLine, method) {
-      return transformedLine[method]();
-    }, line);
-
-    return toSide.getTiles(newLine.indicies());
-  }
-
-};
-
-Tile.translationMap = (function() {
-
-  var X = 'x',
-      Y = 'y',
-      FLIP = 'flip',
-      ROTATE = 'rotate';
-
-  // Line coordinate mapping to side id.
-  // [coordinate, methods...]
-  return {
-
-    front: {
-      top:      [Y],                // top
-      bottom:   [Y],                // bottom
-      left:     [X],                // left
-      right:    [X]                 // right
-    },
-
-    back: {
-      bottom:   [Y, FLIP],          // top
-      top:      [Y, FLIP],          // bottom
-      left:     [X],                // left
-      right:    [X]                 // right
-    },
-
-    top: {
-      back:     [Y, FLIP],          // top
-      front:    [Y],                // bottom
-      left:     [X, ROTATE],        // left
-      right:    [X, FLIP, ROTATE],  // right
-    },
-
-    bottom: {
-      front:    [Y],                // top
-      back:     [Y, FLIP],          // bottom
-      left:     [X, FLIP, ROTATE],  // left
-      right:    [X, ROTATE]         // right
-    },
-
-    left: {
-      top:      [Y, ROTATE],        // top
-      bottom:   [Y, FLIP, ROTATE],    // bottom
-      back:     [X],                // left
-      front:    [X]                 // right
-    },
-
-    right: {
-      top:      [Y, FLIP, ROTATE],  // top
-      bottom:   [Y, ROTATE],        // bottom
-      front:    [X],                // left
-      back:     [X]                 // right
-    }
-  };
-
-}());
 
 /**
  * A lightweight guided tutorial helper that is attached to a specific
