@@ -22,6 +22,13 @@ Player.prototype = {
 
   getLines: function() {
     return this._cubeCache.getLines();
+  },
+
+  getWinLines: function() {
+    var size = this._cubeCache._cubeSize;
+    return _.filter(this.getLines(), function(line) {
+      return line.length() === size;
+    });
   }
 
 };

@@ -107,10 +107,6 @@ App.prototype = {
     if (player.isBot()) {
       player.play();
     }
-
-    //debug
-    //console.log('+++ cubeCache:', player.name, player._cubeCache._sideMap);
-    //console.log('ooo lineMap:', player.name, player._cubeCache._lineMap);
   },
 
   selectTile: function(tile) {
@@ -152,67 +148,10 @@ App.prototype = {
     this._endTurn();
   },
 
-  checkWin: function() {
-
-    var winLines = [],
-        size = this.cube.size;
-
-    // Loop through each cube side.
-    // Testing out CubeCache...
-    _.forEach(this.currentPlayer._cubeCache._sideMap, function(map) {
-
-      // Check for vertical matches.
-      // Inspect each starting index from 0 and leftwards.
-      _.forEach(_.at(map, _.times(size)), function(tile) {
-        var line;
-
-        // If a tile exists at an index, begin searching rightwards.
-        if (tile) {
-          line = _.at(map, _.times(size - 1, function(i) {
-            return tile.index + ((i + 1) * size);
-          }));
-
-          // Push the original tile on the line stack.
-          line.push(tile);
-
-          // If the limit is reached, the line is complete. It's a win!
-          if (_.compact(line).length === size) {
-            winLines.push(line);
-          }
-        }
-      });
-      
-      // Check for horizontal matches.
-      // Inspect each starting index from 0 and downwards.
-      _.forEach(_.at(map, _.times(size, function(i) { return i * size })), function(tile) {
-        var line;
-
-        // If a tile exists at an index, begin searching rightwards.
-        if (tile) {
-          line = _.at(map, _.times(size - 1, function(i) {
-            return tile.index + (i + 1);
-          }));
-
-          // Push the original tile on the line stack.
-          line.push(tile);
-
-          // If the limit is reached, the line is complete. It's a win!
-          if (_.compact(line).length === size) {
-            winLines.push(line);
-          }
-        }
-      });
-
-    });
-
-    // Return the number of winning lines (or 0 if no win).
-    return winLines.length;
-  },
-
   _endTurn: function() {
 
-    var winBy = this.checkWin(),
-        player = this.currentPlayer,
+    var player = this.currentPlayer,
+        winBy = player.getWinLines().length,
         modifier;
 
     // If a player wins, display a message and exit.
@@ -352,6 +291,8 @@ Bot.prototype = {
 
   play: function() {
 
+    console.log('============== BOT MOVE ==============');
+
     /*
       First, gather all the Bot's tiles to see if a win is possible this turn
       (there are lines that are missing one tile).
@@ -363,22 +304,20 @@ Bot.prototype = {
         - Neutralizing a tile?
         - Claiming the missing tile?
      */
-    var cube = this._cubeCache._cube;
 
-    console.log('============== BOT MOVE ==============');
+    var cube = this._cubeCache._cube,
+        botLines = this.getLines(),
+        playerLines = this.opponent.getLines(),
+        selectedTiles = [];
 
-    var lines = this.getLines(),
-        playerLines = this.opponent.getLines();
-
-    console.log('= bot lines:', lines);
-    console.log('= player lines:', playerLines);
 
     // Check if the bot is about to win:
     var size = this._cubeCache._cubeSize;
-    var botWinningMoves = _.filter(lines, function(line) {
+    var botWinningMoves = _.filter(botLines, function(line) {
       return line.length() === size - 1;
     });
     console.log('= bot winning moves:', botWinningMoves);
+
 
     // If the bot has some winning moves, try some scenarios out.
     _.forEach(botWinningMoves, function(line) {
@@ -388,6 +327,8 @@ Bot.prototype = {
       _.forEach(line.missingTiles(), function(tile) {
 
         console.log('# missing tile:', tile);
+
+        
       });
 
     });
@@ -1232,6 +1173,13 @@ Player.prototype = {
 
   getLines: function() {
     return this._cubeCache.getLines();
+  },
+
+  getWinLines: function() {
+    var size = this._cubeCache._cubeSize;
+    return _.filter(this.getLines(), function(line) {
+      return line.length() === size;
+    });
   }
 
 };

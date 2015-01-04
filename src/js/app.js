@@ -107,10 +107,6 @@ App.prototype = {
     if (player.isBot()) {
       player.play();
     }
-
-    //debug
-    //console.log('+++ cubeCache:', player.name, player._cubeCache._sideMap);
-    //console.log('ooo lineMap:', player.name, player._cubeCache._lineMap);
   },
 
   selectTile: function(tile) {
@@ -152,67 +148,10 @@ App.prototype = {
     this._endTurn();
   },
 
-  checkWin: function() {
-
-    var winLines = [],
-        size = this.cube.size;
-
-    // Loop through each cube side.
-    // Testing out CubeCache...
-    _.forEach(this.currentPlayer._cubeCache._sideMap, function(map) {
-
-      // Check for vertical matches.
-      // Inspect each starting index from 0 and leftwards.
-      _.forEach(_.at(map, _.times(size)), function(tile) {
-        var line;
-
-        // If a tile exists at an index, begin searching rightwards.
-        if (tile) {
-          line = _.at(map, _.times(size - 1, function(i) {
-            return tile.index + ((i + 1) * size);
-          }));
-
-          // Push the original tile on the line stack.
-          line.push(tile);
-
-          // If the limit is reached, the line is complete. It's a win!
-          if (_.compact(line).length === size) {
-            winLines.push(line);
-          }
-        }
-      });
-      
-      // Check for horizontal matches.
-      // Inspect each starting index from 0 and downwards.
-      _.forEach(_.at(map, _.times(size, function(i) { return i * size })), function(tile) {
-        var line;
-
-        // If a tile exists at an index, begin searching rightwards.
-        if (tile) {
-          line = _.at(map, _.times(size - 1, function(i) {
-            return tile.index + (i + 1);
-          }));
-
-          // Push the original tile on the line stack.
-          line.push(tile);
-
-          // If the limit is reached, the line is complete. It's a win!
-          if (_.compact(line).length === size) {
-            winLines.push(line);
-          }
-        }
-      });
-
-    });
-
-    // Return the number of winning lines (or 0 if no win).
-    return winLines.length;
-  },
-
   _endTurn: function() {
 
-    var winBy = this.checkWin(),
-        player = this.currentPlayer,
+    var player = this.currentPlayer,
+        winBy = player.getWinLines().length,
         modifier;
 
     // If a player wins, display a message and exit.

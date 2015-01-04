@@ -7,6 +7,8 @@ Bot.prototype = {
 
   play: function() {
 
+    console.log('============== BOT MOVE ==============');
+
     /*
       First, gather all the Bot's tiles to see if a win is possible this turn
       (there are lines that are missing one tile).
@@ -18,22 +20,20 @@ Bot.prototype = {
         - Neutralizing a tile?
         - Claiming the missing tile?
      */
-    var cube = this._cubeCache._cube;
 
-    console.log('============== BOT MOVE ==============');
+    var cube = this._cubeCache._cube,
+        botLines = this.getLines(),
+        playerLines = this.opponent.getLines(),
+        selectedTiles = [];
 
-    var lines = this.getLines(),
-        playerLines = this.opponent.getLines();
-
-    console.log('= bot lines:', lines);
-    console.log('= player lines:', playerLines);
 
     // Check if the bot is about to win:
     var size = this._cubeCache._cubeSize;
-    var botWinningMoves = _.filter(lines, function(line) {
+    var botWinningMoves = _.filter(botLines, function(line) {
       return line.length() === size - 1;
     });
     console.log('= bot winning moves:', botWinningMoves);
+
 
     // If the bot has some winning moves, try some scenarios out.
     _.forEach(botWinningMoves, function(line) {
@@ -43,6 +43,8 @@ Bot.prototype = {
       _.forEach(line.missingTiles(), function(tile) {
 
         console.log('# missing tile:', tile);
+
+        
       });
 
     });
