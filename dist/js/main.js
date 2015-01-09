@@ -19,9 +19,6 @@ function App(containerId) {
   this.players = null;
   this.currentPlayer = null;
 
-  // The three selected tiles to place pieces on.
-  this.selectedTiles = [];
-
   // Cross-selected tile for helping attacks.
   this._helperTile = null;
 
@@ -75,11 +72,7 @@ App.prototype = {
     // Create the players and set the first one as current.
     var human = new Player('Kevin', 'player1', cube);
     var bot = new Bot('CPU', 'player2', cube, human);
-    this.players = [
-      human,
-      //new Player('Jon', 'player2', cube)
-      bot
-    ];
+    this.players = [human, bot];
     this.setCurrentPlayer(_.first(this.players));
 
     // Begin the rendering.
@@ -91,6 +84,14 @@ App.prototype = {
       .listenTo('mouseout', this._handleMouseOut, this);
 
     cube.on('renderstart', _.bind(this.clearHelperTile, this));
+
+    // Not really into this but sure for now.
+    _.forEach(this.players, function(player) {
+      player
+        .on('player:initialSelected', _.bind(this.showCrosshairs, this))
+        .on('player:initialDeselected', _.bind(this.hideCrosshairs, this))
+        .on('player:claim', _.bind(this.claim, this))
+    }, this);
 
     this.tutorial.next().next();
   },
@@ -109,18 +110,17 @@ App.prototype = {
     }
   },
 
-  selectTile: function(tile) {
+  showCrosshairs: function(tile) {
     tile.addClass('selected');
-    this.selectedTiles.push(tile);
-    this.cube.updateAdjacentTiles(tile, function(tile) {
+    this.cube.updateCrosshairs(tile, function(tile) {
       tile.addClass('highlighted');
     });
+    this.tutorial.next();
   },
 
-  deselectTile: function(tile) {
+  hideCrosshairs: function(tile) {
     tile.removeClass('selected');
-    _.pull(this.selectedTiles, tile);
-    this.cube.updateAdjacentTiles(tile, function(tile) {
+    this.cube.updateCrosshairs(tile, function(tile) {
       tile.removeClass('highlighted');
     });
   },
@@ -132,18 +132,11 @@ App.prototype = {
     this._helperTile = null;
   },
 
-  claim: function() {
-
-    // Set the selected tiles to the player's color.
-    _.forEach(this.selectedTiles, function(tile) {
-      this.currentPlayer.claim(tile);
-    }, this);
+  claim: function(tiles) {
 
     // Remove all helpers.
     this.clearHelperTile();
-    this.deselectTile(_.first(this.selectedTiles));
-
-    this.selectedTiles = [];
+    this.hideCrosshairs(_.first(tiles));
 
     this._endTurn();
   },
@@ -176,13 +169,15 @@ App.prototype = {
     return null;
   },
 
-  _determineHelperHighlight: function(evt, callback) {
+  _findHelperTile: function(evt, callback) {
 
     // The tile the user is interacting with.
     var tile = this._getTileFromElement(evt.target),
 
         // The first tile that has been selected.
-        initialTile = _.first(this.selectedTiles);
+        // CHEATING THIS FOR NOW. Need to move this login into Player object
+        // so Bot can take advantage of it.
+        initialTile = _.first(this.currentPlayer._selectedTiles);
 
     // If the user is hovering on a neighboring side of the initial tile,
     // highlight some targeting help on a visible side.
@@ -194,90 +189,31 @@ App.prototype = {
   _handleClick: function(evt) {
 
     // Get the target element from the event.
-    var tile = this._getTileFromElement(evt.target),
+    var tile = this._getTileFromElement(evt.target);
 
-        // The first tile that has been selected.
-        initialTile = _.first(this.selectedTiles),
-
-        // The union of the first and potential second tile.
-        helperTile = this._helperTile;
-
-    // If the target is a tile, let's figure out what to do with it.
+    // If the tile exists, try to select it.
     if (tile) {
-
-      // If the tile is already claimed, get outta dodge.
-      if (tile.claimedBy) {
-        this.messages.add('claimed');
-        return;
+      try {
+        this.currentPlayer.selectTile(tile, this._helperTile);
+        this.tutorial.next().next();
       }
 
-      // If nothing has been selected yet, select the tile normally.
-      if (!initialTile) {
-        this.selectTile(tile);
-        this.tutorial.next();
+      // An error was thrown in the tile selection process. Handle it.
+      catch(e) {
+        this.messages.add(e.message);
       }
-
-      // Otherwise, there must be a selected tile already.
-      else {
-
-        // Deselect the tile if it is the target.
-        if (tile === initialTile) {
-          this.deselectTile(tile);
-        }
-
-        // Otherwise, try and make a match.
-        else {
-
-          // If the same side was selected, deselect the initial and select the new.
-          if (tile.side === initialTile.side) {
-            this.deselectTile(initialTile);
-            this.selectTile(tile);
-          }
-
-          // Else if the side selected is not a neighbor, display an error.
-          else if (!initialTile.side.isNeighbor(tile.side)) {
-            this.messages.add('notNeighbor');
-          }
-
-          // Otherwise, we're on a good side. Let's drill down further.
-          else {
-
-            // If the attack target is claimed by the current player, don't claim it again!
-            if (helperTile.claimedBy) {
-              if (helperTile.claimedBy === this.currentPlayer) {
-                this.messages.add('targetClaimed');
-              }
-              // Otherwise, cancel the two tiles out.
-              else {
-                helperTile.claimedBy.release(helperTile);
-                this.selectedTiles.push(tile);
-                this.claim();
-              }
-            }
-
-            // Otherwise, a valid selection has been made! Claim both.
-            else {
-              this.selectedTiles.push(tile, helperTile);
-              this.claim();
-              this.tutorial.next().next();
-            }
-          }
-        }
-      }
-    };
+    }
   },
 
   _handleMouseOver: function(evt) {
-    this._determineHelperHighlight(evt, _.bind(function(tile) {
+    this._findHelperTile(evt, _.bind(function(tile) {
       tile.addClass('helper');
       this._helperTile = tile;
     }, this));
   },
 
   _handleMouseOut: function(evt) {
-    this._determineHelperHighlight(evt, function(tile) {
-      tile.removeClass('helper');
-    });
+    this.clearHelperTile();
   }
 
 };
@@ -425,7 +361,7 @@ Cube.prototype = {
    * @param  {DOMElement}   tile The selected tile as a raw DOM element.
    * @param  {Function}     callback   The method to invoke passing each tile as an argument.
    */
-  updateAdjacentTiles: function(tile, callback) {
+  updateCrosshairs: function(tile, callback) {
 
     tile.xLine.updateTiles(callback);
     tile.yLine.updateTiles(callback);
@@ -1088,6 +1024,17 @@ CubeCache.prototype = {
 
 };
 
+function SelectTileError(message) {
+  this.name = 'SelectTileError';
+  this.message = message;
+}
+
+SelectTileError.CLAIMED = 'claimed';
+SelectTileError.NOT_NEIGHBOR = 'notNeighbor';
+SelectTileError.TARGET_CLAIMED = 'targetClaimed';
+
+SelectTileError.prototype = Error.prototype;
+
 function Messages() {
   this.delay = 100;
   this.queue = [];
@@ -1152,18 +1099,15 @@ Messages.LIST = {
 function Player(name, tileClass, cube) {
   this.name = name;
   this.tileClass = tileClass;
+  this._selectedTiles = [];
   this._cubeCache = new CubeCache(cube);
+  EventEmitter2.call(this);
 }
 
 Player.prototype = {
 
   isBot: function() {
     return this instanceof Bot;
-  },
-
-  claim: function(tile) {
-    tile.claim(this);
-    this._cubeCache.add(tile);
   },
 
   release: function(tile) {
@@ -1175,14 +1119,125 @@ Player.prototype = {
     return this._cubeCache.getLines();
   },
 
+  /**
+   * Win lines are completed lines. This method returns all the win
+   * lines claimed by the player.
+   * @return {Array} A collection of this player's win lines.
+   */
   getWinLines: function() {
     var size = this._cubeCache._cubeSize;
     return _.filter(this.getLines(), function(line) {
       return line.length() === size;
     });
+  },
+
+  /**
+   * Gets the tile where the first two selected tile's coordinates intersect.
+   * @param {Tile} [tile1] The first tile selected.
+   * @param {Tile} [tile2] The second tile selected.
+   * @return {Tile}       The tile being attacked.
+   */
+  getAttackTile: function(tile1, tile2) {
+
+  },
+
+  /**
+   * Dictates whether or not the player can attack the given tile.
+   * Basically, as long as the tile is not claimed by the player and
+   * is not some barrier, the tile can be attacked.
+   * @param  {Tile} tile The tile to check.
+   * @return {Boolean} Can the given tile be attacked by this player?
+   */
+  canAttack: function(tile) {
+    return tile.claimedBy !== this;
+  },
+
+  /**
+   * [selectTile description]
+   * @param  {Tile} tile The tile this player is trying to select.
+   * @param {Tile} [attackTile] The tile being attacked (if this is not the initial selection).
+   * @return {Boolean} Was this the last tile that needed to be selected?
+   */
+  selectTile: function(tile, attackTile) {
+
+    // Get a reference to all the selected tiles.
+    var selectedTiles = this._selectedTiles,
+
+        // Get a reference to the first tile selected.
+        initialTile = _.first(selectedTiles);
+
+    // If the tile is already claimed, get outta dodge.
+    if (tile.claimedBy) {
+      throw new SelectTileError(SelectTileError.CLAIMED);
+    }
+
+    // If an initial tile exists, run some tests.
+    if (initialTile) {
+
+      // If the initial tile is selected, deselected it and bail out.
+      if (tile === initialTile) {
+        this.deselectTile(tile);
+        return;
+      }
+
+      // If the new selected tile is on the same side as the
+      // initial tile, deselect the initial tile.
+      if (tile.side === initialTile.side) {
+        this.deselectTile(initialTile);
+      }
+
+      // Else, if the side selected is not a neighbor, bail out.
+      else if (!initialTile.side.isNeighbor(tile.side)) {
+        throw new SelectTileError(SelectTileError.NOT_NEIGHBOR);
+      }
+    }
+
+    // If the attack tile exists, run even more tests.
+    if (attackTile) {
+
+      // If the attack tile is valid, that means both tiles can be selected
+      // and everything can be claimed.
+      if (this.canAttack(attackTile)) {
+        if (attackTile.claimedBy) {
+          attackTile.claimedBy.release(attackTile);
+        }
+        selectedTiles.push(tile, attackTile);
+        this.claim();
+      }
+      else {
+        throw new SelectTileError(SelectTileError.TARGET_CLAIMED)
+      }
+    }
+
+    // Otherwise, the initial tile must have been selected.
+    // Emit an event to celebrate this special occasion!
+    else {
+      selectedTiles.push(tile);
+      this.emit('player:initialSelected', tile);
+    }
+
+    // Are we done selecting tiles this turn?
+    return selectedTiles.length === 3;
+  },
+
+  deselectTile: function(tile) {
+    _.pull(this._selectedTiles, tile);
+    this.emit('player:initialDeselected', tile);
+  },
+
+  claim: function() {
+    _.forEach(this._selectedTiles, function(tile) {
+      tile.claim(this);
+      this._cubeCache.add(tile);
+    }, this);
+    this.emit('player:claim', this._selectedTiles);
+    this._selectedTiles = [];
   }
 
 };
+
+// Mixin EventEmitter methods.
+_.assign(Player.prototype, EventEmitter2.prototype);
 
 // Assign Bot inheritence here because Bot is getting included first.
 // Need to switch to modules next go-round. For reals.

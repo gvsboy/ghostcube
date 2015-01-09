@@ -19,9 +19,6 @@ function App(containerId) {
   this.players = null;
   this.currentPlayer = null;
 
-  // The three selected tiles to place pieces on.
-  this.selectedTiles = [];
-
   // Cross-selected tile for helping attacks.
   this._helperTile = null;
 
@@ -75,11 +72,7 @@ App.prototype = {
     // Create the players and set the first one as current.
     var human = new Player('Kevin', 'player1', cube);
     var bot = new Bot('CPU', 'player2', cube, human);
-    this.players = [
-      human,
-      //new Player('Jon', 'player2', cube)
-      bot
-    ];
+    this.players = [human, bot];
     this.setCurrentPlayer(_.first(this.players));
 
     // Begin the rendering.
@@ -91,6 +84,14 @@ App.prototype = {
       .listenTo('mouseout', this._handleMouseOut, this);
 
     cube.on('renderstart', _.bind(this.clearHelperTile, this));
+
+    // Not really into this but sure for now.
+    _.forEach(this.players, function(player) {
+      player
+        .on('player:initialSelected', _.bind(this.showCrosshairs, this))
+        .on('player:initialDeselected', _.bind(this.hideCrosshairs, this))
+        .on('player:claim', _.bind(this.claim, this))
+    }, this);
 
     this.tutorial.next().next();
   },
@@ -109,18 +110,17 @@ App.prototype = {
     }
   },
 
-  selectTile: function(tile) {
+  showCrosshairs: function(tile) {
     tile.addClass('selected');
-    this.selectedTiles.push(tile);
-    this.cube.updateAdjacentTiles(tile, function(tile) {
+    this.cube.updateCrosshairs(tile, function(tile) {
       tile.addClass('highlighted');
     });
+    this.tutorial.next();
   },
 
-  deselectTile: function(tile) {
+  hideCrosshairs: function(tile) {
     tile.removeClass('selected');
-    _.pull(this.selectedTiles, tile);
-    this.cube.updateAdjacentTiles(tile, function(tile) {
+    this.cube.updateCrosshairs(tile, function(tile) {
       tile.removeClass('highlighted');
     });
   },
@@ -132,18 +132,11 @@ App.prototype = {
     this._helperTile = null;
   },
 
-  claim: function() {
-
-    // Set the selected tiles to the player's color.
-    _.forEach(this.selectedTiles, function(tile) {
-      this.currentPlayer.claim(tile);
-    }, this);
+  claim: function(tiles) {
 
     // Remove all helpers.
     this.clearHelperTile();
-    this.deselectTile(_.first(this.selectedTiles));
-
-    this.selectedTiles = [];
+    this.hideCrosshairs(_.first(tiles));
 
     this._endTurn();
   },
@@ -176,13 +169,15 @@ App.prototype = {
     return null;
   },
 
-  _determineHelperHighlight: function(evt, callback) {
+  _findHelperTile: function(evt, callback) {
 
     // The tile the user is interacting with.
     var tile = this._getTileFromElement(evt.target),
 
         // The first tile that has been selected.
-        initialTile = _.first(this.selectedTiles);
+        // CHEATING THIS FOR NOW. Need to move this login into Player object
+        // so Bot can take advantage of it.
+        initialTile = _.first(this.currentPlayer._selectedTiles);
 
     // If the user is hovering on a neighboring side of the initial tile,
     // highlight some targeting help on a visible side.
@@ -194,90 +189,31 @@ App.prototype = {
   _handleClick: function(evt) {
 
     // Get the target element from the event.
-    var tile = this._getTileFromElement(evt.target),
+    var tile = this._getTileFromElement(evt.target);
 
-        // The first tile that has been selected.
-        initialTile = _.first(this.selectedTiles),
-
-        // The union of the first and potential second tile.
-        helperTile = this._helperTile;
-
-    // If the target is a tile, let's figure out what to do with it.
+    // If the tile exists, try to select it.
     if (tile) {
-
-      // If the tile is already claimed, get outta dodge.
-      if (tile.claimedBy) {
-        this.messages.add('claimed');
-        return;
+      try {
+        this.currentPlayer.selectTile(tile, this._helperTile);
+        this.tutorial.next().next();
       }
 
-      // If nothing has been selected yet, select the tile normally.
-      if (!initialTile) {
-        this.selectTile(tile);
-        this.tutorial.next();
+      // An error was thrown in the tile selection process. Handle it.
+      catch(e) {
+        this.messages.add(e.message);
       }
-
-      // Otherwise, there must be a selected tile already.
-      else {
-
-        // Deselect the tile if it is the target.
-        if (tile === initialTile) {
-          this.deselectTile(tile);
-        }
-
-        // Otherwise, try and make a match.
-        else {
-
-          // If the same side was selected, deselect the initial and select the new.
-          if (tile.side === initialTile.side) {
-            this.deselectTile(initialTile);
-            this.selectTile(tile);
-          }
-
-          // Else if the side selected is not a neighbor, display an error.
-          else if (!initialTile.side.isNeighbor(tile.side)) {
-            this.messages.add('notNeighbor');
-          }
-
-          // Otherwise, we're on a good side. Let's drill down further.
-          else {
-
-            // If the attack target is claimed by the current player, don't claim it again!
-            if (helperTile.claimedBy) {
-              if (helperTile.claimedBy === this.currentPlayer) {
-                this.messages.add('targetClaimed');
-              }
-              // Otherwise, cancel the two tiles out.
-              else {
-                helperTile.claimedBy.release(helperTile);
-                this.selectedTiles.push(tile);
-                this.claim();
-              }
-            }
-
-            // Otherwise, a valid selection has been made! Claim both.
-            else {
-              this.selectedTiles.push(tile, helperTile);
-              this.claim();
-              this.tutorial.next().next();
-            }
-          }
-        }
-      }
-    };
+    }
   },
 
   _handleMouseOver: function(evt) {
-    this._determineHelperHighlight(evt, _.bind(function(tile) {
+    this._findHelperTile(evt, _.bind(function(tile) {
       tile.addClass('helper');
       this._helperTile = tile;
     }, this));
   },
 
   _handleMouseOut: function(evt) {
-    this._determineHelperHighlight(evt, function(tile) {
-      tile.removeClass('helper');
-    });
+    this.clearHelperTile();
   }
 
 };

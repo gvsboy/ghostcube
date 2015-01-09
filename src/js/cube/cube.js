@@ -87,7 +87,7 @@ Cube.prototype = {
    * @param  {DOMElement}   tile The selected tile as a raw DOM element.
    * @param  {Function}     callback   The method to invoke passing each tile as an argument.
    */
-  updateAdjacentTiles: function(tile, callback) {
+  updateCrosshairs: function(tile, callback) {
 
     tile.xLine.updateTiles(callback);
     tile.yLine.updateTiles(callback);
