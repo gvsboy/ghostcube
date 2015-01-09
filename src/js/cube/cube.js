@@ -104,25 +104,26 @@ Cube.prototype = {
     }, this);
   },
 
-  updateHelperHighlight: function(tile, initialTile, callback) {
+  /**
+   * Gets the tile where the two passed tile's coordinates intersect.
+   * @param {Tile} [tile1] The first tile selected.
+   * @param {Tile} [tile2] The second tile selected.
+   * @return {Tile}       The tile being attacked.
+   */
+  getAttackTile: function(tile1, tile2) {
 
-    // Get the raw neighbor sides (without their placement keys)
-    // and exclude the selected side.
-    var neighbors = _.without(initialTile.side.getNeighbors(), tile.side);
+    // Get the neighbor sides and exclude the selected side.
+    var neighbors = _.without(tile2.side.getNeighbors(), tile1.side),
 
-    _.forEach(neighbors, function(neighbor) {
+        // Get the neighbor that is visible.
+        side = _.find(neighbors, function(neighbor) {
+          return neighbor.isVisible(this.x, this.y);
+        }, this);
 
-      if (neighbor.isVisible(this.x, this.y)) {
-
-        var highlightTiles = tile.translate(neighbor);
-
-        var helperTile = _.find(highlightTiles, function(ti) {
-          return ti.hasClass('highlighted');
-        });
-
-        callback(helperTile);
-      }
-    }, this);
+    // Return the tile that intersects the two passed tiles.
+    return _.find(tile1.translate(side), function(ti) {
+      return ti.hasClass('highlighted');
+    });
   },
 
   /**

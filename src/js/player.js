@@ -34,16 +34,6 @@ Player.prototype = {
   },
 
   /**
-   * Gets the tile where the first two selected tile's coordinates intersect.
-   * @param {Tile} [tile1] The first tile selected.
-   * @param {Tile} [tile2] The second tile selected.
-   * @return {Tile}       The tile being attacked.
-   */
-  getAttackTile: function(tile1, tile2) {
-
-  },
-
-  /**
    * Dictates whether or not the player can attack the given tile.
    * Basically, as long as the tile is not claimed by the player and
    * is not some barrier, the tile can be attacked.

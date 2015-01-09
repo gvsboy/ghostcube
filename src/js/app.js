@@ -133,11 +133,8 @@ App.prototype = {
   },
 
   claim: function(tiles) {
-
-    // Remove all helpers.
     this.clearHelperTile();
     this.hideCrosshairs(_.first(tiles));
-
     this._endTurn();
   },
 
@@ -169,23 +166,6 @@ App.prototype = {
     return null;
   },
 
-  _findHelperTile: function(evt, callback) {
-
-    // The tile the user is interacting with.
-    var tile = this._getTileFromElement(evt.target),
-
-        // The first tile that has been selected.
-        // CHEATING THIS FOR NOW. Need to move this login into Player object
-        // so Bot can take advantage of it.
-        initialTile = _.first(this.currentPlayer._selectedTiles);
-
-    // If the user is hovering on a neighboring side of the initial tile,
-    // highlight some targeting help on a visible side.
-    if (tile && initialTile && initialTile.side.isNeighbor(tile.side)) {
-      this.cube.updateHelperHighlight(tile, initialTile, callback);
-    }
-  },
-
   _handleClick: function(evt) {
 
     // Get the target element from the event.
@@ -206,10 +186,24 @@ App.prototype = {
   },
 
   _handleMouseOver: function(evt) {
-    this._findHelperTile(evt, _.bind(function(tile) {
-      tile.addClass('helper');
-      this._helperTile = tile;
-    }, this));
+
+    // The tile the user is interacting with.
+    var tile = this._getTileFromElement(evt.target),
+
+        // The first tile that has been selected.
+        // This is kinda crap; accessing private data.
+        initialTile = _.first(this.currentPlayer._selectedTiles),
+
+        helperTile;
+
+    // If the user is hovering on a neighboring side of the initial tile,
+    // highlight some targeting help on a visible side.
+    if (tile && initialTile && initialTile.side.isNeighbor(tile.side)) {
+      helperTile = this._helperTile = this.cube.getAttackTile(tile, initialTile);
+      if (helperTile) {
+        helperTile.addClass('helper');
+      }
+    }
   },
 
   _handleMouseOut: function(evt) {

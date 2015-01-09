@@ -133,11 +133,8 @@ App.prototype = {
   },
 
   claim: function(tiles) {
-
-    // Remove all helpers.
     this.clearHelperTile();
     this.hideCrosshairs(_.first(tiles));
-
     this._endTurn();
   },
 
@@ -169,23 +166,6 @@ App.prototype = {
     return null;
   },
 
-  _findHelperTile: function(evt, callback) {
-
-    // The tile the user is interacting with.
-    var tile = this._getTileFromElement(evt.target),
-
-        // The first tile that has been selected.
-        // CHEATING THIS FOR NOW. Need to move this login into Player object
-        // so Bot can take advantage of it.
-        initialTile = _.first(this.currentPlayer._selectedTiles);
-
-    // If the user is hovering on a neighboring side of the initial tile,
-    // highlight some targeting help on a visible side.
-    if (tile && initialTile && initialTile.side.isNeighbor(tile.side)) {
-      this.cube.updateHelperHighlight(tile, initialTile, callback);
-    }
-  },
-
   _handleClick: function(evt) {
 
     // Get the target element from the event.
@@ -206,10 +186,24 @@ App.prototype = {
   },
 
   _handleMouseOver: function(evt) {
-    this._findHelperTile(evt, _.bind(function(tile) {
-      tile.addClass('helper');
-      this._helperTile = tile;
-    }, this));
+
+    // The tile the user is interacting with.
+    var tile = this._getTileFromElement(evt.target),
+
+        // The first tile that has been selected.
+        // This is kinda crap; accessing private data.
+        initialTile = _.first(this.currentPlayer._selectedTiles),
+
+        helperTile;
+
+    // If the user is hovering on a neighboring side of the initial tile,
+    // highlight some targeting help on a visible side.
+    if (tile && initialTile && initialTile.side.isNeighbor(tile.side)) {
+      helperTile = this._helperTile = this.cube.getAttackTile(tile, initialTile);
+      if (helperTile) {
+        helperTile.addClass('helper');
+      }
+    }
   },
 
   _handleMouseOut: function(evt) {
@@ -378,25 +372,26 @@ Cube.prototype = {
     }, this);
   },
 
-  updateHelperHighlight: function(tile, initialTile, callback) {
+  /**
+   * Gets the tile where the two passed tile's coordinates intersect.
+   * @param {Tile} [tile1] The first tile selected.
+   * @param {Tile} [tile2] The second tile selected.
+   * @return {Tile}       The tile being attacked.
+   */
+  getAttackTile: function(tile1, tile2) {
 
-    // Get the raw neighbor sides (without their placement keys)
-    // and exclude the selected side.
-    var neighbors = _.without(initialTile.side.getNeighbors(), tile.side);
+    // Get the neighbor sides and exclude the selected side.
+    var neighbors = _.without(tile2.side.getNeighbors(), tile1.side),
 
-    _.forEach(neighbors, function(neighbor) {
+        // Get the neighbor that is visible.
+        side = _.find(neighbors, function(neighbor) {
+          return neighbor.isVisible(this.x, this.y);
+        }, this);
 
-      if (neighbor.isVisible(this.x, this.y)) {
-
-        var highlightTiles = tile.translate(neighbor);
-
-        var helperTile = _.find(highlightTiles, function(ti) {
-          return ti.hasClass('highlighted');
-        });
-
-        callback(helperTile);
-      }
-    }, this);
+    // Return the tile that intersects the two passed tiles.
+    return _.find(tile1.translate(side), function(ti) {
+      return ti.hasClass('highlighted');
+    });
   },
 
   /**
@@ -823,17 +818,22 @@ Tile.prototype = {
     // It looks like this: [1, flip]
     // Where: The first index is the coordinate to use in a line pair
     //        The remaining indicies are methods to invoke on the line
-    var translation = Tile.translationMap[this.side.id][toSide.id],
+    var translation = Tile.translationMap[this.side.id][toSide ? toSide.id : null],
 
         // The line from the line pair to use.
         line = _.first(translation) === 'x' ? this.xLine : this.yLine;
 
-    // Run through each translation method (flip, rotate) and return the result.
-    var newLine = _.reduce(_.rest(translation), function(transformedLine, method) {
-      return transformedLine[method]();
-    }, line);
+    if (translation) {
 
-    return toSide.getTiles(newLine.indicies());
+      // Run through each translation method (flip, rotate) and return the result.
+      var newLine = _.reduce(_.rest(translation), function(transformedLine, method) {
+        return transformedLine[method]();
+      }, line);
+
+      return toSide.getTiles(newLine.indicies());
+    }
+
+    return null;
   }
 
 };
@@ -1129,16 +1129,6 @@ Player.prototype = {
     return _.filter(this.getLines(), function(line) {
       return line.length() === size;
     });
-  },
-
-  /**
-   * Gets the tile where the first two selected tile's coordinates intersect.
-   * @param {Tile} [tile1] The first tile selected.
-   * @param {Tile} [tile2] The second tile selected.
-   * @return {Tile}       The tile being attacked.
-   */
-  getAttackTile: function(tile1, tile2) {
-
   },
 
   /**

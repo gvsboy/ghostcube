@@ -82,17 +82,22 @@ Tile.prototype = {
     // It looks like this: [1, flip]
     // Where: The first index is the coordinate to use in a line pair
     //        The remaining indicies are methods to invoke on the line
-    var translation = Tile.translationMap[this.side.id][toSide.id],
+    var translation = Tile.translationMap[this.side.id][toSide ? toSide.id : null],
 
         // The line from the line pair to use.
         line = _.first(translation) === 'x' ? this.xLine : this.yLine;
 
-    // Run through each translation method (flip, rotate) and return the result.
-    var newLine = _.reduce(_.rest(translation), function(transformedLine, method) {
-      return transformedLine[method]();
-    }, line);
+    if (translation) {
 
-    return toSide.getTiles(newLine.indicies());
+      // Run through each translation method (flip, rotate) and return the result.
+      var newLine = _.reduce(_.rest(translation), function(transformedLine, method) {
+        return transformedLine[method]();
+      }, line);
+
+      return toSide.getTiles(newLine.indicies());
+    }
+
+    return null;
   }
 
 };
