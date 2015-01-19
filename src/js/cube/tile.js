@@ -67,10 +67,6 @@ Tile.prototype = {
     return this;
   },
 
-  hasClass: function(name) {
-    return this.el.classList.contains(name);
-  },
-
   updateLines: function(x, y) {
     this.xLine = x;
     this.yLine = y;

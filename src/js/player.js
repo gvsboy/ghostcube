@@ -13,8 +13,8 @@ Player.prototype = {
   },
 
   release: function(tile) {
-    tile.release();
     this._cubeCache.remove(tile);
+    tile.release();
   },
 
   getLines: function() {
@@ -90,11 +90,20 @@ Player.prototype = {
       // If the attack tile is valid, that means both tiles can be selected
       // and everything can be claimed.
       if (this.canAttack(attackTile)) {
+
+        // If the tile is already claimed, cancel the two out.
         if (attackTile.claimedBy) {
           attackTile.claimedBy.release(attackTile);
+          selectedTiles.push(tile);
         }
-        selectedTiles.push(tile, attackTile);
-        this.claim();
+
+        // Otherwise select it per usual.
+        else {
+          selectedTiles.push(tile, attackTile);
+        }
+
+        // We're done selecting tiles.
+        return true;
       }
       else {
         throw new SelectTileError(SelectTileError.TARGET_CLAIMED)
@@ -108,8 +117,8 @@ Player.prototype = {
       this.emit('player:initialSelected', tile);
     }
 
-    // Are we done selecting tiles this turn?
-    return selectedTiles.length === 3;
+    // We still need to select more tiles this turn.
+    return false;
   },
 
   deselectTile: function(tile) {

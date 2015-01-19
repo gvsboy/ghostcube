@@ -9,30 +9,33 @@ function CubeCache(cube) {
   // A collection of lines created by side.
   this._lineMap = this._buildCollection(cube);
 
-  // A collection of the tiles claimed by side.
-  this._sideMap = this._buildCollection(cube);
+  // A collection of claimed tiles that are not part of lines.
+  this._singles = [];
 }
 
 CubeCache.prototype = {
 
   add: function(tile) {
 
-    var side = this._getSideByTile(tile),
-        index = tile.index;
+    var claimedBy = tile.claimedBy,
+        xPartial = this._getPartialLineTiles(tile.xLine, claimedBy),
+        yPartial = this._getPartialLineTiles(tile.yLine, claimedBy);
 
-    side[index] = tile;
-    this._growLine(this._getXTiles(side, index));
-    this._growLine(this._getYTiles(side, index));
+    this._growLine(xPartial);
+    this._growLine(yPartial);
   },
 
   remove: function(tile) {
 
-    var side = this._getSideByTile(tile),
-        index = tile.index;
+    var claimedBy = tile.claimedBy,
+        xPartial = this._getPartialLineTiles(tile.xLine, claimedBy),
+        yPartial = this._getPartialLineTiles(tile.yLine, claimedBy);
 
-    side[index] = null;
-    this._shrinkLine(this._getXTiles(side, index));
-    this._shrinkLine(this._getYTiles(side, index));
+    _.pull(xPartial, tile);
+    _.pull(yPartial, tile);
+
+    this._shrinkLine(xPartial);
+    this._shrinkLine(yPartial);
   },
 
   /**
@@ -64,19 +67,10 @@ CubeCache.prototype = {
     }, {});
   },
 
-  _getSideByTile: function(tile) {
-    return this._sideMap[tile.side.id];
-  },
-
-  _getXTiles: function(side, index) {
-    var start = index - (index % this._cubeSize);
-    return _.compact(_.at(side, _.range(start, start + this._cubeSize)));
-  },
-
-  _getYTiles: function(side, index) {
-    var size = this._cubeSize,
-        start = index % size;
-    return _.compact(_.at(side, _.range(start, Math.pow(size, 2), size)));
+  _getPartialLineTiles: function(line, claimedBy) {
+    return _.filter(line.getTiles(), function(tile) {
+      return tile.claimedBy === claimedBy;
+    });
   },
 
   _growLine: function(tiles) {
@@ -90,12 +84,20 @@ CubeCache.prototype = {
         return ln && ln.all(tiles);
       });
 
+      // If a line exists already, update it with the new tiles.
       if (line) {
         line.update(tiles);
       }
+
+      // Otherwise, create a new line with the given tiles.
       else {
         side.push(new Line(tiles));
       }
+    }
+
+    // Otherwise, this isn't a line yet. Add the tile to the 'singles' collection.
+    else {
+      //this._singles.push(tiles[0]);
     }
   },
 

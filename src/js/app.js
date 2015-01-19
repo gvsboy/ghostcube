@@ -174,13 +174,20 @@ App.prototype = {
     // If the tile exists, try to select it.
     if (tile) {
       try {
-        this.currentPlayer.selectTile(tile, this._helperTile);
+        if (this.currentPlayer.selectTile(tile, this._helperTile)) {
+          this.currentPlayer.claim();
+        }
         this.tutorial.next().next();
       }
 
       // An error was thrown in the tile selection process. Handle it.
       catch(e) {
-        this.messages.add(e.message);
+        if (e instanceof SelectTileError) {
+          this.messages.add(e.message);
+        }
+        else {
+          throw e;
+        }
       }
     }
   },

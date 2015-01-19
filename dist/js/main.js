@@ -174,13 +174,20 @@ App.prototype = {
     // If the tile exists, try to select it.
     if (tile) {
       try {
-        this.currentPlayer.selectTile(tile, this._helperTile);
+        if (this.currentPlayer.selectTile(tile, this._helperTile)) {
+          this.currentPlayer.claim();
+        }
         this.tutorial.next().next();
       }
 
       // An error was thrown in the tile selection process. Handle it.
       catch(e) {
-        this.messages.add(e.message);
+        if (e instanceof SelectTileError) {
+          this.messages.add(e.message);
+        }
+        else {
+          throw e;
+        }
       }
     }
   },
@@ -237,8 +244,7 @@ Bot.prototype = {
 
     var cube = this._cubeCache._cube,
         botLines = this.getLines(),
-        playerLines = this.opponent.getLines(),
-        selectedTiles = [];
+        playerLines = this.opponent.getLines();
 
 
     // Check if the bot is about to win:
@@ -246,22 +252,62 @@ Bot.prototype = {
     var botWinningMoves = _.filter(botLines, function(line) {
       return line.length() === size - 1;
     });
-    console.log('= bot winning moves:', botWinningMoves);
+    //console.log('= bot winning moves:', botWinningMoves);
 
 
-    // If the bot has some winning moves, try some scenarios out.
-    _.forEach(botWinningMoves, function(line) {
+    /* If the bot has some winning moves, try some scenarios out.
+    for (var i = 0, len = botWinningMoves.length; i < len; i++) {
 
-      // Find out which tiles are missing from the line and
-      // loop through them to determine which ones can be captured.
-      _.forEach(line.missingTiles(), function(tile) {
+      var missingTile = botWinningMoves[i].missingTiles()[0];
 
-        console.log('# missing tile:', tile);
+      console.log('missing tile:', missingTile);
 
-        
-      });
+      if (this._selectedTiles.length < 1) {
+        this.selectTile(missingTile);
+      }
+      else {
+        var attackTile = cube.getAttackTile(this._selectedTiles[0], missingTile);
+        this.selectTile(missingTile, attackTile);
+      }
+    }
+    */
+   
+    // Dummy
+    console.log('opponent cube cache:', this.opponent._cubeCache);
 
-    });
+    /* If there are player lines, try to stop them.
+    if (playerLines.length) {
+      for (var i = 0, len = playerLines.length; i < len; i++) {
+        var missingTile = botWinningMoves[i].missingTiles()[0];
+        var initialTile = _.first(this.selectTiles);
+
+        // If there's a tile selected already, try to seal the deal with two more.
+        if (initialTile) {
+          var attackTile = cube.getAttackTile(initialTile, missingTile);
+          if (this.tryTiles(missingTile, attackTile)) {
+            this.claim();
+            return;
+          }
+        }
+        else {
+          this.tryTiles(missingTile);
+        }
+      }
+    }
+    */
+
+    // If there are no lines, try attacking a tile.
+    //console.log('player tile', this.opponent._cubeCache._sideMap);
+
+  },
+
+  tryTiles: function(tile1, tile2) {
+    try {
+      this.selectTile(tile1, tile2);
+      return true;
+    }
+    catch (e) {}
+    return false;
   }
 
 };
@@ -349,6 +395,13 @@ Cube.prototype = {
   },
 
   /**
+   * @return {Array} The three visible sides.
+   */
+  getVisibleSides: function() {
+
+  },
+
+  /**
    * Updates the passed tile and all related adjacent tiles with the
    * passed callback. This method is mostly used for highlighting tiles
    * to help the user make strategy decisions easier.
@@ -389,9 +442,7 @@ Cube.prototype = {
         }, this);
 
     // Return the tile that intersects the two passed tiles.
-    return _.find(tile1.translate(side), function(ti) {
-      return ti.hasClass('highlighted');
-    });
+    return _.intersection(tile1.translate(side), tile2.translate(side))[0];
   },
 
   /**
@@ -803,10 +854,6 @@ Tile.prototype = {
     return this;
   },
 
-  hasClass: function(name) {
-    return this.el.classList.contains(name);
-  },
-
   updateLines: function(x, y) {
     this.xLine = x;
     this.yLine = y;
@@ -905,30 +952,33 @@ function CubeCache(cube) {
   // A collection of lines created by side.
   this._lineMap = this._buildCollection(cube);
 
-  // A collection of the tiles claimed by side.
-  this._sideMap = this._buildCollection(cube);
+  // A collection of claimed tiles that are not part of lines.
+  this._singles = [];
 }
 
 CubeCache.prototype = {
 
   add: function(tile) {
 
-    var side = this._getSideByTile(tile),
-        index = tile.index;
+    var claimedBy = tile.claimedBy,
+        xPartial = this._getPartialLineTiles(tile.xLine, claimedBy),
+        yPartial = this._getPartialLineTiles(tile.yLine, claimedBy);
 
-    side[index] = tile;
-    this._growLine(this._getXTiles(side, index));
-    this._growLine(this._getYTiles(side, index));
+    this._growLine(xPartial);
+    this._growLine(yPartial);
   },
 
   remove: function(tile) {
 
-    var side = this._getSideByTile(tile),
-        index = tile.index;
+    var claimedBy = tile.claimedBy,
+        xPartial = this._getPartialLineTiles(tile.xLine, claimedBy),
+        yPartial = this._getPartialLineTiles(tile.yLine, claimedBy);
 
-    side[index] = null;
-    this._shrinkLine(this._getXTiles(side, index));
-    this._shrinkLine(this._getYTiles(side, index));
+    _.pull(xPartial, tile);
+    _.pull(yPartial, tile);
+
+    this._shrinkLine(xPartial);
+    this._shrinkLine(yPartial);
   },
 
   /**
@@ -960,19 +1010,10 @@ CubeCache.prototype = {
     }, {});
   },
 
-  _getSideByTile: function(tile) {
-    return this._sideMap[tile.side.id];
-  },
-
-  _getXTiles: function(side, index) {
-    var start = index - (index % this._cubeSize);
-    return _.compact(_.at(side, _.range(start, start + this._cubeSize)));
-  },
-
-  _getYTiles: function(side, index) {
-    var size = this._cubeSize,
-        start = index % size;
-    return _.compact(_.at(side, _.range(start, Math.pow(size, 2), size)));
+  _getPartialLineTiles: function(line, claimedBy) {
+    return _.filter(line.getTiles(), function(tile) {
+      return tile.claimedBy === claimedBy;
+    });
   },
 
   _growLine: function(tiles) {
@@ -986,12 +1027,20 @@ CubeCache.prototype = {
         return ln && ln.all(tiles);
       });
 
+      // If a line exists already, update it with the new tiles.
       if (line) {
         line.update(tiles);
       }
+
+      // Otherwise, create a new line with the given tiles.
       else {
         side.push(new Line(tiles));
       }
+    }
+
+    // Otherwise, this isn't a line yet. Add the tile to the 'singles' collection.
+    else {
+      //this._singles.push(tiles[0]);
     }
   },
 
@@ -1033,8 +1082,7 @@ SelectTileError.CLAIMED = 'claimed';
 SelectTileError.NOT_NEIGHBOR = 'notNeighbor';
 SelectTileError.TARGET_CLAIMED = 'targetClaimed';
 
-SelectTileError.prototype = Error.prototype;
-
+SelectTileError.prototype = new Error();
 function Messages() {
   this.delay = 100;
   this.queue = [];
@@ -1111,8 +1159,8 @@ Player.prototype = {
   },
 
   release: function(tile) {
-    tile.release();
     this._cubeCache.remove(tile);
+    tile.release();
   },
 
   getLines: function() {
@@ -1188,11 +1236,20 @@ Player.prototype = {
       // If the attack tile is valid, that means both tiles can be selected
       // and everything can be claimed.
       if (this.canAttack(attackTile)) {
+
+        // If the tile is already claimed, cancel the two out.
         if (attackTile.claimedBy) {
           attackTile.claimedBy.release(attackTile);
+          selectedTiles.push(tile);
         }
-        selectedTiles.push(tile, attackTile);
-        this.claim();
+
+        // Otherwise select it per usual.
+        else {
+          selectedTiles.push(tile, attackTile);
+        }
+
+        // We're done selecting tiles.
+        return true;
       }
       else {
         throw new SelectTileError(SelectTileError.TARGET_CLAIMED)
@@ -1206,8 +1263,8 @@ Player.prototype = {
       this.emit('player:initialSelected', tile);
     }
 
-    // Are we done selecting tiles this turn?
-    return selectedTiles.length === 3;
+    // We still need to select more tiles this turn.
+    return false;
   },
 
   deselectTile: function(tile) {

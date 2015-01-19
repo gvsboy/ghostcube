@@ -81,6 +81,13 @@ Cube.prototype = {
   },
 
   /**
+   * @return {Array} The three visible sides.
+   */
+  getVisibleSides: function() {
+
+  },
+
+  /**
    * Updates the passed tile and all related adjacent tiles with the
    * passed callback. This method is mostly used for highlighting tiles
    * to help the user make strategy decisions easier.
@@ -121,9 +128,7 @@ Cube.prototype = {
         }, this);
 
     // Return the tile that intersects the two passed tiles.
-    return _.find(tile1.translate(side), function(ti) {
-      return ti.hasClass('highlighted');
-    });
+    return _.intersection(tile1.translate(side), tile2.translate(side))[0];
   },
 
   /**
