@@ -136,6 +136,7 @@ App.prototype = {
     this.clearHelperTile();
     this.hideCrosshairs(_.first(tiles));
     this._endTurn();
+    console.log('player cache singles:', this.players[0]._cubeCache._singles);
   },
 
   _endTurn: function() {

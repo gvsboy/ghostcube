@@ -72,6 +72,13 @@ Tile.prototype = {
     this.yLine = y;
   },
 
+  /**
+   * @return {Array} All the tiles composing both lines.
+   */
+  getAllLineTiles: function() {
+    return _.union(this.xLine.getTiles(), this.yLine.getTiles());
+  },
+
   translate: function(toSide) {
 
     // A translation is a recipe for morphing one line into another.

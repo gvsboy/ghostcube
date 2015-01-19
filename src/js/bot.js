@@ -52,7 +52,7 @@ Bot.prototype = {
     */
    
     // Dummy
-    console.log('opponent cube cache:', this.opponent._cubeCache);
+    //console.log('opponent cube cache singles:', this.opponent._cubeCache._singles);
 
     /* If there are player lines, try to stop them.
     if (playerLines.length) {
