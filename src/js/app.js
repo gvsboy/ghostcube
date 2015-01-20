@@ -136,7 +136,6 @@ App.prototype = {
     this.clearHelperTile();
     this.hideCrosshairs(_.first(tiles));
     this._endTurn();
-    console.log('player cache singles:', this.players[0]._cubeCache._singles);
   },
 
   _endTurn: function() {
@@ -199,8 +198,7 @@ App.prototype = {
     var tile = this._getTileFromElement(evt.target),
 
         // The first tile that has been selected.
-        // This is kinda crap; accessing private data.
-        initialTile = _.first(this.currentPlayer._selectedTiles),
+        initialTile = this.currentPlayer.getInitialTile(),
 
         helperTile;
 

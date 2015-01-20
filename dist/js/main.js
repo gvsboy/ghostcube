@@ -136,7 +136,6 @@ App.prototype = {
     this.clearHelperTile();
     this.hideCrosshairs(_.first(tiles));
     this._endTurn();
-    console.log('player cache singles:', this.players[0]._cubeCache._singles);
   },
 
   _endTurn: function() {
@@ -199,8 +198,7 @@ App.prototype = {
     var tile = this._getTileFromElement(evt.target),
 
         // The first tile that has been selected.
-        // This is kinda crap; accessing private data.
-        initialTile = _.first(this.currentPlayer._selectedTiles),
+        initialTile = this.currentPlayer.getInitialTile(),
 
         helperTile;
 
@@ -276,33 +274,68 @@ Bot.prototype = {
     // Dummy
     //console.log('opponent cube cache singles:', this.opponent._cubeCache._singles);
 
-    /* If there are player lines, try to stop them.
+    // If there are player lines, try to stop them.
     if (playerLines.length) {
       for (var i = 0, len = playerLines.length; i < len; i++) {
-        var missingTile = botWinningMoves[i].missingTiles()[0];
-        var initialTile = _.first(this.selectTiles);
+        var missingTile = playerLines[i].missingTiles()[0];
+        var initialTile = this.getInitialTile();
 
         // If there's a tile selected already, try to seal the deal with two more.
         if (initialTile) {
           var attackTile = cube.getAttackTile(initialTile, missingTile);
-          if (this.tryTiles(missingTile, attackTile)) {
+          if (this._tryTiles(missingTile, attackTile)) {
             this.claim();
             return;
           }
         }
         else {
-          this.tryTiles(missingTile);
+          this._tryTiles(missingTile);
         }
       }
     }
-    */
 
     // If there are no lines, try attacking a tile.
-    //console.log('player tile', this.opponent._cubeCache._sideMap);
+    // Is there a tile selected?
+
+    // Get a random single.
+    this._selectSingles();
 
   },
 
-  tryTiles: function(tile1, tile2) {
+  _selectSingles: function() {
+
+    var cube = this._cubeCache._cube,
+        singles = this.opponent.getSingles(),
+        initialTile,
+        tile;
+
+    for (var t = 0, len = singles.length; t < len; t++) {
+
+      tile = singles[t];
+      initialTile = this.getInitialTile();
+
+      if (initialTile) {
+        var attackTile = cube.getAttackTile(initialTile, tile);
+        if (this._tryTiles(tile, attackTile)) {
+          this.claim();
+          return;
+        }
+      }
+      else {
+
+        // Loop through all the line tiles until one of the is selectable.
+        var lineTiles = tile.getAllLineTiles();
+        for (var e = 0, elen = lineTiles.length; e < elen; e++) {
+          if (this._tryTiles(lineTiles[e])) {
+            break;
+          }
+        }
+      }
+    }
+
+  },
+
+  _tryTiles: function(tile1, tile2) {
     try {
       this.selectTile(tile1, tile2);
       return true;
@@ -1224,6 +1257,20 @@ Player.prototype = {
 
   getLines: function() {
     return this._cubeCache.getLines();
+  },
+
+  /**
+   * @return {Array[Tile]} All the tiles claimed that do not compose lines.
+   */
+  getSingles: function() {
+    return this._cubeCache._singles;
+  },
+
+  /**
+   * @return {Tile} The first tile selected to be claimed.
+   */
+  getInitialTile: function() {
+    return _.first(this._selectedTiles);
   },
 
   /**

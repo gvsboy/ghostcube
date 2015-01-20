@@ -22,6 +22,20 @@ Player.prototype = {
   },
 
   /**
+   * @return {Array[Tile]} All the tiles claimed that do not compose lines.
+   */
+  getSingles: function() {
+    return this._cubeCache._singles;
+  },
+
+  /**
+   * @return {Tile} The first tile selected to be claimed.
+   */
+  getInitialTile: function() {
+    return _.first(this._selectedTiles);
+  },
+
+  /**
    * Win lines are completed lines. This method returns all the win
    * lines claimed by the player.
    * @return {Array} A collection of this player's win lines.
