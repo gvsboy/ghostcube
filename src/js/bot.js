@@ -25,49 +25,37 @@ Bot.prototype = {
         - Claiming the missing tile?
      */
 
+    this._selectWin() ||
+    this._selectOpponentBlocker() || 
+    this._selectSingles();
+  },
+
+  _selectWin: function() {
+
+    var botLines = this.getLines();
+
+    // More tiles must be selected to complete the turn.
+    return false;
+  },
+
+  _selectOpponentBlocker: function() {
+
     var cube = this._cubeCache._cube,
-        botLines = this.getLines(),
         playerLines = this.opponent.getLines();
 
-
-    // Check if the bot is about to win:
-    var size = this._cubeCache._cubeSize;
-    var botWinningMoves = _.filter(botLines, function(line) {
-      return line.length() === size - 1;
-    });
-    //console.log('= bot winning moves:', botWinningMoves);
-
-
-    /* If the bot has some winning moves, try some scenarios out.
-    for (var i = 0, len = botWinningMoves.length; i < len; i++) {
-
-      var missingTile = botWinningMoves[i].missingTiles()[0];
-
-      console.log('missing tile:', missingTile);
-
-      if (this._selectedTiles.length < 1) {
-        this.selectTile(missingTile);
-      }
-      else {
-        var attackTile = cube.getAttackTile(this._selectedTiles[0], missingTile);
-        this.selectTile(missingTile, attackTile);
-      }
-    }
-    */
-
-    // Dummy
-    //console.log('opponent cube cache singles:', this.opponent._cubeCache._singles);
-    /* If there are player lines, try to stop them.
     if (playerLines.length) {
       for (var i = 0, len = playerLines.length; i < len; i++) {
-        var missingTile = playerLines[i].missingTiles()[0];
+
         var initialTile = this.getInitialTriedTile();
+        var missingTile = playerLines[i].missingTiles()[0];
+
+        console.log('@@@ win loop: initial | tile: ', initialTile, missingTile);
 
         // If there's a tile selected already, try to seal the deal with two more.
         if (initialTile) {
           var attackTile = cube.getAttackTile(initialTile, missingTile);
           if (this._tryTiles(missingTile, attackTile)) {
-            return; // Done! The tiles will be claimed.
+            return true; // Done! The tiles will be claimed.
           }
         }
         else {
@@ -75,14 +63,9 @@ Bot.prototype = {
         }
       }
     }
-    */
 
-    // If there are no lines, try attacking a tile.
-    // Is there a tile selected?
-
-    // Get a random single.
-    this._selectSingles();
-
+    // More tiles must be selected to complete the turn.
+    return false;
   },
 
   _selectSingles: function() {
@@ -102,11 +85,13 @@ Bot.prototype = {
       if (initialTile && tile) {
         var attackTile = cube.getAttackTile(initialTile, tile);
         if (this._tryTiles(tile, attackTile)) {
-          return; // Done! The tiles will be claimed.
+          return true; // Done! The tiles will be claimed.
         }
       }
     }
 
+    // More tiles must be selected to complete the turn.
+    return false;
   },
 
   /**
