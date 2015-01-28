@@ -78,11 +78,6 @@ App.prototype = {
     // Begin the rendering.
     this.renderer.initialize();
 
-    cube
-      .listenTo('click', this._handleClick, this)
-      .listenTo('mouseover', this._handleMouseOver, this)
-      .listenTo('mouseout', this._handleMouseOut, this);
-
     cube.on('renderstart', _.bind(this.clearHelperTile, this));
 
     // Not really into this but sure for now.
@@ -96,6 +91,20 @@ App.prototype = {
     this.tutorial.next().next();
   },
 
+  enableCubeInteraction: function() {
+    this.cube
+      .listenTo('click', this._handleClick, this)
+      .listenTo('mouseover', this._handleMouseOver, this)
+      .listenTo('mouseout', this._handleMouseOut, this);
+  },
+
+  disableCubeInteraction: function() {
+    this.cube
+      .stopListeningTo('click')
+      .stopListeningTo('mouseover')
+      .stopListeningTo('mouseout');
+  },
+
   setCurrentPlayer: function(player) {
     var cubeEl = this.cube.el;
     cubeEl.classList.add(player.tileClass + '-turn');
@@ -106,7 +115,11 @@ App.prototype = {
     this.messages.add(player.name + '\'s turn!', 'alert');
 
     if (player.isBot()) {
+      this.disableCubeInteraction();
       player.play();
+    }
+    else {
+      this.enableCubeInteraction();
     }
   },
 
@@ -174,9 +187,7 @@ App.prototype = {
     // If the tile exists, try to select it.
     if (tile) {
       try {
-        if (this.currentPlayer.selectTile(tile, this._helperTile)) {
-          this.currentPlayer.claim();
-        }
+        this.currentPlayer.selectTile(tile, this._helperTile);
         this.tutorial.next().next();
       }
 

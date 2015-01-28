@@ -78,11 +78,6 @@ App.prototype = {
     // Begin the rendering.
     this.renderer.initialize();
 
-    cube
-      .listenTo('click', this._handleClick, this)
-      .listenTo('mouseover', this._handleMouseOver, this)
-      .listenTo('mouseout', this._handleMouseOut, this);
-
     cube.on('renderstart', _.bind(this.clearHelperTile, this));
 
     // Not really into this but sure for now.
@@ -96,6 +91,20 @@ App.prototype = {
     this.tutorial.next().next();
   },
 
+  enableCubeInteraction: function() {
+    this.cube
+      .listenTo('click', this._handleClick, this)
+      .listenTo('mouseover', this._handleMouseOver, this)
+      .listenTo('mouseout', this._handleMouseOut, this);
+  },
+
+  disableCubeInteraction: function() {
+    this.cube
+      .stopListeningTo('click')
+      .stopListeningTo('mouseover')
+      .stopListeningTo('mouseout');
+  },
+
   setCurrentPlayer: function(player) {
     var cubeEl = this.cube.el;
     cubeEl.classList.add(player.tileClass + '-turn');
@@ -106,7 +115,11 @@ App.prototype = {
     this.messages.add(player.name + '\'s turn!', 'alert');
 
     if (player.isBot()) {
+      this.disableCubeInteraction();
       player.play();
+    }
+    else {
+      this.enableCubeInteraction();
     }
   },
 
@@ -174,9 +187,7 @@ App.prototype = {
     // If the tile exists, try to select it.
     if (tile) {
       try {
-        if (this.currentPlayer.selectTile(tile, this._helperTile)) {
-          this.currentPlayer.claim();
-        }
+        this.currentPlayer.selectTile(tile, this._helperTile);
         this.tutorial.next().next();
       }
 
@@ -225,9 +236,13 @@ function Bot(name, tileClass, cube, opponent) {
 
 Bot.prototype = {
 
+  getInitialTriedTile: function() {
+    return _.first(this._triedTiles);
+  },
+
   play: function() {
 
-    console.log('============== BOT MOVE ==============');
+    this._triedTiles = [];
 
     /*
       First, gather all the Bot's tiles to see if a win is possible this turn
@@ -270,22 +285,20 @@ Bot.prototype = {
       }
     }
     */
-   
+
     // Dummy
     //console.log('opponent cube cache singles:', this.opponent._cubeCache._singles);
-
-    // If there are player lines, try to stop them.
+    /* If there are player lines, try to stop them.
     if (playerLines.length) {
       for (var i = 0, len = playerLines.length; i < len; i++) {
         var missingTile = playerLines[i].missingTiles()[0];
-        var initialTile = this.getInitialTile();
+        var initialTile = this.getInitialTriedTile();
 
         // If there's a tile selected already, try to seal the deal with two more.
         if (initialTile) {
           var attackTile = cube.getAttackTile(initialTile, missingTile);
           if (this._tryTiles(missingTile, attackTile)) {
-            this.claim();
-            return;
+            return; // Done! The tiles will be claimed.
           }
         }
         else {
@@ -293,6 +306,7 @@ Bot.prototype = {
         }
       }
     }
+    */
 
     // If there are no lines, try attacking a tile.
     // Is there a tile selected?
@@ -305,34 +319,60 @@ Bot.prototype = {
   _selectSingles: function() {
 
     var cube = this._cubeCache._cube,
-        singles = this.opponent.getSingles(),
+        singles = _.shuffle(this.opponent.getSingles()),
         initialTile,
         tile;
 
     for (var t = 0, len = singles.length; t < len; t++) {
 
-      tile = singles[t];
-      initialTile = this.getInitialTile();
+      initialTile = this.getInitialTriedTile();
+      tile = this._selectByTileLine(singles[t]);
 
-      if (initialTile) {
+      console.log('### singles loop: initial | tile: ', initialTile, tile);
+
+      if (initialTile && tile) {
         var attackTile = cube.getAttackTile(initialTile, tile);
         if (this._tryTiles(tile, attackTile)) {
-          this.claim();
-          return;
-        }
-      }
-      else {
-
-        // Loop through all the line tiles until one of the is selectable.
-        var lineTiles = tile.getAllLineTiles();
-        for (var e = 0, elen = lineTiles.length; e < elen; e++) {
-          if (this._tryTiles(lineTiles[e])) {
-            break;
-          }
+          return; // Done! The tiles will be claimed.
         }
       }
     }
 
+  },
+
+  /**
+   * Attempts to select a tile on the same line as the given tile.
+   * Scans both x and y lines, shuffling the collection.
+   * @param  {Tile} tile The target tile.
+   * @return {Tile}      The selected tile.
+   */
+  _selectByTileLine: function(tile) {
+
+    // Grab all the tiles on the same line as the passed tile.
+    var lineTiles = _.shuffle(tile.getAllLineTiles());
+
+    // Return the first tile that is a valid selection.
+    return _.find(lineTiles, function(ti) {
+      return this._tryTiles(ti);
+    }, this);
+  },
+
+  _selectTiles: function() {
+    this._triedTiles = _.union(this._triedTiles, arguments);
+    if (this._triedTiles.length === 3) {
+      this._report();
+      this._animateClaim();
+    }
+  },
+
+  _animateClaim: function() {
+    setTimeout(_.bind(function() {
+      var tile = this._triedTiles.shift();
+      Player.prototype._selectTiles.call(this, tile);
+      if (!_.isEmpty(this._triedTiles)) {
+        this._animateClaim();
+      }
+    }, this), 600);
   },
 
   _tryTiles: function(tile1, tile2) {
@@ -340,8 +380,20 @@ Bot.prototype = {
       this.selectTile(tile1, tile2);
       return true;
     }
-    catch (e) {}
+    catch (e) {
+      if (!(e instanceof SelectTileError)) {
+        throw e;
+      }
+    }
     return false;
+  },
+
+  _report: function() {
+    var info = _.reduce(this._triedTiles, function(all, tile) {
+      all.push(tile.toString ? tile.toString() : tile);
+      return all;
+    }, []);
+    console.log("### Bot will try: ", info.join(' | '));
   }
 
 };
@@ -359,6 +411,8 @@ function Cube(el, size) {
 
   // This will be set in beginGame.
   this._sides = null;
+
+  this._eventMap = {};
 
   // EventEmitter constructor call.
   EventEmitter2.call(this);
@@ -415,7 +469,26 @@ Cube.prototype = {
   },
 
   listenTo: function(eventName, callback, context) {
-    this.el.addEventListener(eventName, _.bind(callback, context || this));
+
+    var events = this._eventMap,
+        handler = _.bind(callback, context || this);
+
+    if (!events[eventName]) {
+      events[eventName] = [];
+    }
+
+    this._eventMap[eventName].push(handler);
+    this.el.addEventListener(eventName, handler);
+
+    return this;
+  },
+
+  stopListeningTo: function(eventName) {
+
+    _.each(this._eventMap[eventName], function(handler) {
+      this.el.removeEventListener(eventName, handler);
+    }, this);
+
     return this;
   },
 
@@ -835,6 +908,14 @@ function Tile(side, index) {
 }
 
 Tile.prototype = {
+
+  /**
+   * Outputs useful identifying information for troubleshooting.
+   * @return {String} Tile information.
+   */
+  toString: function() {
+    return this.el.id;
+  },
 
   build: function(id) {
     var el = document.createElement('div');
@@ -1346,31 +1427,40 @@ Player.prototype = {
         // If the tile is already claimed, cancel the two out.
         if (attackTile.claimedBy) {
           attackTile.claimedBy.release(attackTile);
-          selectedTiles.push(tile);
+          this._selectTiles(tile, 'attack');
         }
 
         // Otherwise select it per usual.
         else {
-          selectedTiles.push(tile, attackTile);
+          this._selectTiles(tile, attackTile);
         }
 
         // We're done selecting tiles.
         return true;
       }
       else {
-        throw new SelectTileError(SelectTileError.TARGET_CLAIMED)
+        throw new SelectTileError(SelectTileError.TARGET_CLAIMED);
       }
     }
 
     // Otherwise, the initial tile must have been selected.
     // Emit an event to celebrate this special occasion!
     else {
-      selectedTiles.push(tile);
-      this.emit('player:initialSelected', tile);
+      this._selectTiles(tile);
     }
 
     // We still need to select more tiles this turn.
     return false;
+  },
+
+  _selectTiles: function() {
+    if (!this.getInitialTile()) {
+      this.emit('player:initialSelected', arguments[0]);
+    }
+    Array.prototype.push.apply(this._selectedTiles, arguments);
+    if (this._selectedTiles.length >= 3) {
+      this.claim();
+    }
   },
 
   deselectTile: function(tile) {
@@ -1380,8 +1470,10 @@ Player.prototype = {
 
   claim: function() {
     _.forEach(this._selectedTiles, function(tile) {
-      tile.claim(this);
-      this._cubeCache.add(tile);
+      if (tile instanceof Tile) {
+        tile.claim(this);
+        this._cubeCache.add(tile);
+      }
     }, this);
     this.emit('player:claim', this._selectedTiles);
     this._selectedTiles = [];
@@ -1394,7 +1486,12 @@ _.assign(Player.prototype, EventEmitter2.prototype);
 
 // Assign Bot inheritence here because Bot is getting included first.
 // Need to switch to modules next go-round. For reals.
-_.assign(Bot.prototype, Player.prototype);
+// This is cheesey.
+(function() {
+  var botSelect = Bot.prototype._selectTiles;
+  _.assign(Bot.prototype, Player.prototype);
+  Bot.prototype._selectTiles = botSelect;
+}());
 
 /**
  * A software interface for determining which keyboard keys are pressed.

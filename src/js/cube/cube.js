@@ -12,6 +12,8 @@ function Cube(el, size) {
   // This will be set in beginGame.
   this._sides = null;
 
+  this._eventMap = {};
+
   // EventEmitter constructor call.
   EventEmitter2.call(this);
 }
@@ -67,7 +69,26 @@ Cube.prototype = {
   },
 
   listenTo: function(eventName, callback, context) {
-    this.el.addEventListener(eventName, _.bind(callback, context || this));
+
+    var events = this._eventMap,
+        handler = _.bind(callback, context || this);
+
+    if (!events[eventName]) {
+      events[eventName] = [];
+    }
+
+    this._eventMap[eventName].push(handler);
+    this.el.addEventListener(eventName, handler);
+
+    return this;
+  },
+
+  stopListeningTo: function(eventName) {
+
+    _.each(this._eventMap[eventName], function(handler) {
+      this.el.removeEventListener(eventName, handler);
+    }, this);
+
     return this;
   },
 

@@ -5,9 +5,13 @@ function Bot(name, tileClass, cube, opponent) {
 
 Bot.prototype = {
 
+  getInitialTriedTile: function() {
+    return _.first(this._triedTiles);
+  },
+
   play: function() {
 
-    console.log('============== BOT MOVE ==============');
+    this._triedTiles = [];
 
     /*
       First, gather all the Bot's tiles to see if a win is possible this turn
@@ -50,22 +54,20 @@ Bot.prototype = {
       }
     }
     */
-   
+
     // Dummy
     //console.log('opponent cube cache singles:', this.opponent._cubeCache._singles);
-
-    // If there are player lines, try to stop them.
+    /* If there are player lines, try to stop them.
     if (playerLines.length) {
       for (var i = 0, len = playerLines.length; i < len; i++) {
         var missingTile = playerLines[i].missingTiles()[0];
-        var initialTile = this.getInitialTile();
+        var initialTile = this.getInitialTriedTile();
 
         // If there's a tile selected already, try to seal the deal with two more.
         if (initialTile) {
           var attackTile = cube.getAttackTile(initialTile, missingTile);
           if (this._tryTiles(missingTile, attackTile)) {
-            this.claim();
-            return;
+            return; // Done! The tiles will be claimed.
           }
         }
         else {
@@ -73,6 +75,7 @@ Bot.prototype = {
         }
       }
     }
+    */
 
     // If there are no lines, try attacking a tile.
     // Is there a tile selected?
@@ -85,34 +88,60 @@ Bot.prototype = {
   _selectSingles: function() {
 
     var cube = this._cubeCache._cube,
-        singles = this.opponent.getSingles(),
+        singles = _.shuffle(this.opponent.getSingles()),
         initialTile,
         tile;
 
     for (var t = 0, len = singles.length; t < len; t++) {
 
-      tile = singles[t];
-      initialTile = this.getInitialTile();
+      initialTile = this.getInitialTriedTile();
+      tile = this._selectByTileLine(singles[t]);
 
-      if (initialTile) {
+      console.log('### singles loop: initial | tile: ', initialTile, tile);
+
+      if (initialTile && tile) {
         var attackTile = cube.getAttackTile(initialTile, tile);
         if (this._tryTiles(tile, attackTile)) {
-          this.claim();
-          return;
-        }
-      }
-      else {
-
-        // Loop through all the line tiles until one of the is selectable.
-        var lineTiles = tile.getAllLineTiles();
-        for (var e = 0, elen = lineTiles.length; e < elen; e++) {
-          if (this._tryTiles(lineTiles[e])) {
-            break;
-          }
+          return; // Done! The tiles will be claimed.
         }
       }
     }
 
+  },
+
+  /**
+   * Attempts to select a tile on the same line as the given tile.
+   * Scans both x and y lines, shuffling the collection.
+   * @param  {Tile} tile The target tile.
+   * @return {Tile}      The selected tile.
+   */
+  _selectByTileLine: function(tile) {
+
+    // Grab all the tiles on the same line as the passed tile.
+    var lineTiles = _.shuffle(tile.getAllLineTiles());
+
+    // Return the first tile that is a valid selection.
+    return _.find(lineTiles, function(ti) {
+      return this._tryTiles(ti);
+    }, this);
+  },
+
+  _selectTiles: function() {
+    this._triedTiles = _.union(this._triedTiles, arguments);
+    if (this._triedTiles.length === 3) {
+      this._report();
+      this._animateClaim();
+    }
+  },
+
+  _animateClaim: function() {
+    setTimeout(_.bind(function() {
+      var tile = this._triedTiles.shift();
+      Player.prototype._selectTiles.call(this, tile);
+      if (!_.isEmpty(this._triedTiles)) {
+        this._animateClaim();
+      }
+    }, this), 600);
   },
 
   _tryTiles: function(tile1, tile2) {
@@ -120,8 +149,20 @@ Bot.prototype = {
       this.selectTile(tile1, tile2);
       return true;
     }
-    catch (e) {}
+    catch (e) {
+      if (!(e instanceof SelectTileError)) {
+        throw e;
+      }
+    }
     return false;
+  },
+
+  _report: function() {
+    var info = _.reduce(this._triedTiles, function(all, tile) {
+      all.push(tile.toString ? tile.toString() : tile);
+      return all;
+    }, []);
+    console.log("### Bot will try: ", info.join(' | '));
   }
 
 };

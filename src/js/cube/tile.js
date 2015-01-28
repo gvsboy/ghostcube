@@ -15,6 +15,14 @@ function Tile(side, index) {
 
 Tile.prototype = {
 
+  /**
+   * Outputs useful identifying information for troubleshooting.
+   * @return {String} Tile information.
+   */
+  toString: function() {
+    return this.el.id;
+  },
+
   build: function(id) {
     var el = document.createElement('div');
     el.id = id;

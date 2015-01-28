@@ -108,31 +108,40 @@ Player.prototype = {
         // If the tile is already claimed, cancel the two out.
         if (attackTile.claimedBy) {
           attackTile.claimedBy.release(attackTile);
-          selectedTiles.push(tile);
+          this._selectTiles(tile, 'attack');
         }
 
         // Otherwise select it per usual.
         else {
-          selectedTiles.push(tile, attackTile);
+          this._selectTiles(tile, attackTile);
         }
 
         // We're done selecting tiles.
         return true;
       }
       else {
-        throw new SelectTileError(SelectTileError.TARGET_CLAIMED)
+        throw new SelectTileError(SelectTileError.TARGET_CLAIMED);
       }
     }
 
     // Otherwise, the initial tile must have been selected.
     // Emit an event to celebrate this special occasion!
     else {
-      selectedTiles.push(tile);
-      this.emit('player:initialSelected', tile);
+      this._selectTiles(tile);
     }
 
     // We still need to select more tiles this turn.
     return false;
+  },
+
+  _selectTiles: function() {
+    if (!this.getInitialTile()) {
+      this.emit('player:initialSelected', arguments[0]);
+    }
+    Array.prototype.push.apply(this._selectedTiles, arguments);
+    if (this._selectedTiles.length >= 3) {
+      this.claim();
+    }
   },
 
   deselectTile: function(tile) {
@@ -142,8 +151,10 @@ Player.prototype = {
 
   claim: function() {
     _.forEach(this._selectedTiles, function(tile) {
-      tile.claim(this);
-      this._cubeCache.add(tile);
+      if (tile instanceof Tile) {
+        tile.claim(this);
+        this._cubeCache.add(tile);
+      }
     }, this);
     this.emit('player:claim', this._selectedTiles);
     this._selectedTiles = [];
@@ -156,4 +167,9 @@ _.assign(Player.prototype, EventEmitter2.prototype);
 
 // Assign Bot inheritence here because Bot is getting included first.
 // Need to switch to modules next go-round. For reals.
-_.assign(Bot.prototype, Player.prototype);
+// This is cheesey.
+(function() {
+  var botSelect = Bot.prototype._selectTiles;
+  _.assign(Bot.prototype, Player.prototype);
+  Bot.prototype._selectTiles = botSelect;
+}());
