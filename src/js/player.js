@@ -12,6 +12,11 @@ Player.prototype = {
     return this instanceof Bot;
   },
 
+  claim: function(tile) {
+    tile.claim(this);
+    this._cubeCache.add(tile);
+  },
+
   release: function(tile) {
     this._cubeCache.remove(tile);
     tile.release();
@@ -140,7 +145,7 @@ Player.prototype = {
     }
     Array.prototype.push.apply(this._selectedTiles, arguments);
     if (this._selectedTiles.length >= 3) {
-      this.claim();
+      this.claimAll();
     }
   },
 
@@ -149,11 +154,10 @@ Player.prototype = {
     this.emit('player:initialDeselected', tile);
   },
 
-  claim: function() {
+  claimAll: function() {
     _.forEach(this._selectedTiles, function(tile) {
       if (tile instanceof Tile) {
-        tile.claim(this);
-        this._cubeCache.add(tile);
+        this.claim(tile);
       }
     }, this);
     this.emit('player:claim', this._selectedTiles);

@@ -25,6 +25,9 @@ function App(containerId) {
   // Step-by-step instruction component.
   this.tutorial = new Tutorial();
 
+  // Records moves as they're made. Can be used to step through time.
+  this.recorder = new Recorder();
+
   // Listen for user interactions.
   this.listen();
 }
@@ -146,6 +149,7 @@ App.prototype = {
   },
 
   claim: function(tiles) {
+    this.recorder.record(this.currentPlayer, tiles);
     this.clearHelperTile();
     this.hideCrosshairs(_.first(tiles));
     this._endTurn();
@@ -242,6 +246,8 @@ Bot.prototype = {
 
   play: function() {
 
+    console.log('================== BOT MOVE ==================');
+
     this._triedTiles = [];
 
     /*
@@ -263,7 +269,31 @@ Bot.prototype = {
 
   _selectWin: function() {
 
-    var botLines = this.getLines();
+    var cube = this._cubeCache._cube,
+        lines = this.getLines(),
+        initialTile,
+        tile;
+
+    console.log('++++++ WIN lines: ', lines);
+
+    for (var i = 0, len = lines.length; i < len; i++) {
+
+      initialTile = this.getInitialTriedTile();
+      tile = lines[i].missingTiles()[0];
+
+      console.log('+++ WIN loop: initial | tile: ', initialTile, tile);
+
+      // If there's a tile selected already, try to seal the deal with two more.
+      if (initialTile) {
+        var attackTile = cube.getAttackTile(initialTile, tile);
+        if (this._tryTiles(tile, attackTile)) {
+          return true; // Done! The tiles will be claimed.
+        }
+      }
+      else {
+        this._tryTiles(tile);
+      }
+    }
 
     // More tiles must be selected to complete the turn.
     return false;
@@ -272,26 +302,28 @@ Bot.prototype = {
   _selectOpponentBlocker: function() {
 
     var cube = this._cubeCache._cube,
-        playerLines = this.opponent.getLines();
+        lines = this.opponent.getLines(),
+        initialTile,
+        tile;
 
-    if (playerLines.length) {
-      for (var i = 0, len = playerLines.length; i < len; i++) {
+    console.log('@@@@@@ BLOCK lines', lines);
 
-        var initialTile = this.getInitialTriedTile();
-        var missingTile = playerLines[i].missingTiles()[0];
+    for (var i = 0, len = lines.length; i < len; i++) {
 
-        console.log('@@@ win loop: initial | tile: ', initialTile, missingTile);
+      initialTile = this.getInitialTriedTile();
+      tile = lines[i].missingTiles()[0];
 
-        // If there's a tile selected already, try to seal the deal with two more.
-        if (initialTile) {
-          var attackTile = cube.getAttackTile(initialTile, missingTile);
-          if (this._tryTiles(missingTile, attackTile)) {
-            return true; // Done! The tiles will be claimed.
-          }
+      console.log('@@@ BLOCK loop: initial | tile: ', initialTile, tile);
+
+      // If there's a tile selected already, try to seal the deal with two more.
+      if (initialTile) {
+        var attackTile = cube.getAttackTile(initialTile, tile);
+        if (this._tryTiles(tile, attackTile)) {
+          return true; // Done! The tiles will be claimed.
         }
-        else {
-          this._tryTiles(missingTile);
-        }
+      }
+      else {
+        this._tryTiles(tile);
       }
     }
 
@@ -311,7 +343,7 @@ Bot.prototype = {
       initialTile = this.getInitialTriedTile();
       tile = this._selectByTileLine(singles[t]);
 
-      console.log('### singles loop: initial | tile: ', initialTile, tile);
+      console.log('--- singles loop: initial | tile: ', initialTile, tile);
 
       if (initialTile && tile) {
         var attackTile = cube.getAttackTile(initialTile, tile);
@@ -1316,6 +1348,11 @@ Player.prototype = {
     return this instanceof Bot;
   },
 
+  claim: function(tile) {
+    tile.claim(this);
+    this._cubeCache.add(tile);
+  },
+
   release: function(tile) {
     this._cubeCache.remove(tile);
     tile.release();
@@ -1444,7 +1481,7 @@ Player.prototype = {
     }
     Array.prototype.push.apply(this._selectedTiles, arguments);
     if (this._selectedTiles.length >= 3) {
-      this.claim();
+      this.claimAll();
     }
   },
 
@@ -1453,11 +1490,10 @@ Player.prototype = {
     this.emit('player:initialDeselected', tile);
   },
 
-  claim: function() {
+  claimAll: function() {
     _.forEach(this._selectedTiles, function(tile) {
       if (tile instanceof Tile) {
-        tile.claim(this);
-        this._cubeCache.add(tile);
+        this.claim(tile);
       }
     }, this);
     this.emit('player:claim', this._selectedTiles);
@@ -1477,6 +1513,71 @@ _.assign(Player.prototype, EventEmitter2.prototype);
   _.assign(Bot.prototype, Player.prototype);
   Bot.prototype._selectTiles = botSelect;
 }());
+
+function Recorder() {
+  this._timeline = [];
+  this._cursor = 0;
+}
+
+Recorder.MESSAGES = {
+  NOT_FOUND: 'Could not locate a turn at ',
+  REWRITE: 'Turns are now being rewritten as the timeline was behind by '
+};
+
+Recorder.prototype = {
+
+  record: function(player, tiles) {
+
+    var behind = this._timeline.length - this._cursor;
+
+    if (behind) {
+      console.warn(Recorder.MESSAGES.REWRITE + this._cursor);
+      // Upgrade lodash and then use:
+      // this._timeline = _.dropRight(this._timeline, behind);
+    }
+
+    this._package(player, tiles);
+    this._cursor++;
+  },
+
+  forward: function() {
+
+    var turnData = this._timeline[this._cursor];
+
+    if (turnData) {
+      _.each(turnData.tiles, function(tile) {
+        turnData.player.claim(tile);
+      });
+      this._cursor++;
+    }
+    else {
+      throw Recorder.MESSAGES.NOT_FOUND + this._cursor;
+    }
+  },
+
+  reverse: function() {
+
+    var turnData = this._timeline[this._cursor - 1];
+
+    if (turnData) {
+      _.each(turnData.tiles, function(tile) {
+        turnData.player.release(tile);
+      });
+      this._cursor--;
+    }
+    else {
+      throw Recorder.MESSAGES.NOT_FOUND + this._cursor;
+    }
+  },
+
+  _package: function(player, tiles) {
+    this._timeline.push({
+      player: player,
+      tiles: tiles
+    });
+  }
+
+};
 
 /**
  * A software interface for determining which keyboard keys are pressed.

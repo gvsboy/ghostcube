@@ -25,6 +25,9 @@ function App(containerId) {
   // Step-by-step instruction component.
   this.tutorial = new Tutorial();
 
+  // Records moves as they're made. Can be used to step through time.
+  this.recorder = new Recorder();
+
   // Listen for user interactions.
   this.listen();
 }
@@ -146,6 +149,7 @@ App.prototype = {
   },
 
   claim: function(tiles) {
+    this.recorder.record(this.currentPlayer, tiles);
     this.clearHelperTile();
     this.hideCrosshairs(_.first(tiles));
     this._endTurn();

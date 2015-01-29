@@ -11,6 +11,8 @@ Bot.prototype = {
 
   play: function() {
 
+    console.log('================== BOT MOVE ==================');
+
     this._triedTiles = [];
 
     /*
@@ -32,7 +34,31 @@ Bot.prototype = {
 
   _selectWin: function() {
 
-    var botLines = this.getLines();
+    var cube = this._cubeCache._cube,
+        lines = this.getLines(),
+        initialTile,
+        tile;
+
+    console.log('++++++ WIN lines: ', lines);
+
+    for (var i = 0, len = lines.length; i < len; i++) {
+
+      initialTile = this.getInitialTriedTile();
+      tile = lines[i].missingTiles()[0];
+
+      console.log('+++ WIN loop: initial | tile: ', initialTile, tile);
+
+      // If there's a tile selected already, try to seal the deal with two more.
+      if (initialTile) {
+        var attackTile = cube.getAttackTile(initialTile, tile);
+        if (this._tryTiles(tile, attackTile)) {
+          return true; // Done! The tiles will be claimed.
+        }
+      }
+      else {
+        this._tryTiles(tile);
+      }
+    }
 
     // More tiles must be selected to complete the turn.
     return false;
@@ -41,26 +67,28 @@ Bot.prototype = {
   _selectOpponentBlocker: function() {
 
     var cube = this._cubeCache._cube,
-        playerLines = this.opponent.getLines();
+        lines = this.opponent.getLines(),
+        initialTile,
+        tile;
 
-    if (playerLines.length) {
-      for (var i = 0, len = playerLines.length; i < len; i++) {
+    console.log('@@@@@@ BLOCK lines', lines);
 
-        var initialTile = this.getInitialTriedTile();
-        var missingTile = playerLines[i].missingTiles()[0];
+    for (var i = 0, len = lines.length; i < len; i++) {
 
-        console.log('@@@ win loop: initial | tile: ', initialTile, missingTile);
+      initialTile = this.getInitialTriedTile();
+      tile = lines[i].missingTiles()[0];
 
-        // If there's a tile selected already, try to seal the deal with two more.
-        if (initialTile) {
-          var attackTile = cube.getAttackTile(initialTile, missingTile);
-          if (this._tryTiles(missingTile, attackTile)) {
-            return true; // Done! The tiles will be claimed.
-          }
+      console.log('@@@ BLOCK loop: initial | tile: ', initialTile, tile);
+
+      // If there's a tile selected already, try to seal the deal with two more.
+      if (initialTile) {
+        var attackTile = cube.getAttackTile(initialTile, tile);
+        if (this._tryTiles(tile, attackTile)) {
+          return true; // Done! The tiles will be claimed.
         }
-        else {
-          this._tryTiles(missingTile);
-        }
+      }
+      else {
+        this._tryTiles(tile);
       }
     }
 
@@ -80,7 +108,7 @@ Bot.prototype = {
       initialTile = this.getInitialTriedTile();
       tile = this._selectByTileLine(singles[t]);
 
-      console.log('### singles loop: initial | tile: ', initialTile, tile);
+      console.log('--- singles loop: initial | tile: ', initialTile, tile);
 
       if (initialTile && tile) {
         var attackTile = cube.getAttackTile(initialTile, tile);
