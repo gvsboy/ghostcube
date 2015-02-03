@@ -246,7 +246,9 @@ Bot.prototype = {
 
   play: function() {
 
-    console.log('================== BOT MOVE ==================');
+    this._initLog();
+
+    this._log('================== BOT MOVE ==================');
 
     this._triedTiles = [];
 
@@ -264,29 +266,32 @@ Bot.prototype = {
 
     this._selectWin() ||
     this._selectOpponentBlocker() || 
-    this._selectSingles();
+    this._selectSingles() ||
+    this._selectLastResort();
   },
 
   _selectWin: function() {
 
-    var cube = this._cubeCache._cube,
-        lines = this.getLines(),
+    var lines = this.getLines(),
         initialTile,
         tile;
 
-    console.log('++++++ WIN lines: ', lines);
+    this._log('++++++ WIN lines:', lines);
 
     for (var i = 0, len = lines.length; i < len; i++) {
 
       initialTile = this.getInitialTriedTile();
       tile = lines[i].missingTiles()[0];
 
-      console.log('+++ WIN loop: initial | tile: ', initialTile, tile);
+      this._log('+++ WIN loop [initial, tile] :', initialTile, tile);
 
       // If there's a tile selected already, try to seal the deal with two more.
       if (initialTile) {
-        var attackTile = cube.getAttackTile(initialTile, tile);
-        if (this._tryTiles(tile, attackTile)) {
+
+        // First try to claim another win situation.
+        // If that doesn't work out, try to claim by any means necessary.
+        var attackTile = this.getAttackTile(initialTile, tile);
+        if (this._tryTiles(tile, attackTile) || this._selectFirstByTile(initialTile)) {
           return true; // Done! The tiles will be claimed.
         }
       }
@@ -301,23 +306,22 @@ Bot.prototype = {
 
   _selectOpponentBlocker: function() {
 
-    var cube = this._cubeCache._cube,
-        lines = this.opponent.getLines(),
+    var lines = this.opponent.getLines(),
         initialTile,
         tile;
 
-    console.log('@@@@@@ BLOCK lines', lines);
+    this._log('@@@@@@ BLOCK lines:', lines);
 
     for (var i = 0, len = lines.length; i < len; i++) {
 
       initialTile = this.getInitialTriedTile();
       tile = lines[i].missingTiles()[0];
 
-      console.log('@@@ BLOCK loop: initial | tile: ', initialTile, tile);
+      this._log('@@@ BLOCK loop [initial, tile] :', initialTile, tile);
 
       // If there's a tile selected already, try to seal the deal with two more.
       if (initialTile) {
-        var attackTile = cube.getAttackTile(initialTile, tile);
+        var attackTile = this.getAttackTile(initialTile, tile);
         if (this._tryTiles(tile, attackTile)) {
           return true; // Done! The tiles will be claimed.
         }
@@ -327,26 +331,34 @@ Bot.prototype = {
       }
     }
 
+    // If the block has been unsuccessful thus far, try again by any means necessary.
+    if (initialTile) {
+      if (this._selectFirstByTile(initialTile)) {
+        return true; // Blocked!
+      }
+    }
+
     // More tiles must be selected to complete the turn.
     return false;
   },
 
   _selectSingles: function() {
 
-    var cube = this._cubeCache._cube,
-        singles = _.shuffle(this.opponent.getSingles()),
+    var singles = _.shuffle(this.opponent.getSingles()),
         initialTile,
         tile;
+
+    this._log('------ SINGLES:', singles);
 
     for (var t = 0, len = singles.length; t < len; t++) {
 
       initialTile = this.getInitialTriedTile();
       tile = this._selectByTileLine(singles[t]);
 
-      console.log('--- singles loop: initial | tile: ', initialTile, tile);
+      this._log('--- singles loop [initial, tile] :', initialTile, tile);
 
       if (initialTile && tile) {
-        var attackTile = cube.getAttackTile(initialTile, tile);
+        var attackTile = this.getAttackTile(initialTile, tile);
         if (this._tryTiles(tile, attackTile)) {
           return true; // Done! The tiles will be claimed.
         }
@@ -355,6 +367,24 @@ Bot.prototype = {
 
     // More tiles must be selected to complete the turn.
     return false;
+  },
+
+  _selectLastResort: function() {
+
+
+
+  },
+
+  /**
+   * Locates the first two matches for a selected tile.
+   * @param  {Tile} tile The tile to find matches for.
+   * @return {Boolean} Was a successful match made?
+   */
+  _selectFirstByTile: function(tile) {
+    //debugger;
+
+    // Perhaps loop through the sides in decending order based on population.
+    // Might as well have a better chance to make or block lines.
   },
 
   /**
@@ -410,7 +440,20 @@ Bot.prototype = {
       all.push(tile.toString ? tile.toString() : tile);
       return all;
     }, []);
-    console.log("### Bot will try: ", info.join(' | '));
+    this._log('### Bot will try:', info.join(' | '));
+  },
+
+  _initLog: function() {
+    this._logText = '';
+  },
+
+  _log: function() {
+    var text = _.reduce(arguments, function(lines, data) {
+      lines.push(!_.isEmpty(data) ? data.toString() : 'NONE');
+      return lines;
+    }, []).join(' ');
+    console.log(text);
+    this._logText += text + '\n';
   }
 
 };
@@ -682,6 +725,18 @@ function Line(tiles) {
 }
 
 Line.prototype = {
+
+  /**
+   * Outputs useful identifying information for troubleshooting.
+   * @return {String} String information.
+   */
+  toString: function() {
+    var info = _.reduce(this.getTiles(), function(tiles, tile) {
+      tiles.push(tile.toString());
+      return tiles;
+    }, []);
+    return '(line: ' + info.join(' ') + ')';
+  },
 
   /**
    * Checks to see if the line contains all of the passed tiles.
@@ -1376,6 +1431,10 @@ Player.prototype = {
     return _.first(this._selectedTiles);
   },
 
+  getAttackTile: function(tile1, tile2) {
+    return this._cubeCache._cube.getAttackTile(tile1, tile2);
+  },
+
   /**
    * Win lines are completed lines. This method returns all the win
    * lines claimed by the player.
@@ -1411,7 +1470,10 @@ Player.prototype = {
     var selectedTiles = this._selectedTiles,
 
         // Get a reference to the first tile selected.
-        initialTile = _.first(selectedTiles);
+        initialTile = _.first(selectedTiles),
+
+        // Potential reference to an attack data object used for Recorder.
+        turnData;
 
     // If the tile is already claimed, get outta dodge.
     if (tile.claimedBy) {
@@ -1448,8 +1510,9 @@ Player.prototype = {
 
         // If the tile is already claimed, cancel the two out.
         if (attackTile.claimedBy) {
+          turnData = this._createAttackData(attackTile);
           attackTile.claimedBy.release(attackTile);
-          this._selectTiles(tile, 'attack');
+          this._selectTiles(tile, turnData);
         }
 
         // Otherwise select it per usual.
@@ -1473,6 +1536,17 @@ Player.prototype = {
 
     // We still need to select more tiles this turn.
     return false;
+  },
+
+  _createAttackData: function(tile) {
+    return {
+      action: 'attack',
+      player: tile.claimedBy,
+      tile: tile,
+      toString: function() {
+        return '(attack -> ' + tile.toString() + ')'
+      }
+    };
   },
 
   _selectTiles: function() {
@@ -1521,7 +1595,8 @@ function Recorder() {
 
 Recorder.MESSAGES = {
   NOT_FOUND: 'Could not locate a turn at ',
-  REWRITE: 'Turns are now being rewritten as the timeline was behind by '
+  REWRITE: 'Turns are now being rewritten as the timeline was behind by ',
+  NO_LOG: '[No log for this turn]'
 };
 
 Recorder.prototype = {
@@ -1531,9 +1606,8 @@ Recorder.prototype = {
     var behind = this._timeline.length - this._cursor;
 
     if (behind) {
-      console.warn(Recorder.MESSAGES.REWRITE + this._cursor);
-      // Upgrade lodash and then use:
-      // this._timeline = _.dropRight(this._timeline, behind);
+      console.warn(Recorder.MESSAGES.REWRITE + behind);
+      this._timeline = _.dropRight(this._timeline, behind);
     }
 
     this._package(player, tiles);
@@ -1546,8 +1620,14 @@ Recorder.prototype = {
 
     if (turnData) {
       _.each(turnData.tiles, function(tile) {
-        turnData.player.claim(tile);
+        if (tile instanceof Tile) {
+          turnData.player.claim(tile);
+        }
+        else {
+          tile.player.release(tile.tile);
+        }
       });
+      console.log(turnData.log);
       this._cursor++;
     }
     else {
@@ -1561,8 +1641,14 @@ Recorder.prototype = {
 
     if (turnData) {
       _.each(turnData.tiles, function(tile) {
-        turnData.player.release(tile);
+        if (tile instanceof Tile) {
+          turnData.player.release(tile);
+        }
+        else {
+          tile.player.claim(tile.tile);
+        }
       });
+      console.log(turnData.log);
       this._cursor--;
     }
     else {
@@ -1573,7 +1659,8 @@ Recorder.prototype = {
   _package: function(player, tiles) {
     this._timeline.push({
       player: player,
-      tiles: tiles
+      tiles: tiles,
+      log: player._logText || Recorder.MESSAGES.NO_LOG
     });
   }
 

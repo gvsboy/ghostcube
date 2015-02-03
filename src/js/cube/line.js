@@ -11,6 +11,18 @@ function Line(tiles) {
 Line.prototype = {
 
   /**
+   * Outputs useful identifying information for troubleshooting.
+   * @return {String} String information.
+   */
+  toString: function() {
+    var info = _.reduce(this.getTiles(), function(tiles, tile) {
+      tiles.push(tile.toString());
+      return tiles;
+    }, []);
+    return '(line: ' + info.join(' ') + ')';
+  },
+
+  /**
    * Checks to see if the line contains all of the passed tiles.
    * @param  {Array} tiles The tiles to check.
    * @return {Boolean}     Does the line contain the passed tiles?

@@ -40,6 +40,10 @@ Player.prototype = {
     return _.first(this._selectedTiles);
   },
 
+  getAttackTile: function(tile1, tile2) {
+    return this._cubeCache._cube.getAttackTile(tile1, tile2);
+  },
+
   /**
    * Win lines are completed lines. This method returns all the win
    * lines claimed by the player.
@@ -75,7 +79,10 @@ Player.prototype = {
     var selectedTiles = this._selectedTiles,
 
         // Get a reference to the first tile selected.
-        initialTile = _.first(selectedTiles);
+        initialTile = _.first(selectedTiles),
+
+        // Potential reference to an attack data object used for Recorder.
+        turnData;
 
     // If the tile is already claimed, get outta dodge.
     if (tile.claimedBy) {
@@ -112,8 +119,9 @@ Player.prototype = {
 
         // If the tile is already claimed, cancel the two out.
         if (attackTile.claimedBy) {
+          turnData = this._createAttackData(attackTile);
           attackTile.claimedBy.release(attackTile);
-          this._selectTiles(tile, 'attack');
+          this._selectTiles(tile, turnData);
         }
 
         // Otherwise select it per usual.
@@ -137,6 +145,17 @@ Player.prototype = {
 
     // We still need to select more tiles this turn.
     return false;
+  },
+
+  _createAttackData: function(tile) {
+    return {
+      action: 'attack',
+      player: tile.claimedBy,
+      tile: tile,
+      toString: function() {
+        return '(attack -> ' + tile.toString() + ')'
+      }
+    };
   },
 
   _selectTiles: function() {

@@ -5,7 +5,8 @@ function Recorder() {
 
 Recorder.MESSAGES = {
   NOT_FOUND: 'Could not locate a turn at ',
-  REWRITE: 'Turns are now being rewritten as the timeline was behind by '
+  REWRITE: 'Turns are now being rewritten as the timeline was behind by ',
+  NO_LOG: '[No log for this turn]'
 };
 
 Recorder.prototype = {
@@ -15,9 +16,8 @@ Recorder.prototype = {
     var behind = this._timeline.length - this._cursor;
 
     if (behind) {
-      console.warn(Recorder.MESSAGES.REWRITE + this._cursor);
-      // Upgrade lodash and then use:
-      // this._timeline = _.dropRight(this._timeline, behind);
+      console.warn(Recorder.MESSAGES.REWRITE + behind);
+      this._timeline = _.dropRight(this._timeline, behind);
     }
 
     this._package(player, tiles);
@@ -30,8 +30,14 @@ Recorder.prototype = {
 
     if (turnData) {
       _.each(turnData.tiles, function(tile) {
-        turnData.player.claim(tile);
+        if (tile instanceof Tile) {
+          turnData.player.claim(tile);
+        }
+        else {
+          tile.player.release(tile.tile);
+        }
       });
+      console.log(turnData.log);
       this._cursor++;
     }
     else {
@@ -45,8 +51,14 @@ Recorder.prototype = {
 
     if (turnData) {
       _.each(turnData.tiles, function(tile) {
-        turnData.player.release(tile);
+        if (tile instanceof Tile) {
+          turnData.player.release(tile);
+        }
+        else {
+          tile.player.claim(tile.tile);
+        }
       });
+      console.log(turnData.log);
       this._cursor--;
     }
     else {
@@ -57,7 +69,8 @@ Recorder.prototype = {
   _package: function(player, tiles) {
     this._timeline.push({
       player: player,
-      tiles: tiles
+      tiles: tiles,
+      log: player._logText || Recorder.MESSAGES.NO_LOG
     });
   }
 
