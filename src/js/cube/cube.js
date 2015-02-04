@@ -97,8 +97,8 @@ Cube.prototype = {
    * @param  {String} name The name of the side you want.
    * @return {Side}      The Side object by name.
    */
-  getSide: function(name) {
-    return this._sides[name];
+  getSides: function(name) {
+    return name ? this._sides[name] : this._sides;
   },
 
   /**
@@ -106,6 +106,27 @@ Cube.prototype = {
    */
   getVisibleSides: function() {
 
+  },
+
+  /**
+   * Retrieves all the unclaimed tiles and sorts them by the amount per
+   * side in ascending order. If an exception tile is passed, do not include
+   * unclaimed tiles from that tile's side.
+   * @param  {Tile} except The tile whose side to exclude.
+   * @return {Array} A list of all the available tiles.
+   */
+  getAvailableTiles: function(except) {
+
+    // Get all the tiles by side and push each array to the main array list.
+    var tilesBySide = _.reduce(this.getSides(), function(list, side) {
+      if (side !== except.side) {
+        list.push(side.getAvailableTiles());
+      }
+      return list;
+    }, []);
+
+    // Sort each side's array by length and then flatten the whole thing.
+    return _.flatten(_.sortBy(tilesBySide, 'length'));
   },
 
   /**

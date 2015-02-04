@@ -53,6 +53,14 @@ Side.prototype = {
     return this._tiles;
   },
 
+  /**
+   * Returns all the tiles that are still unclaimed.
+   * @return {Array} A collection of unclaimed tiles.
+   */
+  getAvailableTiles: function() {
+    return _.reject(this._tiles, 'claimedBy');
+  },
+
   _buildTiles: function(size) {
 
     var tiles, lines;

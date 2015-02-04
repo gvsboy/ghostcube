@@ -19,7 +19,7 @@ Line.prototype = {
       tiles.push(tile.toString());
       return tiles;
     }, []);
-    return '(line: ' + info.join(' ') + ')';
+    return '(' + info.join(' ') + ')';
   },
 
   /**

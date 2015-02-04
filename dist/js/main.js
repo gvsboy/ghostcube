@@ -178,7 +178,7 @@ App.prototype = {
     var data;
     if (el.classList.contains('tile')) {
       data = el.id.split('-');
-      return this.cube.getSide(data[0]).getTiles(data[1])[0];
+      return this.cube.getSides(data[0]).getTiles(data[1])[0];
     }
     return null;
   },
@@ -265,7 +265,8 @@ Bot.prototype = {
      */
 
     this._selectWin() ||
-    this._selectOpponentBlocker() || 
+    this._selectOpponentBlocker() ||
+    this._selectOpponentSingles() ||
     this._selectSingles() ||
     this._selectLastResort();
   },
@@ -342,9 +343,13 @@ Bot.prototype = {
     return false;
   },
 
-  _selectSingles: function() {
+  _selectOpponentSingles: function() {
+    return this._selectSingles(true);
+  },
 
-    var singles = _.shuffle(this.opponent.getSingles()),
+  _selectSingles: function(useOpponent) {
+
+    var singles = _.shuffle(useOpponent ? this.opponent.getSingles() : this.getSingles()),
         initialTile,
         tile;
 
@@ -371,7 +376,7 @@ Bot.prototype = {
 
   _selectLastResort: function() {
 
-
+    this._selectFirstByTile();
 
   },
 
@@ -381,10 +386,13 @@ Bot.prototype = {
    * @return {Boolean} Was a successful match made?
    */
   _selectFirstByTile: function(tile) {
-    //debugger;
 
     // Perhaps loop through the sides in decending order based on population.
     // Might as well have a better chance to make or block lines.
+    var tiles = this._cubeCache._cube.getAvailableTiles(tile);
+
+    debugger;
+    
   },
 
   /**
@@ -557,8 +565,8 @@ Cube.prototype = {
    * @param  {String} name The name of the side you want.
    * @return {Side}      The Side object by name.
    */
-  getSide: function(name) {
-    return this._sides[name];
+  getSides: function(name) {
+    return name ? this._sides[name] : this._sides;
   },
 
   /**
@@ -566,6 +574,27 @@ Cube.prototype = {
    */
   getVisibleSides: function() {
 
+  },
+
+  /**
+   * Retrieves all the unclaimed tiles and sorts them by the amount per
+   * side in ascending order. If an exception tile is passed, do not include
+   * unclaimed tiles from that tile's side.
+   * @param  {Tile} except The tile whose side to exclude.
+   * @return {Array} A list of all the available tiles.
+   */
+  getAvailableTiles: function(except) {
+
+    // Get all the tiles by side and push each array to the main array list.
+    var tilesBySide = _.reduce(this.getSides(), function(list, side) {
+      if (side !== except.side) {
+        list.push(side.getAvailableTiles());
+      }
+      return list;
+    }, []);
+
+    // Sort each side's array by length and then flatten the whole thing.
+    return _.flatten(_.sortBy(tilesBySide, 'length'));
   },
 
   /**
@@ -735,7 +764,7 @@ Line.prototype = {
       tiles.push(tile.toString());
       return tiles;
     }, []);
-    return '(line: ' + info.join(' ') + ')';
+    return '(' + info.join(' ') + ')';
   },
 
   /**
@@ -909,6 +938,14 @@ Side.prototype = {
       return _.at(this._tiles, _.isArray(indicies) ? _.uniq(_.flatten(indicies)) : +indicies);
     }
     return this._tiles;
+  },
+
+  /**
+   * Returns all the tiles that are still unclaimed.
+   * @return {Array} A collection of unclaimed tiles.
+   */
+  getAvailableTiles: function() {
+    return _.reject(this._tiles, 'claimedBy');
   },
 
   _buildTiles: function(size) {
@@ -1648,7 +1685,6 @@ Recorder.prototype = {
           tile.player.claim(tile.tile);
         }
       });
-      console.log(turnData.log);
       this._cursor--;
     }
     else {

@@ -178,7 +178,7 @@ App.prototype = {
     var data;
     if (el.classList.contains('tile')) {
       data = el.id.split('-');
-      return this.cube.getSide(data[0]).getTiles(data[1])[0];
+      return this.cube.getSides(data[0]).getTiles(data[1])[0];
     }
     return null;
   },

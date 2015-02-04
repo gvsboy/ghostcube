@@ -30,7 +30,8 @@ Bot.prototype = {
      */
 
     this._selectWin() ||
-    this._selectOpponentBlocker() || 
+    this._selectOpponentBlocker() ||
+    this._selectOpponentSingles() ||
     this._selectSingles() ||
     this._selectLastResort();
   },
@@ -107,9 +108,13 @@ Bot.prototype = {
     return false;
   },
 
-  _selectSingles: function() {
+  _selectOpponentSingles: function() {
+    return this._selectSingles(true);
+  },
 
-    var singles = _.shuffle(this.opponent.getSingles()),
+  _selectSingles: function(useOpponent) {
+
+    var singles = _.shuffle(useOpponent ? this.opponent.getSingles() : this.getSingles()),
         initialTile,
         tile;
 
@@ -136,7 +141,7 @@ Bot.prototype = {
 
   _selectLastResort: function() {
 
-
+    this._selectFirstByTile();
 
   },
 
@@ -146,10 +151,13 @@ Bot.prototype = {
    * @return {Boolean} Was a successful match made?
    */
   _selectFirstByTile: function(tile) {
-    //debugger;
 
     // Perhaps loop through the sides in decending order based on population.
     // Might as well have a better chance to make or block lines.
+    var tiles = this._cubeCache._cube.getAvailableTiles(tile);
+
+    debugger;
+    
   },
 
   /**

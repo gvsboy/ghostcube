@@ -58,7 +58,6 @@ Recorder.prototype = {
           tile.player.claim(tile.tile);
         }
       });
-      console.log(turnData.log);
       this._cursor--;
     }
     else {
