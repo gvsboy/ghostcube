@@ -120,7 +120,7 @@ Cube.prototype = {
     // Get all the tiles by side and push each array to the main array list.
     var tilesBySide = _.reduce(this.getSides(), function(list, side) {
       if (side !== except.side) {
-        list.push(side.getAvailableTiles());
+        list.push(_.shuffle(side.getAvailableTiles()));
       }
       return list;
     }, []);
@@ -161,16 +161,23 @@ Cube.prototype = {
    */
   getAttackTile: function(tile1, tile2) {
 
-    // Get the neighbor sides and exclude the selected side.
-    var neighbors = _.without(tile2.side.getNeighbors(), tile1.side),
+    var neighbors, side;
 
-        // Get the neighbor that is visible.
-        side = _.find(neighbors, function(neighbor) {
-          return neighbor.isVisible(this.x, this.y);
-        }, this);
+    if (tile1 && tile2 && tile1.side.isNeighbor(tile2.side)) {
 
-    // Return the tile that intersects the two passed tiles.
-    return _.intersection(tile1.translate(side), tile2.translate(side))[0];
+      // Get the neighbor sides and exclude the selected side.
+      neighbors = _.without(tile2.side.getNeighbors(), tile1.side),
+
+      // Get the neighbor that is visible.
+      side = _.find(neighbors, function(neighbor) {
+        return neighbor.isVisible(this.x, this.y);
+      }, this);
+
+      // Return the tile that intersects the two passed tiles.
+      return _.intersection(tile1.translate(side), tile2.translate(side))[0];
+    }
+
+    return null;
   },
 
   /**

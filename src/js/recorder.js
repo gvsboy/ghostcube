@@ -1,6 +1,7 @@
-function Recorder() {
+function Recorder(app) {
   this._timeline = [];
   this._cursor = 0;
+  this._app = app;
 }
 
 Recorder.MESSAGES = {
@@ -39,6 +40,7 @@ Recorder.prototype = {
       });
       console.log(turnData.log);
       this._cursor++;
+      this._app.setCurrentPlayer(this._app.getOpponent(turnData.player), true);
     }
     else {
       throw Recorder.MESSAGES.NOT_FOUND + this._cursor;
@@ -59,6 +61,7 @@ Recorder.prototype = {
         }
       });
       this._cursor--;
+      this._app.setCurrentPlayer(turnData.player, true);
     }
     else {
       throw Recorder.MESSAGES.NOT_FOUND + this._cursor;

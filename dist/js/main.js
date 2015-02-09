@@ -26,7 +26,7 @@ function App(containerId) {
   this.tutorial = new Tutorial();
 
   // Records moves as they're made. Can be used to step through time.
-  this.recorder = new Recorder();
+  this.recorder = new Recorder(this);
 
   // Listen for user interactions.
   this.listen();
@@ -108,7 +108,14 @@ App.prototype = {
       .stopListeningTo('mouseout');
   },
 
-  setCurrentPlayer: function(player) {
+  /**
+   * Sets the current player to the passed player, displaying the correct
+   * messaging and updating the UI state.
+   * @param {Player} player    The player to set as the current player.
+   * @param {Boolean} botManual Should the bot play it's turn automatically?
+   *                            Used in recorder mode to pause auto playback.
+   */
+  setCurrentPlayer: function(player, botManual) {
     var cubeEl = this.cube.el;
     cubeEl.classList.add(player.tileClass + '-turn');
     if (this.currentPlayer) {
@@ -119,11 +126,17 @@ App.prototype = {
 
     if (player.isBot()) {
       this.disableCubeInteraction();
-      player.play();
+      if (!botManual) {
+        player.play();
+      }
     }
     else {
       this.enableCubeInteraction();
     }
+  },
+
+  getOpponent: function(player) {
+    return this.players[this.players.indexOf(player) === 1 ? 0 : 1];
   },
 
   showCrosshairs: function(tile) {
@@ -169,7 +182,7 @@ App.prototype = {
     }
 
     // Else, switch players and continue.
-    this.setCurrentPlayer(this.players[this.players.indexOf(player) === 1 ? 0 : 1]);
+    this.setCurrentPlayer(this.getOpponent(player));
   },
 
   // Potentially dangerous as this is hackable...
@@ -213,17 +226,14 @@ App.prototype = {
     var tile = this._getTileFromElement(evt.target),
 
         // The first tile that has been selected.
-        initialTile = this.currentPlayer.getInitialTile(),
-
-        helperTile;
+        initialTile = this.currentPlayer.getInitialTile();
 
     // If the user is hovering on a neighboring side of the initial tile,
     // highlight some targeting help on a visible side.
-    if (tile && initialTile && initialTile.side.isNeighbor(tile.side)) {
-      helperTile = this._helperTile = this.cube.getAttackTile(tile, initialTile);
-      if (helperTile) {
-        helperTile.addClass('helper');
-      }
+    this._helperTile = this.cube.getAttackTile(tile, initialTile);
+
+    if (this._helperTile) {
+      this._helperTile.addClass('helper');
     }
   },
 
@@ -266,8 +276,8 @@ Bot.prototype = {
 
     this._selectWin() ||
     this._selectOpponentBlocker() ||
-    this._selectOpponentSingles() ||
     this._selectSingles() ||
+    this._selectOpponentSingles() ||
     this._selectLastResort();
   },
 
@@ -287,12 +297,12 @@ Bot.prototype = {
       this._log('+++ WIN loop [initial, tile] :', initialTile, tile);
 
       // If there's a tile selected already, try to seal the deal with two more.
-      if (initialTile) {
+      if (initialTile && tile) {
 
         // First try to claim another win situation.
         // If that doesn't work out, try to claim by any means necessary.
         var attackTile = this.getAttackTile(initialTile, tile);
-        if (this._tryTiles(tile, attackTile) || this._selectFirstByTile(initialTile)) {
+        if (this._tryTiles(tile, attackTile)) {
           return true; // Done! The tiles will be claimed.
         }
       }
@@ -321,7 +331,7 @@ Bot.prototype = {
       this._log('@@@ BLOCK loop [initial, tile] :', initialTile, tile);
 
       // If there's a tile selected already, try to seal the deal with two more.
-      if (initialTile) {
+      if (initialTile && tile) {
         var attackTile = this.getAttackTile(initialTile, tile);
         if (this._tryTiles(tile, attackTile)) {
           return true; // Done! The tiles will be claimed.
@@ -329,13 +339,6 @@ Bot.prototype = {
       }
       else {
         this._tryTiles(tile);
-      }
-    }
-
-    // If the block has been unsuccessful thus far, try again by any means necessary.
-    if (initialTile) {
-      if (this._selectFirstByTile(initialTile)) {
-        return true; // Blocked!
       }
     }
 
@@ -353,7 +356,7 @@ Bot.prototype = {
         initialTile,
         tile;
 
-    this._log('------ SINGLES:', singles);
+    this._log('------ SINGLES' + (useOpponent ? ' OPPONENT:' : ':'), singles);
 
     for (var t = 0, len = singles.length; t < len; t++) {
 
@@ -376,23 +379,40 @@ Bot.prototype = {
 
   _selectLastResort: function() {
 
-    this._selectFirstByTile();
+    function attempt(tile) {
 
-  },
+      var testTile;
 
-  /**
-   * Locates the first two matches for a selected tile.
-   * @param  {Tile} tile The tile to find matches for.
-   * @return {Boolean} Was a successful match made?
-   */
-  _selectFirstByTile: function(tile) {
+      for (var t = 0, len = tiles.length; t < len; t++) {
+        testTile = tiles[t];
+        var attackTile = this.getAttackTile(tile, testTile);
+        if (this._tryTiles(testTile, attackTile)) {
+          return true;
+        }
+      }
+      return false;
+    }
 
-    // Perhaps loop through the sides in decending order based on population.
-    // Might as well have a better chance to make or block lines.
     var tiles = this._cubeCache._cube.getAvailableTiles(tile);
 
-    debugger;
+    this._log('$$$$$ LAST RESORT');
+
+    // If there is an initial tile, try to match it first.
+    if (this.getInitialTriedTile()) {
+      if (attempt(this.getInitialTriedTile())) {
+        return true;
+      }
+    }
     
+    // Otherwise, go through all the tiles and try to find a match.
+    for (var e = 0, elen = tiles.length; e < len; e++) {
+      this._triedTiles = [];
+      this._tryTiles(tiles[e]);
+      if (attempt(tiles[e])) {
+        return true;
+      }
+    }
+
   },
 
   /**
@@ -588,7 +608,7 @@ Cube.prototype = {
     // Get all the tiles by side and push each array to the main array list.
     var tilesBySide = _.reduce(this.getSides(), function(list, side) {
       if (side !== except.side) {
-        list.push(side.getAvailableTiles());
+        list.push(_.shuffle(side.getAvailableTiles()));
       }
       return list;
     }, []);
@@ -629,16 +649,23 @@ Cube.prototype = {
    */
   getAttackTile: function(tile1, tile2) {
 
-    // Get the neighbor sides and exclude the selected side.
-    var neighbors = _.without(tile2.side.getNeighbors(), tile1.side),
+    var neighbors, side;
 
-        // Get the neighbor that is visible.
-        side = _.find(neighbors, function(neighbor) {
-          return neighbor.isVisible(this.x, this.y);
-        }, this);
+    if (tile1 && tile2 && tile1.side.isNeighbor(tile2.side)) {
 
-    // Return the tile that intersects the two passed tiles.
-    return _.intersection(tile1.translate(side), tile2.translate(side))[0];
+      // Get the neighbor sides and exclude the selected side.
+      neighbors = _.without(tile2.side.getNeighbors(), tile1.side),
+
+      // Get the neighbor that is visible.
+      side = _.find(neighbors, function(neighbor) {
+        return neighbor.isVisible(this.x, this.y);
+      }, this);
+
+      // Return the tile that intersects the two passed tiles.
+      return _.intersection(tile1.translate(side), tile2.translate(side))[0];
+    }
+
+    return null;
   },
 
   /**
@@ -1625,9 +1652,10 @@ _.assign(Player.prototype, EventEmitter2.prototype);
   Bot.prototype._selectTiles = botSelect;
 }());
 
-function Recorder() {
+function Recorder(app) {
   this._timeline = [];
   this._cursor = 0;
+  this._app = app;
 }
 
 Recorder.MESSAGES = {
@@ -1666,6 +1694,7 @@ Recorder.prototype = {
       });
       console.log(turnData.log);
       this._cursor++;
+      this._app.setCurrentPlayer(this._app.getOpponent(turnData.player), true);
     }
     else {
       throw Recorder.MESSAGES.NOT_FOUND + this._cursor;
@@ -1686,6 +1715,7 @@ Recorder.prototype = {
         }
       });
       this._cursor--;
+      this._app.setCurrentPlayer(turnData.player, true);
     }
     else {
       throw Recorder.MESSAGES.NOT_FOUND + this._cursor;

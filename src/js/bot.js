@@ -31,8 +31,8 @@ Bot.prototype = {
 
     this._selectWin() ||
     this._selectOpponentBlocker() ||
-    this._selectOpponentSingles() ||
     this._selectSingles() ||
+    this._selectOpponentSingles() ||
     this._selectLastResort();
   },
 
@@ -52,12 +52,12 @@ Bot.prototype = {
       this._log('+++ WIN loop [initial, tile] :', initialTile, tile);
 
       // If there's a tile selected already, try to seal the deal with two more.
-      if (initialTile) {
+      if (initialTile && tile) {
 
         // First try to claim another win situation.
         // If that doesn't work out, try to claim by any means necessary.
         var attackTile = this.getAttackTile(initialTile, tile);
-        if (this._tryTiles(tile, attackTile) || this._selectFirstByTile(initialTile)) {
+        if (this._tryTiles(tile, attackTile)) {
           return true; // Done! The tiles will be claimed.
         }
       }
@@ -86,7 +86,7 @@ Bot.prototype = {
       this._log('@@@ BLOCK loop [initial, tile] :', initialTile, tile);
 
       // If there's a tile selected already, try to seal the deal with two more.
-      if (initialTile) {
+      if (initialTile && tile) {
         var attackTile = this.getAttackTile(initialTile, tile);
         if (this._tryTiles(tile, attackTile)) {
           return true; // Done! The tiles will be claimed.
@@ -94,13 +94,6 @@ Bot.prototype = {
       }
       else {
         this._tryTiles(tile);
-      }
-    }
-
-    // If the block has been unsuccessful thus far, try again by any means necessary.
-    if (initialTile) {
-      if (this._selectFirstByTile(initialTile)) {
-        return true; // Blocked!
       }
     }
 
@@ -118,7 +111,7 @@ Bot.prototype = {
         initialTile,
         tile;
 
-    this._log('------ SINGLES:', singles);
+    this._log('------ SINGLES' + (useOpponent ? ' OPPONENT:' : ':'), singles);
 
     for (var t = 0, len = singles.length; t < len; t++) {
 
@@ -141,23 +134,40 @@ Bot.prototype = {
 
   _selectLastResort: function() {
 
-    this._selectFirstByTile();
+    function attempt(tile) {
 
-  },
+      var testTile;
 
-  /**
-   * Locates the first two matches for a selected tile.
-   * @param  {Tile} tile The tile to find matches for.
-   * @return {Boolean} Was a successful match made?
-   */
-  _selectFirstByTile: function(tile) {
+      for (var t = 0, len = tiles.length; t < len; t++) {
+        testTile = tiles[t];
+        var attackTile = this.getAttackTile(tile, testTile);
+        if (this._tryTiles(testTile, attackTile)) {
+          return true;
+        }
+      }
+      return false;
+    }
 
-    // Perhaps loop through the sides in decending order based on population.
-    // Might as well have a better chance to make or block lines.
     var tiles = this._cubeCache._cube.getAvailableTiles(tile);
 
-    debugger;
+    this._log('$$$$$ LAST RESORT');
+
+    // If there is an initial tile, try to match it first.
+    if (this.getInitialTriedTile()) {
+      if (attempt(this.getInitialTriedTile())) {
+        return true;
+      }
+    }
     
+    // Otherwise, go through all the tiles and try to find a match.
+    for (var e = 0, elen = tiles.length; e < len; e++) {
+      this._triedTiles = [];
+      this._tryTiles(tiles[e]);
+      if (attempt(tiles[e])) {
+        return true;
+      }
+    }
+
   },
 
   /**

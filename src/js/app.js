@@ -26,7 +26,7 @@ function App(containerId) {
   this.tutorial = new Tutorial();
 
   // Records moves as they're made. Can be used to step through time.
-  this.recorder = new Recorder();
+  this.recorder = new Recorder(this);
 
   // Listen for user interactions.
   this.listen();
@@ -108,7 +108,14 @@ App.prototype = {
       .stopListeningTo('mouseout');
   },
 
-  setCurrentPlayer: function(player) {
+  /**
+   * Sets the current player to the passed player, displaying the correct
+   * messaging and updating the UI state.
+   * @param {Player} player    The player to set as the current player.
+   * @param {Boolean} botManual Should the bot play it's turn automatically?
+   *                            Used in recorder mode to pause auto playback.
+   */
+  setCurrentPlayer: function(player, botManual) {
     var cubeEl = this.cube.el;
     cubeEl.classList.add(player.tileClass + '-turn');
     if (this.currentPlayer) {
@@ -119,11 +126,17 @@ App.prototype = {
 
     if (player.isBot()) {
       this.disableCubeInteraction();
-      player.play();
+      if (!botManual) {
+        player.play();
+      }
     }
     else {
       this.enableCubeInteraction();
     }
+  },
+
+  getOpponent: function(player) {
+    return this.players[this.players.indexOf(player) === 1 ? 0 : 1];
   },
 
   showCrosshairs: function(tile) {
@@ -169,7 +182,7 @@ App.prototype = {
     }
 
     // Else, switch players and continue.
-    this.setCurrentPlayer(this.players[this.players.indexOf(player) === 1 ? 0 : 1]);
+    this.setCurrentPlayer(this.getOpponent(player));
   },
 
   // Potentially dangerous as this is hackable...
@@ -213,17 +226,14 @@ App.prototype = {
     var tile = this._getTileFromElement(evt.target),
 
         // The first tile that has been selected.
-        initialTile = this.currentPlayer.getInitialTile(),
-
-        helperTile;
+        initialTile = this.currentPlayer.getInitialTile();
 
     // If the user is hovering on a neighboring side of the initial tile,
     // highlight some targeting help on a visible side.
-    if (tile && initialTile && initialTile.side.isNeighbor(tile.side)) {
-      helperTile = this._helperTile = this.cube.getAttackTile(tile, initialTile);
-      if (helperTile) {
-        helperTile.addClass('helper');
-      }
+    this._helperTile = this.cube.getAttackTile(tile, initialTile);
+
+    if (this._helperTile) {
+      this._helperTile.addClass('helper');
     }
   },
 
