@@ -302,7 +302,7 @@ Bot.prototype = {
         // First try to claim another win situation.
         // If that doesn't work out, try to claim by any means necessary.
         var attackTile = this.getAttackTile(initialTile, tile);
-        if (this._tryTiles(tile, attackTile)) {
+        if (attackTile && this._tryTiles(tile, attackTile)) {
           return true; // Done! The tiles will be claimed.
         }
       }
@@ -333,7 +333,7 @@ Bot.prototype = {
       // If there's a tile selected already, try to seal the deal with two more.
       if (initialTile && tile) {
         var attackTile = this.getAttackTile(initialTile, tile);
-        if (this._tryTiles(tile, attackTile)) {
+        if (attackTile && this._tryTiles(tile, attackTile)) {
           return true; // Done! The tiles will be claimed.
         }
       }
@@ -367,7 +367,7 @@ Bot.prototype = {
 
       if (initialTile && tile) {
         var attackTile = this.getAttackTile(initialTile, tile);
-        if (this._tryTiles(tile, attackTile)) {
+        if (attackTile && this._tryTiles(tile, attackTile)) {
           return true; // Done! The tiles will be claimed.
         }
       }
@@ -386,7 +386,7 @@ Bot.prototype = {
       for (var t = 0, len = tiles.length; t < len; t++) {
         testTile = tiles[t];
         var attackTile = this.getAttackTile(tile, testTile);
-        if (this._tryTiles(testTile, attackTile)) {
+        if (attackTile && this._tryTiles(testTile, attackTile)) {
           return true;
         }
       }
@@ -818,7 +818,7 @@ Line.prototype = {
    */
   isHorizontal: function() {
     var tiles = this.getTiles();
-    return tiles[1].index === tiles[0].index + 1;
+    return _.includes(tiles[0].xLine.getTiles(), tiles[1]);
   },
 
   /**
@@ -961,10 +961,10 @@ Side.prototype = {
    * @return {Tile[]}          An array of selected tiles.
    */
   getTiles: function(indicies) {
-    if (indicies) {
-      return _.at(this._tiles, _.isArray(indicies) ? _.uniq(_.flatten(indicies)) : +indicies);
+    if (_.isUndefined(indicies)) {
+      return this._tiles;
     }
-    return this._tiles;
+    return _.at(this._tiles, _.isArray(indicies) ? _.uniq(_.flatten(indicies)) : +indicies);
   },
 
   /**

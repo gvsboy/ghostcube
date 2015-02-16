@@ -47,6 +47,19 @@ module.exports = function(grunt) {
           livereload: true
         }
       }
+    },
+
+    jasmine: {
+      all: {
+        src: 'src/js/**/*.js',
+        options: {
+          specs: 'jasmine/spec/*Spec.js',
+          helpers: 'jasmine/spec/*Helper.js',
+          vendor: [
+            'dist/js/lib.js'
+          ]
+        }
+      }
     }
 
   });
@@ -55,6 +68,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-sass');
   grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-contrib-jasmine');
   grunt.loadNpmTasks('grunt-bower-concat');
 
   grunt.registerTask('default', [

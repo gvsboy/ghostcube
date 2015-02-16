@@ -47,10 +47,10 @@ Side.prototype = {
    * @return {Tile[]}          An array of selected tiles.
    */
   getTiles: function(indicies) {
-    if (indicies) {
-      return _.at(this._tiles, _.isArray(indicies) ? _.uniq(_.flatten(indicies)) : +indicies);
+    if (_.isUndefined(indicies)) {
+      return this._tiles;
     }
-    return this._tiles;
+    return _.at(this._tiles, _.isArray(indicies) ? _.uniq(_.flatten(indicies)) : +indicies);
   },
 
   /**

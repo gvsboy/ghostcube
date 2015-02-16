@@ -46,7 +46,7 @@ Line.prototype = {
    */
   isHorizontal: function() {
     var tiles = this.getTiles();
-    return tiles[1].index === tiles[0].index + 1;
+    return _.includes(tiles[0].xLine.getTiles(), tiles[1]);
   },
 
   /**
