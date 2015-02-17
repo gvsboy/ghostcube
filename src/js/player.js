@@ -105,7 +105,7 @@ Player.prototype = {
       }
 
       // Else, if the side selected is not a neighbor, bail out.
-      else if (!initialTile.side.isNeighbor(tile.side)) {
+      else if (!initialTile.isNeighboringSide(tile)) {
         throw new SelectTileError(SelectTileError.NOT_NEIGHBOR);
       }
     }

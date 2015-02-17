@@ -116,7 +116,12 @@ Bot.prototype = {
     for (var t = 0, len = singles.length; t < len; t++) {
 
       initialTile = this.getInitialTriedTile();
-      tile = this._selectByTileLine(singles[t]);
+
+      // If there is no initial tile or this singles selection is on a neighboring
+      // side, make a selection attempt.
+      if (!initialTile || singles[t].isNeighboringSide(initialTile)) {
+        tile = this._selectByTileLine(singles[t]);
+      }
 
       this._log('--- singles loop [initial, tile] :', initialTile, tile);
 
@@ -124,6 +129,11 @@ Bot.prototype = {
         var attackTile = this.getAttackTile(initialTile, tile);
         if (attackTile && this._tryTiles(tile, attackTile)) {
           return true; // Done! The tiles will be claimed.
+        }
+
+        // Otherwise, remove the last tried tile. The attack combo won't work.
+        else {
+          this._triedTiles = _.dropRight(this._triedTiles);
         }
       }
     }
@@ -134,33 +144,36 @@ Bot.prototype = {
 
   _selectLastResort: function() {
 
+    var self = this;
+
     function attempt(tile) {
 
       var testTile;
 
       for (var t = 0, len = tiles.length; t < len; t++) {
         testTile = tiles[t];
-        var attackTile = this.getAttackTile(tile, testTile);
-        if (attackTile && this._tryTiles(testTile, attackTile)) {
+        var attackTile = self.getAttackTile(tile, testTile);
+        if (attackTile && self._tryTiles(testTile, attackTile)) {
           return true;
         }
       }
       return false;
     }
 
-    var tiles = this._cubeCache._cube.getAvailableTiles(tile);
+    var initialTile = this.getInitialTriedTile(),
+        tiles = this._cubeCache._cube.getAvailableTiles(initialTile);
 
     this._log('$$$$$ LAST RESORT');
 
     // If there is an initial tile, try to match it first.
-    if (this.getInitialTriedTile()) {
+    if (initialTile) {
       if (attempt(this.getInitialTriedTile())) {
         return true;
       }
     }
-    
+
     // Otherwise, go through all the tiles and try to find a match.
-    for (var e = 0, elen = tiles.length; e < len; e++) {
+    for (var e = 0, len = tiles.length; e < len; e++) {
       this._triedTiles = [];
       this._tryTiles(tiles[e]);
       if (attempt(tiles[e])) {
@@ -188,7 +201,13 @@ Bot.prototype = {
   },
 
   _selectTiles: function() {
-    this._triedTiles = _.union(this._triedTiles, arguments);
+
+    var tiles = _.union(this._triedTiles, arguments);
+
+    this._triedTiles = tiles;
+
+    this._log('^^^^^^^^^^^^^^^^^^^^ _triedTiles is now:', this._triedTiles);
+
     if (this._triedTiles.length === 3) {
       this._report();
       this._animateClaim();

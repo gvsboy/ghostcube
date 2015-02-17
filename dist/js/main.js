@@ -361,7 +361,12 @@ Bot.prototype = {
     for (var t = 0, len = singles.length; t < len; t++) {
 
       initialTile = this.getInitialTriedTile();
-      tile = this._selectByTileLine(singles[t]);
+
+      // If there is no initial tile or this singles selection is on a neighboring
+      // side, make a selection attempt.
+      if (!initialTile || singles[t].isNeighboringSide(initialTile)) {
+        tile = this._selectByTileLine(singles[t]);
+      }
 
       this._log('--- singles loop [initial, tile] :', initialTile, tile);
 
@@ -369,6 +374,11 @@ Bot.prototype = {
         var attackTile = this.getAttackTile(initialTile, tile);
         if (attackTile && this._tryTiles(tile, attackTile)) {
           return true; // Done! The tiles will be claimed.
+        }
+
+        // Otherwise, remove the last tried tile. The attack combo won't work.
+        else {
+          this._triedTiles = _.dropRight(this._triedTiles);
         }
       }
     }
@@ -379,33 +389,36 @@ Bot.prototype = {
 
   _selectLastResort: function() {
 
+    var self = this;
+
     function attempt(tile) {
 
       var testTile;
 
       for (var t = 0, len = tiles.length; t < len; t++) {
         testTile = tiles[t];
-        var attackTile = this.getAttackTile(tile, testTile);
-        if (attackTile && this._tryTiles(testTile, attackTile)) {
+        var attackTile = self.getAttackTile(tile, testTile);
+        if (attackTile && self._tryTiles(testTile, attackTile)) {
           return true;
         }
       }
       return false;
     }
 
-    var tiles = this._cubeCache._cube.getAvailableTiles(tile);
+    var initialTile = this.getInitialTriedTile(),
+        tiles = this._cubeCache._cube.getAvailableTiles(initialTile);
 
     this._log('$$$$$ LAST RESORT');
 
     // If there is an initial tile, try to match it first.
-    if (this.getInitialTriedTile()) {
+    if (initialTile) {
       if (attempt(this.getInitialTriedTile())) {
         return true;
       }
     }
-    
+
     // Otherwise, go through all the tiles and try to find a match.
-    for (var e = 0, elen = tiles.length; e < len; e++) {
+    for (var e = 0, len = tiles.length; e < len; e++) {
       this._triedTiles = [];
       this._tryTiles(tiles[e]);
       if (attempt(tiles[e])) {
@@ -433,7 +446,13 @@ Bot.prototype = {
   },
 
   _selectTiles: function() {
-    this._triedTiles = _.union(this._triedTiles, arguments);
+
+    var tiles = _.union(this._triedTiles, arguments);
+
+    this._triedTiles = tiles;
+
+    this._log('^^^^^^^^^^^^^^^^^^^^ _triedTiles is now:', this._triedTiles);
+
     if (this._triedTiles.length === 3) {
       this._report();
       this._animateClaim();
@@ -524,6 +543,13 @@ Cube.prototype = {
     var el = this.el,
         self = this;
 
+    // Set the initial rotated state. Would be cool to make these dynamic
+    // but probably not worth the trouble.
+    // http://css-tricks.com/get-value-of-css-rotation-through-javascript/
+    // http://stackoverflow.com/questions/8270612/get-element-moz-transformrotate-value-in-jquery
+    this.x = 315;
+    this.y = 315;
+
     el.addEventListener(Vendor.EVENT.animationIteration, function() {
       el.classList.add('transition');
       el.addEventListener(Vendor.EVENT.animationEnd, function animEnd(evt) {
@@ -532,13 +558,6 @@ Cube.prototype = {
           // Remove the transition class and append the init class. Done!
           el.classList.remove('transition');
           el.classList.add('init');
-
-          // Set the initial rotated state. Would be cool to make these dynamic
-          // but probably not worth the trouble.
-          // http://css-tricks.com/get-value-of-css-rotation-through-javascript/
-          // http://stackoverflow.com/questions/8270612/get-element-moz-transformrotate-value-in-jquery
-          self.x = 315;
-          self.y = 315;
 
           // Let's go!
           self.emit('init');
@@ -554,6 +573,18 @@ Cube.prototype = {
 
     this.style[Vendor.JS.transform] =
       Cube.ROTATE_X_PREFIX + this.x + Cube.ROTATE_UNIT_SUFFIX + ' ' + Cube.ROTATE_Y_PREFIX + this.y + Cube.ROTATE_UNIT_SUFFIX;
+  },
+
+  /**
+   * Calculate the rotation needed to display all the given tiles which
+   * must be neighbors to each other (for obvious reasons).
+   * @param  {Array} tiles A collection of tiles (three maximum).
+   * @return {[type]}       [description]
+   */
+  rotateToTiles: function(tiles) {
+    var visibilityMap = _.forEach(tiles, function(tile) {
+      return tile._visibilityMap;
+    });
   },
 
   listenTo: function(eventName, callback, context) {
@@ -607,7 +638,7 @@ Cube.prototype = {
 
     // Get all the tiles by side and push each array to the main array list.
     var tilesBySide = _.reduce(this.getSides(), function(list, side) {
-      if (side !== except.side) {
+      if (!except || side !== except.side) {
         list.push(_.shuffle(side.getAvailableTiles()));
       }
       return list;
@@ -651,7 +682,7 @@ Cube.prototype = {
 
     var neighbors, side;
 
-    if (tile1 && tile2 && tile1.side.isNeighbor(tile2.side)) {
+    if (tile1 && tile2 && tile1.isNeighboringSide(tile2)) {
 
       // Get the neighbor sides and exclude the selected side.
       neighbors = _.without(tile2.side.getNeighbors(), tile1.side),
@@ -1093,6 +1124,10 @@ Tile.prototype = {
         .addClass('unclaimed')
         .removeClass('claimed');
     }
+  },
+
+  isNeighboringSide: function(tile) {
+    return this.side.isNeighbor(tile.side);
   },
 
   addClass: function(name) {
@@ -1560,7 +1595,7 @@ Player.prototype = {
       }
 
       // Else, if the side selected is not a neighbor, bail out.
-      else if (!initialTile.side.isNeighbor(tile.side)) {
+      else if (!initialTile.isNeighboringSide(tile)) {
         throw new SelectTileError(SelectTileError.NOT_NEIGHBOR);
       }
     }

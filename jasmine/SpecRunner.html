@@ -10,18 +10,34 @@
   </head>
 
   <body>
+
+    <!-- Cube Markup -->
+    <div id="cube" class="cube splash" style="display:none">
+      <div id="front" class="face"></div>
+      <div id="back" class="face"></div>
+      <div id="left" class="face"></div>
+      <div id="right" class="face"></div>
+      <div id="top" class="face"></div>
+      <div id="bottom" class="face"></div>
+    </div>
+
+    <!-- Jasmine Includes -->
     <script src="lib/jasmine-2.2.0/jasmine.js"></script>
     <script src="lib/jasmine-2.2.0/jasmine-html.js"></script>
     <script src="lib/jasmine-2.2.0/boot.js"></script>
 
-    <!-- Source -->
+    <!-- App Source -->
     <script src="../dist/js/lib.js"></script>
     <script src="../dist/js/main.js"></script>
 
     <!-- Specs -->
     <script src="spec/SpecHelper.js"></script>
+    <script src="spec/CubeSpec.js"></script>
     <script src="spec/SideSpec.js"></script>
     <script src="spec/LineSpec.js"></script>
+    <script src="spec/TileSpec.js"></script>
+    <script src="spec/BotSpec.js"></script>
+
   </body>
 
 </html>

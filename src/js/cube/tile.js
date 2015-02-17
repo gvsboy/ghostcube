@@ -65,6 +65,10 @@ Tile.prototype = {
     }
   },
 
+  isNeighboringSide: function(tile) {
+    return this.side.isNeighbor(tile.side);
+  },
+
   addClass: function(name) {
     this.el.classList.add(name);
     return this;
