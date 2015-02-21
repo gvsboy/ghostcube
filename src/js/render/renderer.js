@@ -49,6 +49,16 @@ Renderer.prototype = {
     if (this.tick > 0 || this._setMovement()) {
       this._loop();
     }
+
+    // debug
+    else {
+      var x = this.cube.x, y = this.cube.y;
+      console.log('CUBE x, y:', x, y);
+      var sides = _.filter(this.cube.getSides(), function(side) {
+        return side.isVisible(x, y);
+      });
+      console.log('visible:', _.pluck(sides, 'id'));
+    }
   },
 
   _listenForKeyboard: function() {

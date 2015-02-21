@@ -6,7 +6,7 @@ describe('Cube', function() {
     expect(Cube).toBeDefined();
   });
 
-  describe('rotateToTiles()', function() {
+  describe('_getCommonVisibleCoordinates()', function() {
 
     it('determines the end points it needs to rotate to', function() {
       var sides = cube.getSides(),
@@ -14,9 +14,16 @@ describe('Cube', function() {
             sides.left.getTiles(3)[0],
             sides.front.getTiles(1)[0],
             sides.top.getTiles(1)[0]
-          ];
-      expect(cube.rotateToTiles(tiles)).toBe([315, 45]);
+          ],
+          coors = cube._getCommonVisibleCoordinates(tiles);
+      expect(coors).toEqual([[225, 225],[315, 45]]);
     });
+
+  });
+
+  xdescribe('rotateToTiles()', function() {
+
+    
 
   });
 

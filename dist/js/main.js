@@ -582,9 +582,8 @@ Cube.prototype = {
    * @return {[type]}       [description]
    */
   rotateToTiles: function(tiles) {
-    var visibilityMap = _.forEach(tiles, function(tile) {
-      return tile._visibilityMap;
-    });
+
+    var coors = this._getCommonVisibleCoordinates(tiles);
   },
 
   listenTo: function(eventName, callback, context) {
@@ -720,6 +719,34 @@ Cube.prototype = {
     }
 
     return result;
+  },
+
+  /**
+   * Calculates all the possible x/y coordinate combinations that exist
+   * where all the given tiles will be visible.
+   * @param  {Array} tiles The tiles to test.
+   * @return {Array}       A collection of valid coordinate collections.
+   *                       e.g. [[225, 225], [315, 45]]
+   */
+  _getCommonVisibleCoordinates: function(tiles) {
+
+    // Collect the visibility map of each passed tile into an array.
+    var visibilityMap = _.map(tiles, function(tile) {
+          return tile.side._visibilityMap;
+        }),
+
+        // Find all the x coordinates shared by all the tiles.
+        xCoors = _.intersection.apply(_, _.map(visibilityMap, function(map) {
+          return _.map(_.keys(map), _.parseInt);
+        })),
+
+        // Given the available x coordinates, find the shared y coordinates.
+        yCoors = _.flatten(_.map(xCoors, function(coor) {
+          return _.intersection.apply(_, _.pluck(visibilityMap, coor));
+        }));
+
+    // Return a collection of x/y collections shared among all the passed tiles.
+    return _.zip(xCoors, yCoors);
   },
 
   _buildSides: function(size) {
@@ -1881,6 +1908,16 @@ Renderer.prototype = {
     // If there are ticks left or a key is down, keep looping.
     if (this.tick > 0 || this._setMovement()) {
       this._loop();
+    }
+
+    // debug
+    else {
+      var x = this.cube.x, y = this.cube.y;
+      console.log('CUBE x, y:', x, y);
+      var sides = _.filter(this.cube.getSides(), function(side) {
+        return side.isVisible(x, y);
+      });
+      console.log('visible:', _.pluck(sides, 'id'));
     }
   },
 
