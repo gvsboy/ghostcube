@@ -37,6 +37,7 @@ Renderer.prototype = {
     else {
       this._listenForKeyboard();
     }
+    this.cube.setRenderer(this);
   },
 
   draw: function() {

@@ -529,6 +529,7 @@ Cube.ROTATE_X_PREFIX = 'rotateX(';
 Cube.ROTATE_Y_PREFIX = 'rotateY(';
 Cube.ROTATE_UNIT_SUFFIX = 'deg)';
 Cube.REVOLUTION = 360;
+Cube.ROTATION_UNIT = 90;
 Cube.ORIGIN = 0;
 
 Cube.prototype = {
@@ -545,10 +546,10 @@ Cube.prototype = {
 
     // Set the initial rotated state. Would be cool to make these dynamic
     // but probably not worth the trouble.
+    // We want to always display three sides so let's cut at 45 degrees.
     // http://css-tricks.com/get-value-of-css-rotation-through-javascript/
     // http://stackoverflow.com/questions/8270612/get-element-moz-transformrotate-value-in-jquery
-    this.x = 315;
-    this.y = 315;
+    this.x = this.y = Cube.REVOLUTION - (Cube.ROTATION_UNIT / 2);
 
     el.addEventListener(Vendor.EVENT.animationIteration, function() {
       el.classList.add('transition');
@@ -567,6 +568,15 @@ Cube.prototype = {
 
   },
 
+  /**
+   * Sets a renderer so the cube can render itself. This is a bit hacky; please find
+   * another way to accomplish self-rendering.
+   * @param {Renderer} renderer The renderer to set on the cube.
+   */
+  setRenderer: function(renderer) {
+    this._renderer = renderer;
+  },
+
   rotate: function(x, y) {
     this.x = this._calculateCoordinate(this.x, x);
     this.y = this._calculateCoordinate(this.y, y);
@@ -583,7 +593,10 @@ Cube.prototype = {
    */
   rotateToTiles: function(tiles) {
 
-    var coors = this._getCommonVisibleCoordinates(tiles);
+    var pairs = this._getCommonVisibleCoordinates(tiles),
+        coors = this._getShortestRotationDistance(pairs);
+
+    debugger;
   },
 
   listenTo: function(eventName, callback, context) {
@@ -747,6 +760,31 @@ Cube.prototype = {
 
     // Return a collection of x/y collections shared among all the passed tiles.
     return _.zip(xCoors, yCoors);
+  },
+
+  /**
+   * Calculates the shortest rotation distance given a collection of
+   * coordinate pairs. This method is meant to be used with data provided
+   * by _getCommonVisibleCoordinates.
+   * @param  {[type]} pairs [description]
+   * @return {[type]}       [description]
+   */
+  _getShortestRotationDistance: function(pairs) {
+
+    var cubeX = this.x,
+        cubeY = this.y;
+
+    return _.reduce(pairs, function(lowest, current) {
+      var diff = [
+        cubeX - current[0],
+        cubeY - current[1]
+      ];
+      debugger;
+      if (!lowest || diff[0] + diff[1] < lowest[0] + lowest[1]) {
+        return diff;
+      }
+      return lowest;
+    }, null);
   },
 
   _buildSides: function(size) {
@@ -1897,6 +1935,7 @@ Renderer.prototype = {
     else {
       this._listenForKeyboard();
     }
+    this.cube.setRenderer(this);
   },
 
   draw: function() {
