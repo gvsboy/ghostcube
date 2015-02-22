@@ -763,6 +763,37 @@ Cube.prototype = {
   },
 
   /**
+   * Calculates the shortest rotation distance between an origin coordinate
+   * and a target coordinate. Accounts for the circular continuation loop from 360
+   * to 0 and the reverse.
+   * @param  {Number} originCoor The coordinate you're currently at.
+   * @param  {Number} targetCoor The coordinate you wish to be at.
+   * @return {Number}            The shortest rotation movement to reach the target.
+   */
+  _getShortestCoordinateDiff: function(originCoor, targetCoor) {
+
+    var revolution = Cube.REVOLUTION,
+        diff = targetCoor - originCoor;
+
+    // If the absolute difference is more than half of a revolution, we need to
+    // take the circular continuation into account to get the shortest distance.
+    if (Math.abs(diff) > revolution / 2) {
+
+      // If the target is higher than the origin, we need to go into reverse.
+      if (targetCoor > originCoor) {
+        diff = targetCoor - revolution - originCoor;
+      }
+
+      // Otherwise, let's move ahead.
+      else {
+        diff = revolution - originCoor + targetCoor;
+      }
+    }
+
+    return diff;
+  },
+
+  /**
    * Calculates the shortest rotation distance given a collection of
    * coordinate pairs. This method is meant to be used with data provided
    * by _getCommonVisibleCoordinates.
@@ -771,20 +802,23 @@ Cube.prototype = {
    */
   _getShortestRotationDistance: function(pairs) {
 
-    var cubeX = this.x,
-        cubeY = this.y;
-
     return _.reduce(pairs, function(lowest, current) {
+
       var diff = [
-        cubeX - current[0],
-        cubeY - current[1]
+        this._getShortestCoordinateDiff(this.x, current[0]),
+        this._getShortestCoordinateDiff(this.y, current[1])
       ];
-      debugger;
+
+      // If a lowest pair hasn't been set yet or the sum of the current coor
+      // differences is less than the previously set lowest pair's, then return
+      // the current pair as the lowest.
       if (!lowest || diff[0] + diff[1] < lowest[0] + lowest[1]) {
         return diff;
       }
+
+      // Otherwise, return the lowest.
       return lowest;
-    }, null);
+    }, null, this);
   },
 
   _buildSides: function(size) {
@@ -795,12 +829,12 @@ Cube.prototype = {
       return list;
     }, {});
 
-    var TOP = sides['top'],
-        BOTTOM = sides['bottom'],
-        FRONT = sides['front'],
-        BACK = sides['back'],
-        LEFT = sides['left'],
-        RIGHT = sides['right'];
+    var TOP = sides.top,
+        BOTTOM = sides.bottom,
+        FRONT = sides.front,
+        BACK = sides.back,
+        LEFT = sides.left,
+        RIGHT = sides.right;
 
     // Pretty crappy ... FOR TESTING ONLY!
     var neighborMap = {

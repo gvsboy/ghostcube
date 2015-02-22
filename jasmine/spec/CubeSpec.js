@@ -36,7 +36,35 @@ describe('Cube', function() {
     });
   });
 
-  describe('_getShortestRotationDistance()', function() {
+  describe('_getShortestCoordinateDiff()', function() {
+
+    it('calculates the shortest diff between 315 and 225', function() {
+      expect(
+        cube._getShortestCoordinateDiff(315, 225)
+      ).toEqual(-90);
+    });
+
+    it('calculates the shortest diff between 225 and 315', function() {
+      expect(
+        cube._getShortestCoordinateDiff(225, 315)
+      ).toEqual(90);
+    });
+
+    it('calculates the shortest diff between 315 and 45', function() {
+      expect(
+        cube._getShortestCoordinateDiff(315, 45)
+      ).toEqual(90);
+    });
+
+    it('calculates the shortest diff between 45 and 315', function() {
+      expect(
+        cube._getShortestCoordinateDiff(45, 315)
+      ).toEqual(-90);
+    });
+
+  });
+
+  xdescribe('_getShortestRotationDistance()', function() {
 
     it('calculates the shortest rotation distance to [left, front, top] from [right, front, top]', function() {
       rotateCubeTo(315, 315);
