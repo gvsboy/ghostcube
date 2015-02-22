@@ -53,31 +53,31 @@ describe('Cube', function() {
     it('calculates the shortest diff between 315 and 45', function() {
       expect(
         cube._getShortestCoordinateDiff(315, 45)
-      ).toEqual(90);
+      ).toEqual(-90);
     });
 
     it('calculates the shortest diff between 45 and 315', function() {
       expect(
         cube._getShortestCoordinateDiff(45, 315)
-      ).toEqual(-90);
+      ).toEqual(90);
     });
 
   });
 
-  xdescribe('_getShortestRotationDistance()', function() {
+  describe('_getShortestRotationDistance()', function() {
 
     it('calculates the shortest rotation distance to [left, front, top] from [right, front, top]', function() {
       rotateCubeTo(315, 315);
       expect(cube._getShortestRotationDistance(
         cube._getCommonVisibleCoordinates(tilesLeftFrontTop)
-      )).toEqual([90, 90]);
+      )).toEqual([0, -90]);
     });
 
     it('calculates the shortest rotation distance to [left, front, top] from [right, front, bottom]', function() {
       rotateCubeTo(45, 315);
       expect(cube._getShortestRotationDistance(
         cube._getCommonVisibleCoordinates(tilesLeftFrontTop)
-      )).toEqual([90, 90]);
+      )).toEqual([90, -90]);
     });
 
   });

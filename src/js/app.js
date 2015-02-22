@@ -81,7 +81,7 @@ App.prototype = {
     // Begin the rendering.
     this.renderer.initialize();
 
-    cube.on('renderstart', _.bind(this.clearHelperTile, this));
+    this.renderer.on('start', _.bind(this.clearHelperTile, this));
 
     // Not really into this but sure for now.
     _.forEach(this.players, function(player) {

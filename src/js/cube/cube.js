@@ -89,7 +89,11 @@ Cube.prototype = {
     var pairs = this._getCommonVisibleCoordinates(tiles),
         coors = this._getShortestRotationDistance(pairs);
 
-    debugger;
+    this.renderer
+      .setMovement(coors[0], coors[1])
+      .then(() => {
+        console.log('DONE YEAH!');
+      });
   },
 
   listenTo: function(eventName, callback, context) {
@@ -273,13 +277,13 @@ Cube.prototype = {
     if (Math.abs(diff) > revolution / 2) {
 
       // If the target is higher than the origin, we need to go into reverse.
-      if (targetCoor > originCoor) {
-        diff = targetCoor - revolution - originCoor;
+      if (originCoor > targetCoor) {
+        diff = originCoor - revolution - targetCoor;
       }
 
       // Otherwise, let's move ahead.
       else {
-        diff = revolution - originCoor + targetCoor;
+        diff = revolution - targetCoor + originCoor;
       }
     }
 
@@ -290,13 +294,15 @@ Cube.prototype = {
    * Calculates the shortest rotation distance given a collection of
    * coordinate pairs. This method is meant to be used with data provided
    * by _getCommonVisibleCoordinates.
-   * @param  {[type]} pairs [description]
-   * @return {[type]}       [description]
+   * @param  {Array} pairs A collection of coordinate pairs.
+   * @return {Array}       A single coordinate pair. e.g. [45, 135]
    */
   _getShortestRotationDistance: function(pairs) {
 
     return _.reduce(pairs, function(lowest, current) {
 
+      // First, determine shortest differences for each coordinate so we can
+      // compare them to a previous lowest pair.
       var diff = [
         this._getShortestCoordinateDiff(this.x, current[0]),
         this._getShortestCoordinateDiff(this.y, current[1])
@@ -305,7 +311,7 @@ Cube.prototype = {
       // If a lowest pair hasn't been set yet or the sum of the current coor
       // differences is less than the previously set lowest pair's, then return
       // the current pair as the lowest.
-      if (!lowest || diff[0] + diff[1] < lowest[0] + lowest[1]) {
+      if (!lowest || Math.abs(diff[0]) + Math.abs(diff[1]) < Math.abs(lowest[0]) + Math.abs(lowest[1])) {
         return diff;
       }
 

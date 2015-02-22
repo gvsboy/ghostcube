@@ -81,7 +81,7 @@ App.prototype = {
     // Begin the rendering.
     this.renderer.initialize();
 
-    cube.on('renderstart', _.bind(this.clearHelperTile, this));
+    this.renderer.on('start', _.bind(this.clearHelperTile, this));
 
     // Not really into this but sure for now.
     _.forEach(this.players, function(player) {
@@ -455,6 +455,11 @@ Bot.prototype = {
 
     if (this._triedTiles.length === 3) {
       this._report();
+      /*
+      this._cubeCache._cube.rotateToTiles(this._triedTiles).then(() => {
+        this._animateClaim();
+      });
+      */
       this._animateClaim();
     }
   },
@@ -596,7 +601,11 @@ Cube.prototype = {
     var pairs = this._getCommonVisibleCoordinates(tiles),
         coors = this._getShortestRotationDistance(pairs);
 
-    debugger;
+    this.renderer
+      .setMovement(coors[0], coors[1])
+      .then(() => {
+        console.log('DONE YEAH!');
+      });
   },
 
   listenTo: function(eventName, callback, context) {
@@ -780,13 +789,13 @@ Cube.prototype = {
     if (Math.abs(diff) > revolution / 2) {
 
       // If the target is higher than the origin, we need to go into reverse.
-      if (targetCoor > originCoor) {
-        diff = targetCoor - revolution - originCoor;
+      if (originCoor > targetCoor) {
+        diff = originCoor - revolution - targetCoor;
       }
 
       // Otherwise, let's move ahead.
       else {
-        diff = revolution - originCoor + targetCoor;
+        diff = revolution - targetCoor + originCoor;
       }
     }
 
@@ -797,13 +806,15 @@ Cube.prototype = {
    * Calculates the shortest rotation distance given a collection of
    * coordinate pairs. This method is meant to be used with data provided
    * by _getCommonVisibleCoordinates.
-   * @param  {[type]} pairs [description]
-   * @return {[type]}       [description]
+   * @param  {Array} pairs A collection of coordinate pairs.
+   * @return {Array}       A single coordinate pair. e.g. [45, 135]
    */
   _getShortestRotationDistance: function(pairs) {
 
     return _.reduce(pairs, function(lowest, current) {
 
+      // First, determine shortest differences for each coordinate so we can
+      // compare them to a previous lowest pair.
       var diff = [
         this._getShortestCoordinateDiff(this.x, current[0]),
         this._getShortestCoordinateDiff(this.y, current[1])
@@ -812,7 +823,7 @@ Cube.prototype = {
       // If a lowest pair hasn't been set yet or the sum of the current coor
       // differences is less than the previously set lowest pair's, then return
       // the current pair as the lowest.
-      if (!lowest || diff[0] + diff[1] < lowest[0] + lowest[1]) {
+      if (!lowest || Math.abs(diff[0]) + Math.abs(diff[1]) < Math.abs(lowest[0]) + Math.abs(lowest[1])) {
         return diff;
       }
 
@@ -1958,6 +1969,9 @@ function Renderer(cube, isMobile) {
 
   // Is the client a mobile device?
   this.isMobile = isMobile;
+
+  // EventEmitter constructor call.
+  EventEmitter2.call(this);
 }
 
 Renderer.prototype = {
@@ -1983,8 +1997,10 @@ Renderer.prototype = {
       this._loop();
     }
 
-    // debug
     else {
+      this.emit('end');
+
+      //debug
       var x = this.cube.x, y = this.cube.y;
       console.log('CUBE x, y:', x, y);
       var sides = _.filter(this.cube.getSides(), function(side) {
@@ -1992,6 +2008,35 @@ Renderer.prototype = {
       });
       console.log('visible:', _.pluck(sides, 'id'));
     }
+  },
+
+  /**
+   * A public interface for manually setting the movement.
+   * @param {Number} x The target x coordinate.
+   * @param {Number} y The target y coordinate.
+   * @return {Promise} A promise to be fulfilled when the movement animation ends.
+   */
+  setMovement: function(x, y) {
+
+    /**
+     * Configure a move in one direction and start the render loop.
+     * @param {Number} tick The distance to rotate.
+     * @param {String} coorProp Which coordinate to rotate on (moveX or moveY).
+     */
+    var move = _.bind((tick, coorProp) => {
+      this.tick = tick;
+      this[coorProp] = tick < 0 ? -this.speed : this.speed;
+      this._loop();
+    }, this);
+
+    // Return a promise that will resolve when both x and y movements are complete.
+    return new Promise((resolve) => {
+      move(x, 'moveX');
+      this.once('end', () => {
+        move(y, 'moveY');
+        this.once('end', resolve);
+      });
+    });
   },
 
   _listenForKeyboard: function() {
@@ -2023,7 +2068,7 @@ Renderer.prototype = {
   _movementListener: function() {
     if (this.tick === 0 && this._setMovement()) {
       this._loop();
-      this.cube.emit('renderstart');
+      this.emit('start');
     }
   },
 
@@ -2093,6 +2138,10 @@ Renderer.prototype = {
   }
 
 };
+
+// Mixin the EventEmitter methods for great justice.
+// Ditch when we migrate to Browserify.
+_.assign(Renderer.prototype, EventEmitter2.prototype);
 
 function Touch() {
   this.queue = [];

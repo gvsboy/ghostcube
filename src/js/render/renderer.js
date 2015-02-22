@@ -26,6 +26,9 @@ function Renderer(cube, isMobile) {
 
   // Is the client a mobile device?
   this.isMobile = isMobile;
+
+  // EventEmitter constructor call.
+  EventEmitter2.call(this);
 }
 
 Renderer.prototype = {
@@ -51,8 +54,10 @@ Renderer.prototype = {
       this._loop();
     }
 
-    // debug
     else {
+      this.emit('end');
+
+      //debug
       var x = this.cube.x, y = this.cube.y;
       console.log('CUBE x, y:', x, y);
       var sides = _.filter(this.cube.getSides(), function(side) {
@@ -60,6 +65,35 @@ Renderer.prototype = {
       });
       console.log('visible:', _.pluck(sides, 'id'));
     }
+  },
+
+  /**
+   * A public interface for manually setting the movement.
+   * @param {Number} x The target x coordinate.
+   * @param {Number} y The target y coordinate.
+   * @return {Promise} A promise to be fulfilled when the movement animation ends.
+   */
+  setMovement: function(x, y) {
+
+    /**
+     * Configure a move in one direction and start the render loop.
+     * @param {Number} tick The distance to rotate.
+     * @param {String} coorProp Which coordinate to rotate on (moveX or moveY).
+     */
+    var move = _.bind((tick, coorProp) => {
+      this.tick = tick;
+      this[coorProp] = tick < 0 ? -this.speed : this.speed;
+      this._loop();
+    }, this);
+
+    // Return a promise that will resolve when both x and y movements are complete.
+    return new Promise((resolve) => {
+      move(x, 'moveX');
+      this.once('end', () => {
+        move(y, 'moveY');
+        this.once('end', resolve);
+      });
+    });
   },
 
   _listenForKeyboard: function() {
@@ -91,7 +125,7 @@ Renderer.prototype = {
   _movementListener: function() {
     if (this.tick === 0 && this._setMovement()) {
       this._loop();
-      this.cube.emit('renderstart');
+      this.emit('start');
     }
   },
 
@@ -161,3 +195,7 @@ Renderer.prototype = {
   }
 
 };
+
+// Mixin the EventEmitter methods for great justice.
+// Ditch when we migrate to Browserify.
+_.assign(Renderer.prototype, EventEmitter2.prototype);

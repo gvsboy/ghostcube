@@ -210,6 +210,11 @@ Bot.prototype = {
 
     if (this._triedTiles.length === 3) {
       this._report();
+      /*
+      this._cubeCache._cube.rotateToTiles(this._triedTiles).then(() => {
+        this._animateClaim();
+      });
+      */
       this._animateClaim();
     }
   },
