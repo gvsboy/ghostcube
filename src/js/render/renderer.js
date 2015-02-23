@@ -81,8 +81,8 @@ Renderer.prototype = {
      * @param {String} coorProp Which coordinate to rotate on (moveX or moveY).
      */
     var move = _.bind((tick, coorProp) => {
-      this.tick = tick;
-      this[coorProp] = tick < 0 ? -this.speed : this.speed;
+      this.tick = Math.abs(tick);
+      this[coorProp] = !tick ? 0 : tick < 0 ? -this.speed : this.speed;
       this._loop();
     }, this);
 
@@ -123,7 +123,7 @@ Renderer.prototype = {
   },
 
   _movementListener: function() {
-    if (this.tick === 0 && this._setMovement()) {
+    if (this.tick <= 0 && this._setMovement()) {
       this._loop();
       this.emit('start');
     }

@@ -82,18 +82,22 @@ Cube.prototype = {
    * Calculate the rotation needed to display all the given tiles which
    * must be neighbors to each other (for obvious reasons).
    * @param  {Array} tiles A collection of tiles (three maximum).
-   * @return {[type]}       [description]
+   * @return {Promise} A promise that resolves when the rotation is complete.
    */
   rotateToTiles: function(tiles) {
 
+    // First, collect all the common coordinates each tile shares when visible.
     var pairs = this._getCommonVisibleCoordinates(tiles),
+
+        // Next, get calculate the shortest rotation distance from the pairs.
         coors = this._getShortestRotationDistance(pairs);
 
-    this.renderer
-      .setMovement(coors[0], coors[1])
-      .then(() => {
-        console.log('DONE YEAH!');
-      });
+    // Return a promise that will resolve when the cube's rotation render completes.
+    return new Promise((resolve) => {
+      this._renderer
+        .setMovement(coors[0], coors[1])
+        .then(resolve);
+    });
   },
 
   listenTo: function(eventName, callback, context) {
@@ -277,13 +281,13 @@ Cube.prototype = {
     if (Math.abs(diff) > revolution / 2) {
 
       // If the target is higher than the origin, we need to go into reverse.
-      if (originCoor > targetCoor) {
-        diff = originCoor - revolution - targetCoor;
+      if (targetCoor > originCoor) {
+        diff = targetCoor - revolution - originCoor;
       }
 
       // Otherwise, let's move ahead.
       else {
-        diff = revolution - targetCoor + originCoor;
+        diff = revolution - originCoor + targetCoor;
       }
     }
 
