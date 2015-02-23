@@ -29,27 +29,20 @@ function App(containerId) {
   this.recorder = new Recorder(this);
 
   // Listen for user interactions.
-  this.listen();
+  this.idle();
 }
 
 App.prototype = {
 
-  // I hate everything in here...
-  listen: function() {
+  /**
+   * Configures the cube object's default pre-game state.
+   */
+  idle: function() {
 
     var self = this,
         cube = this.cube,
         cubeEl = cube.el,
         container = this.container;
-
-    function beginGame(evt) {
-      // Every animated cube face will bubble up their animation events
-      // so let's react to only one of them.
-      if (evt.target === container) {
-        container.removeEventListener(Vendor.EVENT.animationEnd, beginGame);
-        cube.build();
-      }
-    }
 
     function cubeClicked() {
       cubeEl.classList.remove('splash');
@@ -58,17 +51,26 @@ App.prototype = {
       container.addEventListener(Vendor.EVENT.animationEnd, beginGame);
     }
 
+    function beginGame(evt) {
+      // Every animated cube face will bubble up their animation events
+      // so let's react to only one of them.
+      if (evt.target === container) {
+        container.removeEventListener(Vendor.EVENT.animationEnd, beginGame);
+        cube
+          .build()
+          .then(_.bind(self.initializeGame, self));
+      }
+    }
+
+    // Click the cube to begin the game.
     cubeEl.addEventListener('click', cubeClicked);
-
-    // When the cube has initialized, start the rendering object.
-    cube.on('init', _.bind(this._realListen, this));
-
-    // The message box listens for messages to display.
-    this.messages.listenTo(this.tutorial);
   },
 
-  // This is where the cube's listeners are created. For reals.
-  _realListen: function() {
+  /**
+   * Configures the cube for game mode by creating players, setting listeners,
+   * and initializing the renderer.
+   */
+  initializeGame: function() {
 
     var cube = this.cube;
 
@@ -76,6 +78,10 @@ App.prototype = {
     var human = new Player('Kevin', 'player1', cube);
     var bot = new Bot('CPU', 'player2', cube, human);
     this.players = [human, bot];
+
+    // The message box listens for messages to display.
+    this.messages.listenTo(this.tutorial);
+
     this.setCurrentPlayer(_.first(this.players));
 
     // Begin the rendering.

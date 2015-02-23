@@ -3,6 +3,8 @@ function Bot(name, tileClass, cube, opponent) {
   this.opponent = opponent;
 }
 
+Bot.THINKING_SPEED = 600;
+
 Bot.prototype = {
 
   getInitialTriedTile: function() {
@@ -209,10 +211,12 @@ Bot.prototype = {
     this._log('^^^^^^^^^^^^^^^^^^^^ _triedTiles is now:', this._triedTiles);
 
     if (this._triedTiles.length === 3) {
-      this._report();
-      this._cubeCache._cube.rotateToTiles(this._triedTiles).then(() => {
-        this._animateClaim();
-      });
+      setTimeout(() => {
+        this._report();
+        this._cubeCache._cube.rotateToTiles(this._triedTiles).then(() => {
+          this._animateClaim();
+        });
+      }, Bot.THINKING_SPEED);
     }
   },
 
@@ -223,7 +227,7 @@ Bot.prototype = {
       if (!_.isEmpty(this._triedTiles)) {
         this._animateClaim();
       }
-    }, this), 600);
+    }, this), Bot.THINKING_SPEED);
   },
 
   _tryTiles: function(tile1, tile2) {

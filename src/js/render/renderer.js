@@ -54,16 +54,9 @@ Renderer.prototype = {
       this._loop();
     }
 
+    // Otherwise, broadcast an event signifying that the rendering has completed.
     else {
       this.emit('end');
-
-      //debug
-      var x = this.cube.x, y = this.cube.y;
-      console.log('CUBE x, y:', x, y);
-      var sides = _.filter(this.cube.getSides(), function(side) {
-        return side.isVisible(x, y);
-      });
-      console.log('visible:', _.pluck(sides, 'id'));
     }
   },
 
@@ -71,7 +64,7 @@ Renderer.prototype = {
    * A public interface for manually setting the movement.
    * @param {Number} x The target x coordinate.
    * @param {Number} y The target y coordinate.
-   * @return {Promise} A promise to be fulfilled when the movement animation ends.
+   * @return {Promise} A promise that resolves when the movement animation ends.
    */
   setMovement: function(x, y) {
 
@@ -80,14 +73,14 @@ Renderer.prototype = {
      * @param {Number} tick The distance to rotate.
      * @param {String} coorProp Which coordinate to rotate on (moveX or moveY).
      */
-    var move = _.bind((tick, coorProp) => {
+    var move = (tick, coorProp) => {
       this.tick = Math.abs(tick);
       this[coorProp] = !tick ? 0 : tick < 0 ? -this.speed : this.speed;
       this._loop();
-    }, this);
+    };
 
     // Return a promise that will resolve when both x and y movements are complete.
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       move(x, 'moveX');
       this.once('end', () => {
         move(y, 'moveY');

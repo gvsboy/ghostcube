@@ -29,27 +29,20 @@ function App(containerId) {
   this.recorder = new Recorder(this);
 
   // Listen for user interactions.
-  this.listen();
+  this.idle();
 }
 
 App.prototype = {
 
-  // I hate everything in here...
-  listen: function() {
+  /**
+   * Configures the cube object's default pre-game state.
+   */
+  idle: function() {
 
     var self = this,
         cube = this.cube,
         cubeEl = cube.el,
         container = this.container;
-
-    function beginGame(evt) {
-      // Every animated cube face will bubble up their animation events
-      // so let's react to only one of them.
-      if (evt.target === container) {
-        container.removeEventListener(Vendor.EVENT.animationEnd, beginGame);
-        cube.build();
-      }
-    }
 
     function cubeClicked() {
       cubeEl.classList.remove('splash');
@@ -58,17 +51,26 @@ App.prototype = {
       container.addEventListener(Vendor.EVENT.animationEnd, beginGame);
     }
 
+    function beginGame(evt) {
+      // Every animated cube face will bubble up their animation events
+      // so let's react to only one of them.
+      if (evt.target === container) {
+        container.removeEventListener(Vendor.EVENT.animationEnd, beginGame);
+        cube
+          .build()
+          .then(_.bind(self.initializeGame, self));
+      }
+    }
+
+    // Click the cube to begin the game.
     cubeEl.addEventListener('click', cubeClicked);
-
-    // When the cube has initialized, start the rendering object.
-    cube.on('init', _.bind(this._realListen, this));
-
-    // The message box listens for messages to display.
-    this.messages.listenTo(this.tutorial);
   },
 
-  // This is where the cube's listeners are created. For reals.
-  _realListen: function() {
+  /**
+   * Configures the cube for game mode by creating players, setting listeners,
+   * and initializing the renderer.
+   */
+  initializeGame: function() {
 
     var cube = this.cube;
 
@@ -76,6 +78,10 @@ App.prototype = {
     var human = new Player('Kevin', 'player1', cube);
     var bot = new Bot('CPU', 'player2', cube, human);
     this.players = [human, bot];
+
+    // The message box listens for messages to display.
+    this.messages.listenTo(this.tutorial);
+
     this.setCurrentPlayer(_.first(this.players));
 
     // Begin the rendering.
@@ -247,6 +253,8 @@ function Bot(name, tileClass, cube, opponent) {
   Player.call(this, name, tileClass, cube);
   this.opponent = opponent;
 }
+
+Bot.THINKING_SPEED = 600;
 
 Bot.prototype = {
 
@@ -454,10 +462,12 @@ Bot.prototype = {
     this._log('^^^^^^^^^^^^^^^^^^^^ _triedTiles is now:', this._triedTiles);
 
     if (this._triedTiles.length === 3) {
-      this._report();
-      this._cubeCache._cube.rotateToTiles(this._triedTiles).then(() => {
-        this._animateClaim();
-      });
+      setTimeout(() => {
+        this._report();
+        this._cubeCache._cube.rotateToTiles(this._triedTiles).then(() => {
+          this._animateClaim();
+        });
+      }, Bot.THINKING_SPEED);
     }
   },
 
@@ -468,7 +478,7 @@ Bot.prototype = {
       if (!_.isEmpty(this._triedTiles)) {
         this._animateClaim();
       }
-    }, this), 600);
+    }, this), Bot.THINKING_SPEED);
   },
 
   _tryTiles: function(tile1, tile2) {
@@ -522,9 +532,6 @@ function Cube(el, size) {
   this._sides = null;
 
   this._eventMap = {};
-
-  // EventEmitter constructor call.
-  EventEmitter2.call(this);
 }
 
 Cube.ROTATE_X_PREFIX = 'rotateX(';
@@ -536,38 +543,43 @@ Cube.ORIGIN = 0;
 
 Cube.prototype = {
 
+  /**
+   * Builds the game-mode version of the cube, slowing down the idle state
+   * to a stop and transitioning to the center of the screen. The initial
+   * rotation coordinate values are set and the sides are generated with their
+   * child tiles.
+   * @return {Promise} A promise that resolves when the transition ends.
+   */
   build: function() {
 
-    // Create the game sides.
+    // Create the game sides. The tiles will animate into existence from a
+    // trigger function during each side's creation.
     this._sides = this._buildSides(this.size);
 
-    // Initialize the game.
-    // Slow down the cube to a stop, display instructions.
-    var el = this.el,
-        self = this;
-
-    // Set the initial rotated state. Would be cool to make these dynamic
-    // but probably not worth the trouble.
-    // We want to always display three sides so let's cut at 45 degrees.
-    // http://css-tricks.com/get-value-of-css-rotation-through-javascript/
-    // http://stackoverflow.com/questions/8270612/get-element-moz-transformrotate-value-in-jquery
+    // Set the initial rotated state. Cut at 45 degrees to always display three sides.
     this.x = this.y = Cube.REVOLUTION - (Cube.ROTATION_UNIT / 2);
 
-    el.addEventListener(Vendor.EVENT.animationIteration, function() {
-      el.classList.add('transition');
-      el.addEventListener(Vendor.EVENT.animationEnd, function animEnd(evt) {
-        if (evt.target === el) {
+    return new Promise(resolve => {
 
-          // Remove the transition class and append the init class. Done!
-          el.classList.remove('transition');
-          el.classList.add('init');
+      // A reference to the cube's element.
+      var el = this.el;
 
-          // Let's go!
-          self.emit('init');
-        }
+      // After the cube's rotation animation has made one loop, begin to slow it down.
+      el.addEventListener(Vendor.EVENT.animationIteration, function() {
+        el.classList.add('transition');
+        el.addEventListener(Vendor.EVENT.animationEnd, function animEnd(evt) {
+          if (evt.target === el) {
+
+            // Remove the transition class and append the init class. Done!
+            el.classList.remove('transition');
+            el.classList.add('init');
+
+            // Let's go!
+            resolve();
+          }
+        });
       });
     });
-
   },
 
   /**
@@ -602,7 +614,7 @@ Cube.prototype = {
         coors = this._getShortestRotationDistance(pairs);
 
     // Return a promise that will resolve when the cube's rotation render completes.
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       this._renderer
         .setMovement(coors[0], coors[1])
         .then(resolve);
@@ -907,10 +919,6 @@ Cube.prototype = {
   }
 
 };
-
-// Mixin the EventEmitter methods for great justice.
-// Ditch when we migrate to Browserify.
-_.assign(Cube.prototype, EventEmitter2.prototype);
 
 /**
  * Lines represent tiles in either a horizontal or vertical row
@@ -1680,10 +1688,7 @@ Player.prototype = {
     var selectedTiles = this._selectedTiles,
 
         // Get a reference to the first tile selected.
-        initialTile = _.first(selectedTiles),
-
-        // Potential reference to an attack data object used for Recorder.
-        turnData;
+        initialTile = _.first(selectedTiles);
 
     // If the tile is already claimed, get outta dodge.
     if (tile.claimedBy) {
@@ -1715,22 +1720,9 @@ Player.prototype = {
     if (attackTile) {
 
       // If the attack tile is valid, that means both tiles can be selected
-      // and everything can be claimed.
+      // and everything can be claimed. Exit true as we're done selecting tiles.
       if (this.canAttack(attackTile)) {
-
-        // If the tile is already claimed, cancel the two out.
-        if (attackTile.claimedBy) {
-          turnData = this._createAttackData(attackTile);
-          attackTile.claimedBy.release(attackTile);
-          this._selectTiles(tile, turnData);
-        }
-
-        // Otherwise select it per usual.
-        else {
-          this._selectTiles(tile, attackTile);
-        }
-
-        // We're done selecting tiles.
+        this._selectTiles(tile, attackTile);
         return true;
       }
       else {
@@ -1750,7 +1742,6 @@ Player.prototype = {
 
   _createAttackData: function(tile) {
     return {
-      action: 'attack',
       player: tile.claimedBy,
       tile: tile,
       toString: function() {
@@ -1775,11 +1766,22 @@ Player.prototype = {
   },
 
   claimAll: function() {
-    _.forEach(this._selectedTiles, function(tile) {
-      if (tile instanceof Tile) {
+
+    _.forEach(this._selectedTiles, function(tile, index, array) {
+
+      // If the tile is already claimed, this is an attack! Release it.
+      // Also, replace it with attack data so the recorder will work.
+      if (tile.claimedBy) {
+        array[index] = this._createAttackData(tile);
+        tile.claimedBy.release(tile);
+      }
+
+      // Otherwise, claim that sucker.
+      else {
         this.claim(tile);
       }
     }, this);
+
     this.emit('player:claim', this._selectedTiles);
     this._selectedTiles = [];
   }
@@ -1998,16 +2000,9 @@ Renderer.prototype = {
       this._loop();
     }
 
+    // Otherwise, broadcast an event signifying that the rendering has completed.
     else {
       this.emit('end');
-
-      //debug
-      var x = this.cube.x, y = this.cube.y;
-      console.log('CUBE x, y:', x, y);
-      var sides = _.filter(this.cube.getSides(), function(side) {
-        return side.isVisible(x, y);
-      });
-      console.log('visible:', _.pluck(sides, 'id'));
     }
   },
 
@@ -2015,7 +2010,7 @@ Renderer.prototype = {
    * A public interface for manually setting the movement.
    * @param {Number} x The target x coordinate.
    * @param {Number} y The target y coordinate.
-   * @return {Promise} A promise to be fulfilled when the movement animation ends.
+   * @return {Promise} A promise that resolves when the movement animation ends.
    */
   setMovement: function(x, y) {
 
@@ -2024,14 +2019,14 @@ Renderer.prototype = {
      * @param {Number} tick The distance to rotate.
      * @param {String} coorProp Which coordinate to rotate on (moveX or moveY).
      */
-    var move = _.bind((tick, coorProp) => {
+    var move = (tick, coorProp) => {
       this.tick = Math.abs(tick);
       this[coorProp] = !tick ? 0 : tick < 0 ? -this.speed : this.speed;
       this._loop();
-    }, this);
+    };
 
     // Return a promise that will resolve when both x and y movements are complete.
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       move(x, 'moveX');
       this.once('end', () => {
         move(y, 'moveY');

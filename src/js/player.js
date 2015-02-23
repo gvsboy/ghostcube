@@ -79,10 +79,7 @@ Player.prototype = {
     var selectedTiles = this._selectedTiles,
 
         // Get a reference to the first tile selected.
-        initialTile = _.first(selectedTiles),
-
-        // Potential reference to an attack data object used for Recorder.
-        turnData;
+        initialTile = _.first(selectedTiles);
 
     // If the tile is already claimed, get outta dodge.
     if (tile.claimedBy) {
@@ -114,22 +111,9 @@ Player.prototype = {
     if (attackTile) {
 
       // If the attack tile is valid, that means both tiles can be selected
-      // and everything can be claimed.
+      // and everything can be claimed. Exit true as we're done selecting tiles.
       if (this.canAttack(attackTile)) {
-
-        // If the tile is already claimed, cancel the two out.
-        if (attackTile.claimedBy) {
-          turnData = this._createAttackData(attackTile);
-          attackTile.claimedBy.release(attackTile);
-          this._selectTiles(tile, turnData);
-        }
-
-        // Otherwise select it per usual.
-        else {
-          this._selectTiles(tile, attackTile);
-        }
-
-        // We're done selecting tiles.
+        this._selectTiles(tile, attackTile);
         return true;
       }
       else {
@@ -149,7 +133,6 @@ Player.prototype = {
 
   _createAttackData: function(tile) {
     return {
-      action: 'attack',
       player: tile.claimedBy,
       tile: tile,
       toString: function() {
@@ -174,11 +157,22 @@ Player.prototype = {
   },
 
   claimAll: function() {
-    _.forEach(this._selectedTiles, function(tile) {
-      if (tile instanceof Tile) {
+
+    _.forEach(this._selectedTiles, function(tile, index, array) {
+
+      // If the tile is already claimed, this is an attack! Release it.
+      // Also, replace it with attack data so the recorder will work.
+      if (tile.claimedBy) {
+        array[index] = this._createAttackData(tile);
+        tile.claimedBy.release(tile);
+      }
+
+      // Otherwise, claim that sucker.
+      else {
         this.claim(tile);
       }
     }, this);
+
     this.emit('player:claim', this._selectedTiles);
     this._selectedTiles = [];
   }

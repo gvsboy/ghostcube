@@ -13,9 +13,6 @@ function Cube(el, size) {
   this._sides = null;
 
   this._eventMap = {};
-
-  // EventEmitter constructor call.
-  EventEmitter2.call(this);
 }
 
 Cube.ROTATE_X_PREFIX = 'rotateX(';
@@ -27,38 +24,43 @@ Cube.ORIGIN = 0;
 
 Cube.prototype = {
 
+  /**
+   * Builds the game-mode version of the cube, slowing down the idle state
+   * to a stop and transitioning to the center of the screen. The initial
+   * rotation coordinate values are set and the sides are generated with their
+   * child tiles.
+   * @return {Promise} A promise that resolves when the transition ends.
+   */
   build: function() {
 
-    // Create the game sides.
+    // Create the game sides. The tiles will animate into existence from a
+    // trigger function during each side's creation.
     this._sides = this._buildSides(this.size);
 
-    // Initialize the game.
-    // Slow down the cube to a stop, display instructions.
-    var el = this.el,
-        self = this;
-
-    // Set the initial rotated state. Would be cool to make these dynamic
-    // but probably not worth the trouble.
-    // We want to always display three sides so let's cut at 45 degrees.
-    // http://css-tricks.com/get-value-of-css-rotation-through-javascript/
-    // http://stackoverflow.com/questions/8270612/get-element-moz-transformrotate-value-in-jquery
+    // Set the initial rotated state. Cut at 45 degrees to always display three sides.
     this.x = this.y = Cube.REVOLUTION - (Cube.ROTATION_UNIT / 2);
 
-    el.addEventListener(Vendor.EVENT.animationIteration, function() {
-      el.classList.add('transition');
-      el.addEventListener(Vendor.EVENT.animationEnd, function animEnd(evt) {
-        if (evt.target === el) {
+    return new Promise(resolve => {
 
-          // Remove the transition class and append the init class. Done!
-          el.classList.remove('transition');
-          el.classList.add('init');
+      // A reference to the cube's element.
+      var el = this.el;
 
-          // Let's go!
-          self.emit('init');
-        }
+      // After the cube's rotation animation has made one loop, begin to slow it down.
+      el.addEventListener(Vendor.EVENT.animationIteration, function() {
+        el.classList.add('transition');
+        el.addEventListener(Vendor.EVENT.animationEnd, function animEnd(evt) {
+          if (evt.target === el) {
+
+            // Remove the transition class and append the init class. Done!
+            el.classList.remove('transition');
+            el.classList.add('init');
+
+            // Let's go!
+            resolve();
+          }
+        });
       });
     });
-
   },
 
   /**
@@ -93,7 +95,7 @@ Cube.prototype = {
         coors = this._getShortestRotationDistance(pairs);
 
     // Return a promise that will resolve when the cube's rotation render completes.
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       this._renderer
         .setMovement(coors[0], coors[1])
         .then(resolve);
@@ -398,7 +400,3 @@ Cube.prototype = {
   }
 
 };
-
-// Mixin the EventEmitter methods for great justice.
-// Ditch when we migrate to Browserify.
-_.assign(Cube.prototype, EventEmitter2.prototype);
