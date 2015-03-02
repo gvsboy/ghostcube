@@ -172,8 +172,8 @@ Cube.prototype = {
    */
   updateCrosshairs: function(tile, callback) {
 
-    tile.xLine.updateTiles(callback);
-    tile.yLine.updateTiles(callback);
+    // Run the callback on all tiles in the lines associated with the given tile.
+    _.each(tile.getAllLineTiles(), callback);
 
     // For each neighbor, pass in the side and the orientation id (e.g. 'left').
     _.forEach(tile.side.getNeighbors(), function(neighbor) {

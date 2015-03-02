@@ -180,3 +180,13 @@ $header-width: 54em;
   50%  { background-color: $tile-selected; }
   100% { background-color: $player2-color; }
 }
+
+@include keyframes(win-player1) {
+  0%   { background-color: $player1-color; }
+  100%  { background-color: $tile-selected; }
+}
+
+@include keyframes(win-player2) {
+  0%   { background-color: $player2-color; }
+  100%  { background-color: $tile-selected; }
+}

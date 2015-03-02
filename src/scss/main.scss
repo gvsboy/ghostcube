@@ -98,6 +98,10 @@ h2 {
       font-size: 4em;
       color: yellow;
     }
+
+    &.persist {
+      @include animation(none);
+    }
   }
 
 }
@@ -214,11 +218,17 @@ h2 {
       .player2-turn &.helper {
         @include animation(attack-player1 0.25s infinite);
       }
+      &.win {
+        @include animation(win-player1 1s infinite);
+      }
     }
     &.player2 {
       background-color: $player2-color;
       .player1-turn &.helper {
-        @include animation(attack-player2 0.25s infinite);
+        @include animation(attack-player2 0.25s infinite alternate);
+      }
+      &.win {
+        @include animation(win-player2 1s infinite alternate);
       }
     }
   }

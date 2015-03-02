@@ -11,14 +11,29 @@ Messages.prototype = {
     source.on('message', _.bind(this.add, this));
   },
 
-  add: function(message, type) {
+  /**
+   * Creates a new message to add to the queue.
+   * @param {String} message The message text.
+   * @param {String} classes A space-separated list of classes to append to the message.
+   */
+  add: function(message, classes) {
+
+    // Generate a new element to contain the message.
     var item = document.createElement('li');
-    if (type) {
-      item.className = type;
+
+    // Add special classes to decorate the message if passed.
+    // We want to use apply here because add takes multiple arguments,
+    // not an array of names.
+    if (classes) {
+      DOMTokenList.prototype.add.apply(item.classList, classes.split(' '));
     }
+
+    // Get the correct message by passed key.
     if (message.split(' ').length === 1) {
       message = Messages.LIST[message];
     }
+
+    // Append the message to the new element and queue it up.
     item.appendChild(document.createTextNode(message));
     this._enqueue(item);
   },

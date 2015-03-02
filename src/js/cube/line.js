@@ -40,6 +40,15 @@ Line.prototype = {
   },
 
   /**
+   * Updates the UI to display a winning state involving the line.
+   */
+  pulsate: function() {
+    _.each(this.getTiles(), (tile) => {
+      tile.addClass('win');
+    });
+  },
+
+  /**
    * Reports whether or not the line is horizontal by checking the
    * index difference between two adjacent tiles.
    * @return {Boolean} Is this line horizontal?
@@ -56,12 +65,6 @@ Line.prototype = {
     return this._tiles;
   },
 
-  updateTiles: function(callback) {
-    _.each(this.getTiles(), function(tile) {
-      callback(tile);
-    });
-  },
-
   /**
    * @return {Number} The number of tiles in the line.
    */
@@ -71,12 +74,9 @@ Line.prototype = {
 
   /**
    * @return {Array} The indicies of all the tiles.
-   * NOTE: Useful? Not sure. Check usage.
    */
   indicies: function() {
-    return _.map(this.getTiles(), function(tile) {
-      return tile.index;
-    });
+    return _.map(this.getTiles(), 'index');
   },
 
   /**

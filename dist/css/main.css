@@ -758,6 +758,78 @@
     background-color: blue;
   }
 }
+@-webkit-keyframes win-player1 {
+  0% {
+    background-color: red;
+  }
+
+  100% {
+    background-color: gold;
+  }
+}
+@-moz-keyframes win-player1 {
+  0% {
+    background-color: red;
+  }
+
+  100% {
+    background-color: gold;
+  }
+}
+@-o-keyframes win-player1 {
+  0% {
+    background-color: red;
+  }
+
+  100% {
+    background-color: gold;
+  }
+}
+@keyframes win-player1 {
+  0% {
+    background-color: red;
+  }
+
+  100% {
+    background-color: gold;
+  }
+}
+@-webkit-keyframes win-player2 {
+  0% {
+    background-color: blue;
+  }
+
+  100% {
+    background-color: gold;
+  }
+}
+@-moz-keyframes win-player2 {
+  0% {
+    background-color: blue;
+  }
+
+  100% {
+    background-color: gold;
+  }
+}
+@-o-keyframes win-player2 {
+  0% {
+    background-color: blue;
+  }
+
+  100% {
+    background-color: gold;
+  }
+}
+@keyframes win-player2 {
+  0% {
+    background-color: blue;
+  }
+
+  100% {
+    background-color: gold;
+  }
+}
 html {
   font-size: 16px;
   /* Set base font size for em conversion */
@@ -867,6 +939,12 @@ h2 {
 #messages li.alert {
   font-size: 4em;
   color: yellow;
+}
+#messages li.persist {
+  animation: none;
+  -o-animation: none;
+  -moz-animation: none;
+  -webkit-animation: none;
 }
 
 .cube {
@@ -1040,14 +1118,26 @@ h2 {
   -moz-animation: attack-player1 0.25s infinite;
   -webkit-animation: attack-player1 0.25s infinite;
 }
+.tile.claimed.player1.win {
+  animation: win-player1 1s infinite;
+  -o-animation: win-player1 1s infinite;
+  -moz-animation: win-player1 1s infinite;
+  -webkit-animation: win-player1 1s infinite;
+}
 .tile.claimed.player2 {
   background-color: blue;
 }
 .player1-turn .tile.claimed.player2.helper {
-  animation: attack-player2 0.25s infinite;
-  -o-animation: attack-player2 0.25s infinite;
-  -moz-animation: attack-player2 0.25s infinite;
-  -webkit-animation: attack-player2 0.25s infinite;
+  animation: attack-player2 0.25s infinite alternate;
+  -o-animation: attack-player2 0.25s infinite alternate;
+  -moz-animation: attack-player2 0.25s infinite alternate;
+  -webkit-animation: attack-player2 0.25s infinite alternate;
+}
+.tile.claimed.player2.win {
+  animation: win-player2 1s infinite alternate;
+  -o-animation: win-player2 1s infinite alternate;
+  -moz-animation: win-player2 1s infinite alternate;
+  -webkit-animation: win-player2 1s infinite alternate;
 }
 
 .tile:nth-child(1) {

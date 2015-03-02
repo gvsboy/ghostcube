@@ -94,7 +94,7 @@ App.prototype = {
       player
         .on('player:initialSelected', _.bind(this.showCrosshairs, this))
         .on('player:initialDeselected', _.bind(this.hideCrosshairs, this))
-        .on('player:claim', _.bind(this.claim, this))
+        .on('player:claim', _.bind(this._endTurn, this))
     }, this);
 
     this.tutorial.next().next();
@@ -147,7 +147,7 @@ App.prototype = {
 
   showCrosshairs: function(tile) {
     tile.addClass('selected');
-    this.cube.updateCrosshairs(tile, function(tile) {
+    this.cube.updateCrosshairs(tile, (tile) => {
       tile.addClass('highlighted');
     });
     this.tutorial.next();
@@ -155,7 +155,7 @@ App.prototype = {
 
   hideCrosshairs: function(tile) {
     tile.removeClass('selected');
-    this.cube.updateCrosshairs(tile, function(tile) {
+    this.cube.updateCrosshairs(tile, (tile) => {
       tile.removeClass('highlighted');
     });
   },
@@ -167,28 +167,44 @@ App.prototype = {
     this._helperTile = null;
   },
 
-  claim: function(tiles) {
-    this.recorder.record(this.currentPlayer, tiles);
-    this.clearHelperTile();
-    this.hideCrosshairs(_.first(tiles));
-    this._endTurn();
-  },
-
-  _endTurn: function() {
+  /**
+   * Ends the current player's turn and determines if the game is
+   * in a win state.
+   * @param  {Array} tiles The tiles selected to end the turn.
+   */
+  _endTurn: function(tiles) {
 
     var player = this.currentPlayer,
-        winBy = player.getWinLines().length,
+        lines = player.getWinLines();
+
+    this.recorder.record(player, tiles);
+    this.clearHelperTile();
+    this.hideCrosshairs(_.first(tiles));
+
+    // If the player has made at least one line, end the game.
+    if (!this._endGame(lines)) {
+      this.setCurrentPlayer(this.getOpponent(player));
+    }
+  },
+
+  /**
+   * Attempts to end the game.
+   * @param  {Array} lines The lines used to win.
+   * @return {Boolean} Is the game in a win state?
+   */
+  _endGame: function(lines) {
+
+    var winBy = lines.length,
         modifier;
 
-    // If a player wins, display a message and exit.
     if (winBy) {
       modifier = winBy > 1 ? ' x' + winBy + '!' : '!';
-      this.messages.add(player.name + ' wins' + modifier, 'alert');
-      //return;// just return for now. should set a win state.
+      this.messages.add(this.currentPlayer.name + ' wins' + modifier, 'alert persist');
+      _.invoke(lines, 'pulsate');
+      return true;
     }
 
-    // Else, switch players and continue.
-    this.setCurrentPlayer(this.getOpponent(player));
+    return false;
   },
 
   // Potentially dangerous as this is hackable...
