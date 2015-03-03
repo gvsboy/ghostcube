@@ -43,7 +43,7 @@ Line.prototype = {
    * Updates the UI to display a winning state involving the line.
    */
   pulsate: function() {
-    _.each(this.getTiles(), (tile) => {
+    _.forEach(this.getTiles(), tile => {
       tile.addClass('win');
     });
   },

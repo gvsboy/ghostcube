@@ -30,7 +30,7 @@ Recorder.prototype = {
     var turnData = this._timeline[this._cursor];
 
     if (turnData) {
-      _.each(turnData.tiles, function(tile) {
+      _.forEach(turnData.tiles, function(tile) {
         if (tile instanceof Tile) {
           turnData.player.claim(tile);
         }
@@ -52,7 +52,7 @@ Recorder.prototype = {
     var turnData = this._timeline[this._cursor - 1];
 
     if (turnData) {
-      _.each(turnData.tiles, function(tile) {
+      _.forEach(turnData.tiles, function(tile) {
         if (tile instanceof Tile) {
           turnData.player.release(tile);
         }

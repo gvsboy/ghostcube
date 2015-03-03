@@ -147,7 +147,7 @@ App.prototype = {
 
   showCrosshairs: function(tile) {
     tile.addClass('selected');
-    this.cube.updateCrosshairs(tile, (tile) => {
+    this.cube.updateCrosshairs(tile, tile => {
       tile.addClass('highlighted');
     });
     this.tutorial.next();
@@ -155,7 +155,7 @@ App.prototype = {
 
   hideCrosshairs: function(tile) {
     tile.removeClass('selected');
-    this.cube.updateCrosshairs(tile, (tile) => {
+    this.cube.updateCrosshairs(tile, tile => {
       tile.removeClass('highlighted');
     });
   },
@@ -201,6 +201,9 @@ App.prototype = {
       modifier = winBy > 1 ? ' x' + winBy + '!' : '!';
       this.messages.add(this.currentPlayer.name + ' wins' + modifier, 'alert persist');
       _.invoke(lines, 'pulsate');
+      setTimeout(() => {
+        this.messages.add('newGame', 'persist');
+      }, 2000);
       return true;
     }
 
@@ -654,7 +657,7 @@ Cube.prototype = {
 
   stopListeningTo: function(eventName) {
 
-    _.each(this._eventMap[eventName], function(handler) {
+    _.forEach(this._eventMap[eventName], function(handler) {
       this.el.removeEventListener(eventName, handler);
     }, this);
 
@@ -708,18 +711,14 @@ Cube.prototype = {
   updateCrosshairs: function(tile, callback) {
 
     // Run the callback on all tiles in the lines associated with the given tile.
-    _.each(tile.getAllLineTiles(), callback);
+    _.forEach(tile.getAllLineTiles(), callback);
 
     // For each neighbor, pass in the side and the orientation id (e.g. 'left').
-    _.forEach(tile.side.getNeighbors(), function(neighbor) {
+    _.forEach(tile.side.getNeighbors(), neighbor => {
 
-      // Find the translated indicies.
-      var tiles = tile.translate(neighbor);
-
-      // Run the callback on each tile.
-      _.forEach(tiles, callback);
-
-    }, this);
+      // Find the translated tiles and run the callback on each.
+      _.forEach(tile.translate(neighbor), callback);
+    });
   },
 
   /**
@@ -981,7 +980,7 @@ Line.prototype = {
    * Updates the UI to display a winning state involving the line.
    */
   pulsate: function() {
-    _.each(this.getTiles(), (tile) => {
+    _.forEach(this.getTiles(), tile => {
       tile.addClass('win');
     });
   },
@@ -1168,7 +1167,7 @@ Side.prototype = {
     };
 
     // For each tile, assign the correct lines.
-    _.each(tiles, function(tile, index) {
+    _.forEach(tiles, function(tile, index) {
 
       var mod = index % size;
           xLine = lines.x[(index - mod) / size],
@@ -1579,6 +1578,7 @@ Messages.prototype = {
    * Creates a new message to add to the queue.
    * @param {String} message The message text.
    * @param {String} classes A space-separated list of classes to append to the message.
+   * @return {Messages} Returns itself for chaining.
    */
   add: function(message, classes) {
 
@@ -1600,6 +1600,8 @@ Messages.prototype = {
     // Append the message to the new element and queue it up.
     item.appendChild(document.createTextNode(message));
     this._enqueue(item);
+
+    return this;
   },
 
   _enqueue: function(item) {
@@ -1635,7 +1637,8 @@ Messages.LIST = {
   claimed: 'This tile is already claimed!',
   targetClaimed: 'The attack target is already claimed by you!',
   sameSide: 'Same side! Choose a tile on a different side.',
-  notNeighbor: 'Not a neighboring side! Choose a tile different side.'
+  notNeighbor: 'Not a neighboring side! Choose a tile different side.',
+  newGame: 'Click anywhere to begin a new game.'
 };
 
 function Player(name, tileClass, cube) {
@@ -1707,6 +1710,27 @@ Player.prototype = {
     return tile.claimedBy !== this;
   },
 
+  claimAll: function() {
+
+    _.forEach(this._selectedTiles, function(tile, index, array) {
+
+      // If the tile is already claimed, this is an attack! Release it.
+      // Also, replace it with attack data so the recorder will work.
+      if (tile.claimedBy) {
+        array[index] = this._createAttackData(tile);
+        tile.claimedBy.release(tile);
+      }
+
+      // Otherwise, claim that sucker.
+      else {
+        this.claim(tile);
+      }
+    }, this);
+
+    this.emit('player:claim', this._selectedTiles);
+    this._selectedTiles = [];
+  },
+
   /**
    * [selectTile description]
    * @param  {Tile} tile The tile this player is trying to select.
@@ -1771,6 +1795,11 @@ Player.prototype = {
     return false;
   },
 
+  deselectTile: function(tile) {
+    _.pull(this._selectedTiles, tile);
+    this.emit('player:initialDeselected', tile);
+  },
+
   _createAttackData: function(tile) {
     return {
       player: tile.claimedBy,
@@ -1789,32 +1818,6 @@ Player.prototype = {
     if (this._selectedTiles.length >= 3) {
       this.claimAll();
     }
-  },
-
-  deselectTile: function(tile) {
-    _.pull(this._selectedTiles, tile);
-    this.emit('player:initialDeselected', tile);
-  },
-
-  claimAll: function() {
-
-    _.forEach(this._selectedTiles, function(tile, index, array) {
-
-      // If the tile is already claimed, this is an attack! Release it.
-      // Also, replace it with attack data so the recorder will work.
-      if (tile.claimedBy) {
-        array[index] = this._createAttackData(tile);
-        tile.claimedBy.release(tile);
-      }
-
-      // Otherwise, claim that sucker.
-      else {
-        this.claim(tile);
-      }
-    }, this);
-
-    this.emit('player:claim', this._selectedTiles);
-    this._selectedTiles = [];
   }
 
 };
@@ -1863,7 +1866,7 @@ Recorder.prototype = {
     var turnData = this._timeline[this._cursor];
 
     if (turnData) {
-      _.each(turnData.tiles, function(tile) {
+      _.forEach(turnData.tiles, function(tile) {
         if (tile instanceof Tile) {
           turnData.player.claim(tile);
         }
@@ -1885,7 +1888,7 @@ Recorder.prototype = {
     var turnData = this._timeline[this._cursor - 1];
 
     if (turnData) {
-      _.each(turnData.tiles, function(tile) {
+      _.forEach(turnData.tiles, function(tile) {
         if (tile instanceof Tile) {
           turnData.player.release(tile);
         }

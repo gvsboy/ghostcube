@@ -119,7 +119,7 @@ Cube.prototype = {
 
   stopListeningTo: function(eventName) {
 
-    _.each(this._eventMap[eventName], function(handler) {
+    _.forEach(this._eventMap[eventName], function(handler) {
       this.el.removeEventListener(eventName, handler);
     }, this);
 
@@ -173,18 +173,14 @@ Cube.prototype = {
   updateCrosshairs: function(tile, callback) {
 
     // Run the callback on all tiles in the lines associated with the given tile.
-    _.each(tile.getAllLineTiles(), callback);
+    _.forEach(tile.getAllLineTiles(), callback);
 
     // For each neighbor, pass in the side and the orientation id (e.g. 'left').
-    _.forEach(tile.side.getNeighbors(), function(neighbor) {
+    _.forEach(tile.side.getNeighbors(), neighbor => {
 
-      // Find the translated indicies.
-      var tiles = tile.translate(neighbor);
-
-      // Run the callback on each tile.
-      _.forEach(tiles, callback);
-
-    }, this);
+      // Find the translated tiles and run the callback on each.
+      _.forEach(tile.translate(neighbor), callback);
+    });
   },
 
   /**

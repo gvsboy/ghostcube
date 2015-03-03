@@ -1118,12 +1118,6 @@ h2 {
   -moz-animation: attack-player1 0.25s infinite;
   -webkit-animation: attack-player1 0.25s infinite;
 }
-.tile.claimed.player1.win {
-  animation: win-player1 1s infinite;
-  -o-animation: win-player1 1s infinite;
-  -moz-animation: win-player1 1s infinite;
-  -webkit-animation: win-player1 1s infinite;
-}
 .tile.claimed.player2 {
   background-color: blue;
 }
@@ -1133,7 +1127,13 @@ h2 {
   -moz-animation: attack-player2 0.25s infinite alternate;
   -webkit-animation: attack-player2 0.25s infinite alternate;
 }
-.tile.claimed.player2.win {
+.tile.preclaimed.player1.win, .tile.claimed.player1.win {
+  animation: win-player1 1s infinite alternate;
+  -o-animation: win-player1 1s infinite alternate;
+  -moz-animation: win-player1 1s infinite alternate;
+  -webkit-animation: win-player1 1s infinite alternate;
+}
+.tile.preclaimed.player2.win, .tile.claimed.player2.win {
   animation: win-player2 1s infinite alternate;
   -o-animation: win-player2 1s infinite alternate;
   -moz-animation: win-player2 1s infinite alternate;

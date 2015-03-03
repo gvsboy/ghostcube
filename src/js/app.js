@@ -147,7 +147,7 @@ App.prototype = {
 
   showCrosshairs: function(tile) {
     tile.addClass('selected');
-    this.cube.updateCrosshairs(tile, (tile) => {
+    this.cube.updateCrosshairs(tile, tile => {
       tile.addClass('highlighted');
     });
     this.tutorial.next();
@@ -155,7 +155,7 @@ App.prototype = {
 
   hideCrosshairs: function(tile) {
     tile.removeClass('selected');
-    this.cube.updateCrosshairs(tile, (tile) => {
+    this.cube.updateCrosshairs(tile, tile => {
       tile.removeClass('highlighted');
     });
   },
@@ -201,6 +201,9 @@ App.prototype = {
       modifier = winBy > 1 ? ' x' + winBy + '!' : '!';
       this.messages.add(this.currentPlayer.name + ' wins' + modifier, 'alert persist');
       _.invoke(lines, 'pulsate');
+      setTimeout(() => {
+        this.messages.add('newGame', 'persist');
+      }, 2000);
       return true;
     }
 

@@ -67,6 +67,27 @@ Player.prototype = {
     return tile.claimedBy !== this;
   },
 
+  claimAll: function() {
+
+    _.forEach(this._selectedTiles, function(tile, index, array) {
+
+      // If the tile is already claimed, this is an attack! Release it.
+      // Also, replace it with attack data so the recorder will work.
+      if (tile.claimedBy) {
+        array[index] = this._createAttackData(tile);
+        tile.claimedBy.release(tile);
+      }
+
+      // Otherwise, claim that sucker.
+      else {
+        this.claim(tile);
+      }
+    }, this);
+
+    this.emit('player:claim', this._selectedTiles);
+    this._selectedTiles = [];
+  },
+
   /**
    * [selectTile description]
    * @param  {Tile} tile The tile this player is trying to select.
@@ -131,6 +152,11 @@ Player.prototype = {
     return false;
   },
 
+  deselectTile: function(tile) {
+    _.pull(this._selectedTiles, tile);
+    this.emit('player:initialDeselected', tile);
+  },
+
   _createAttackData: function(tile) {
     return {
       player: tile.claimedBy,
@@ -149,32 +175,6 @@ Player.prototype = {
     if (this._selectedTiles.length >= 3) {
       this.claimAll();
     }
-  },
-
-  deselectTile: function(tile) {
-    _.pull(this._selectedTiles, tile);
-    this.emit('player:initialDeselected', tile);
-  },
-
-  claimAll: function() {
-
-    _.forEach(this._selectedTiles, function(tile, index, array) {
-
-      // If the tile is already claimed, this is an attack! Release it.
-      // Also, replace it with attack data so the recorder will work.
-      if (tile.claimedBy) {
-        array[index] = this._createAttackData(tile);
-        tile.claimedBy.release(tile);
-      }
-
-      // Otherwise, claim that sucker.
-      else {
-        this.claim(tile);
-      }
-    }, this);
-
-    this.emit('player:claim', this._selectedTiles);
-    this._selectedTiles = [];
   }
 
 };

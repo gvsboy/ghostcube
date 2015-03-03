@@ -15,6 +15,7 @@ Messages.prototype = {
    * Creates a new message to add to the queue.
    * @param {String} message The message text.
    * @param {String} classes A space-separated list of classes to append to the message.
+   * @return {Messages} Returns itself for chaining.
    */
   add: function(message, classes) {
 
@@ -36,6 +37,8 @@ Messages.prototype = {
     // Append the message to the new element and queue it up.
     item.appendChild(document.createTextNode(message));
     this._enqueue(item);
+
+    return this;
   },
 
   _enqueue: function(item) {
@@ -71,5 +74,6 @@ Messages.LIST = {
   claimed: 'This tile is already claimed!',
   targetClaimed: 'The attack target is already claimed by you!',
   sameSide: 'Same side! Choose a tile on a different side.',
-  notNeighbor: 'Not a neighboring side! Choose a tile different side.'
+  notNeighbor: 'Not a neighboring side! Choose a tile different side.',
+  newGame: 'Click anywhere to begin a new game.'
 };
