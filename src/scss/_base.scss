@@ -151,6 +151,17 @@ $header-width: 54em;
   100%  { height: 0; }
 }
 
+@include keyframes(message-add-persist) {
+  0%    { margin-left: -20em; height: 1.5em }
+  10%   { margin-left: 0; height: 1.5em }
+  100%  { margin-left: 0; height: 1.5em }
+}
+
+@include keyframes(message-add-persist-hide) {
+  0%    { margin-left: 0; height: 1.5em }
+  100%  { height: 0; }
+}
+
 @include keyframes(tile-claimed-player1) {
   0%    { background-color: black; }
   20%   { background-color: $player1-color; }

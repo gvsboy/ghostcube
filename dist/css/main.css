@@ -454,6 +454,110 @@
     height: 0;
   }
 }
+@-webkit-keyframes message-add-persist {
+  0% {
+    margin-left: -20em;
+    height: 1.5em;
+  }
+
+  10% {
+    margin-left: 0;
+    height: 1.5em;
+  }
+
+  100% {
+    margin-left: 0;
+    height: 1.5em;
+  }
+}
+@-moz-keyframes message-add-persist {
+  0% {
+    margin-left: -20em;
+    height: 1.5em;
+  }
+
+  10% {
+    margin-left: 0;
+    height: 1.5em;
+  }
+
+  100% {
+    margin-left: 0;
+    height: 1.5em;
+  }
+}
+@-o-keyframes message-add-persist {
+  0% {
+    margin-left: -20em;
+    height: 1.5em;
+  }
+
+  10% {
+    margin-left: 0;
+    height: 1.5em;
+  }
+
+  100% {
+    margin-left: 0;
+    height: 1.5em;
+  }
+}
+@keyframes message-add-persist {
+  0% {
+    margin-left: -20em;
+    height: 1.5em;
+  }
+
+  10% {
+    margin-left: 0;
+    height: 1.5em;
+  }
+
+  100% {
+    margin-left: 0;
+    height: 1.5em;
+  }
+}
+@-webkit-keyframes message-add-persist-hide {
+  0% {
+    margin-left: 0;
+    height: 1.5em;
+  }
+
+  100% {
+    height: 0;
+  }
+}
+@-moz-keyframes message-add-persist-hide {
+  0% {
+    margin-left: 0;
+    height: 1.5em;
+  }
+
+  100% {
+    height: 0;
+  }
+}
+@-o-keyframes message-add-persist-hide {
+  0% {
+    margin-left: 0;
+    height: 1.5em;
+  }
+
+  100% {
+    height: 0;
+  }
+}
+@keyframes message-add-persist-hide {
+  0% {
+    margin-left: 0;
+    height: 1.5em;
+  }
+
+  100% {
+    height: 0;
+  }
+}
 @-webkit-keyframes tile-claimed-player1 {
   0% {
     background-color: black;
@@ -941,10 +1045,16 @@ h2 {
   color: yellow;
 }
 #messages li.persist {
-  animation: none;
-  -o-animation: none;
-  -moz-animation: none;
-  -webkit-animation: none;
+  animation: message-add-persist 4s forwards;
+  -o-animation: message-add-persist 4s forwards;
+  -moz-animation: message-add-persist 4s forwards;
+  -webkit-animation: message-add-persist 4s forwards;
+}
+#messages li.hide {
+  animation: message-add-persist-hide 0.8s forwards;
+  -o-animation: message-add-persist-hide 0.8s forwards;
+  -moz-animation: message-add-persist-hide 0.8s forwards;
+  -webkit-animation: message-add-persist-hide 0.8s forwards;
 }
 
 .cube {

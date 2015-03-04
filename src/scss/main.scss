@@ -100,7 +100,11 @@ h2 {
     }
 
     &.persist {
-      @include animation(none);
+      @include animation(message-add-persist 4s forwards);
+    }
+    
+    &.hide {
+      @include animation(message-add-persist-hide 0.8s forwards);
     }
   }
 

@@ -1604,6 +1604,16 @@ Messages.prototype = {
     return this;
   },
 
+  /**
+   * Removes all persisted messages from the queue by adding the 'hide'
+   * class to each one.
+   */
+  removeAll: function() {
+    _.forEach(this.container.children, item => {
+      item.classList.add('hide');
+    });
+  },
+
   _enqueue: function(item) {
 
     var container = this.container,
@@ -1620,8 +1630,17 @@ Messages.prototype = {
     }, delay, item);
   },
 
+  /**
+   * Removes a message item referenced by the passed animationend event.
+   * The message will be removed if it's not persistent or it contains
+   * the 'hide' class.
+   * @param  {animationend} evt An animationend event.
+   */
   _remove: function(evt) {
-    this.container.removeChild(evt.target);
+    var classList = evt.target.classList;
+    if (!classList.contains('persist') || classList.contains('hide')) {
+      this.container.removeChild(evt.target);
+    }
   },
 
   _buildContainer: function() {
