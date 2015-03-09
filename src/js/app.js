@@ -199,15 +199,8 @@ App.prototype = {
       // After a brief pause, alert the user that clicking anywhere will restart the game.
       // Set a listener to do just that.
       setTimeout(() => {
-
         this.messages.add('newGame', 'persist');
-
-        UTIL.listenOnce(document, 'click', () => {
-          _.forEach(this.players, player => player.releaseAll());
-          this.messages.removeAll();
-          this.setCurrentPlayer(_.first(this.players));
-        });
-
+        UTIL.listenOnce(document, 'click', _.bind(this._resetGameState, this));
       }, 2000);
 
       // Yes, the game has ended.
@@ -216,6 +209,12 @@ App.prototype = {
 
     // Nobody has won yet. Continue!
     return false;
+  },
+
+  _resetGameState: function() {
+    _.forEach(this.players, player => player.releaseAll());
+    this.messages.removeAll();
+    this.setCurrentPlayer(_.first(this.players));
   },
 
   // Potentially dangerous as this is hackable...

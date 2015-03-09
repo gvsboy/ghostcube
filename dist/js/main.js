@@ -199,15 +199,8 @@ App.prototype = {
       // After a brief pause, alert the user that clicking anywhere will restart the game.
       // Set a listener to do just that.
       setTimeout(() => {
-
         this.messages.add('newGame', 'persist');
-
-        UTIL.listenOnce(document, 'click', () => {
-          _.forEach(this.players, player => player.releaseAll());
-          this.messages.removeAll();
-          this.setCurrentPlayer(_.first(this.players));
-        });
-
+        UTIL.listenOnce(document, 'click', _.bind(this._resetGameState, this));
       }, 2000);
 
       // Yes, the game has ended.
@@ -216,6 +209,12 @@ App.prototype = {
 
     // Nobody has won yet. Continue!
     return false;
+  },
+
+  _resetGameState: function() {
+    _.forEach(this.players, player => player.releaseAll());
+    this.messages.removeAll();
+    this.setCurrentPlayer(_.first(this.players));
   },
 
   // Potentially dangerous as this is hackable...
@@ -745,9 +744,7 @@ Cube.prototype = {
       neighbors = _.without(tile2.side.getNeighbors(), tile1.side),
 
       // Get the neighbor that is visible.
-      side = _.find(neighbors, function(neighbor) {
-        return neighbor.isVisible(this.x, this.y);
-      }, this);
+      side = _.find(neighbors, neighbor => neighbor.isVisible(this.x, this.y));
 
       // Return the tile that intersects the two passed tiles.
       return _.intersection(tile1.translate(side), tile2.translate(side))[0];
@@ -789,9 +786,7 @@ Cube.prototype = {
   _getCommonVisibleCoordinates: function(tiles) {
 
     // Collect the visibility map of each passed tile into an array.
-    var visibilityMap = _.map(tiles, function(tile) {
-          return tile.side._visibilityMap;
-        }),
+    var visibilityMap = _.map(tiles, tile => tile.side._visibilityMap),
 
         // Find all the x coordinates shared by all the tiles.
         xCoors = _.intersection.apply(_, _.map(visibilityMap, function(map) {
@@ -1479,9 +1474,7 @@ CubeCache.prototype = {
   },
 
   _getPartialLineTiles: function(line, claimedBy) {
-    return _.filter(line.getTiles(), function(tile) {
-      return tile.claimedBy === claimedBy;
-    });
+    return _.filter(line.getTiles(), tile => tile.claimedBy === claimedBy);
   },
 
   _growLine: function(tiles) {

@@ -199,9 +199,7 @@ Cube.prototype = {
       neighbors = _.without(tile2.side.getNeighbors(), tile1.side),
 
       // Get the neighbor that is visible.
-      side = _.find(neighbors, function(neighbor) {
-        return neighbor.isVisible(this.x, this.y);
-      }, this);
+      side = _.find(neighbors, neighbor => neighbor.isVisible(this.x, this.y));
 
       // Return the tile that intersects the two passed tiles.
       return _.intersection(tile1.translate(side), tile2.translate(side))[0];
@@ -243,9 +241,7 @@ Cube.prototype = {
   _getCommonVisibleCoordinates: function(tiles) {
 
     // Collect the visibility map of each passed tile into an array.
-    var visibilityMap = _.map(tiles, function(tile) {
-          return tile.side._visibilityMap;
-        }),
+    var visibilityMap = _.map(tiles, tile => tile.side._visibilityMap),
 
         // Find all the x coordinates shared by all the tiles.
         xCoors = _.intersection.apply(_, _.map(visibilityMap, function(map) {

@@ -120,9 +120,7 @@ CubeCache.prototype = {
   },
 
   _getPartialLineTiles: function(line, claimedBy) {
-    return _.filter(line.getTiles(), function(tile) {
-      return tile.claimedBy === claimedBy;
-    });
+    return _.filter(line.getTiles(), tile => tile.claimedBy === claimedBy);
   },
 
   _growLine: function(tiles) {

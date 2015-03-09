@@ -15,3 +15,27 @@ function createPlayers(cube) {
       bot = new Bot('CPU', 'player2', cube, human);
   return [human, bot];
 }
+
+/**
+ * Fetches tiles from strings. E.g. 'right 2'
+ * @param {Cube} cube The cube to fetch tiles from.
+ * @param {...String} Any number of strings representing tiles.
+ * @return {Array} A collection of fetched tiles.
+ */
+function getTiles(cube) {
+  var sides = cube.getSides();
+  return _.map(_.rest(arguments), function(string) {
+    var idPair = string.split(' ');
+    return sides[idPair[0]].getTiles(idPair[1])[0];
+  });
+}
+
+/**
+ * Like getTiles() but only fetches a single tile.
+ * @param  {Cube} cube The cube to fetch tiles from.
+ * @param  {String} string A string representing a tile.
+ * @return {Tile} The fetched tile.
+ */
+function getTile(cube, string) {
+  return getTiles(cube, string)[0];
+}

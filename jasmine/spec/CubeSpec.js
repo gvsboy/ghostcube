@@ -2,9 +2,9 @@ describe('Cube', function() {
 
   var cube = createCube(),
       sides = cube.getSides(),
-      tilesLeftFrontTop = [sides.left.getTiles(3)[0], sides.front.getTiles(1)[0], sides.top.getTiles(1)[0]],
-      tilesRightFrontBottom = [sides.right.getTiles(3)[0], sides.front.getTiles(1)[0], sides.bottom.getTiles(1)[0]],
-      tilesLeftBackTop = [sides.left.getTiles(3)[0], sides.back.getTiles(1)[0], sides.top.getTiles(1)[0]];
+      tilesLeftFrontTop = getTiles(cube, 'left 3', 'front 1', 'top 1'),
+      tilesRightFrontBottom = getTiles(cube, 'right 3', 'front 1', 'bottom 1'),
+      tilesLeftBackTop = getTiles(cube, 'left 3', 'back 1', 'top 1');
 
   function rotateCubeTo(x, y) {
     cube.x = x;
