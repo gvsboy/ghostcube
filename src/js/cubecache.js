@@ -6,14 +6,28 @@ function CubeCache(cube) {
   // The size to check completed lines against.
   this._cubeSize = cube.size;
 
-  // A collection of lines created by side.
-  this._lineMap = this._buildCollection(cube);
-
-  // A collection of claimed tiles that are not part of lines.
-  this._singles = [];
+  // Create cache objects to hold claimed tiles.
+  this.initialize();
 }
 
 CubeCache.prototype = {
+
+  /**
+   * Called on instantiation and reset, this initialize a fresh cache
+   * in two collecitons: An object keyed by cube side id to contain lines
+   * and an array to contain single tiles.
+   */
+  initialize: function() {
+
+    // A collection of lines created by side.
+    this._lineMap = _.reduce(this._cube.getSides(), (sides, side, id) => {
+      sides[id] = [];
+      return sides;
+    }, {});
+
+    // A collection of claimed tiles that are not part of lines.
+    this._singles = [];
+  },
 
   add: function(tile) {
 
@@ -75,27 +89,34 @@ CubeCache.prototype = {
    * @return {Array} A collection of lines.
    */
   getLines: function() {
-    return _.chain(this._lineMap)
-      .values()
-      .flatten()
-      .compact()
-      .sortBy(function(line) {
-        return line._tiles.length;
-      })
+    return this._getLinesAsChain()
+      .sortBy(line => line._tiles.length)
       .value();
   },
 
   /**
-   * Create an object keyed by cube side id with array values for containing
-   * various Tile data objects.
-   * @param  {Cube} cube The Cube object to base the collection on.
-   * @return {Object}    An object representation of the cube, keyed by side id.
+   * Retrieves all cached tiles.
+   * @return {Array} A colleciton of all the cached tiles.
    */
-  _buildCollection: function(cube) {
-    return _.reduce(cube._sides, function(sides, side, id) {
-      sides[id] = [];
-      return sides;
-    }, {});
+  getAllTiles: function() {
+    return this._getLinesAsChain()
+      .map(line => line.getTiles())
+      .flatten()
+      .uniq()
+      .concat(this._singles)
+      .value();
+  },
+
+  /**
+   * Fetches a chain-wrapped collection of cached lines, flattened and
+   * compacted into one array.
+   * @return {lodash} A lodash chain-wrapped collection.
+   */
+  _getLinesAsChain: function() {
+    return _.chain(this._lineMap)
+      .values()
+      .flatten()
+      .compact()
   },
 
   _getPartialLineTiles: function(line, claimedBy) {

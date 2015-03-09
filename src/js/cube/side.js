@@ -63,12 +63,8 @@ Side.prototype = {
 
   _buildTiles: function(size) {
 
-    var tiles, lines;
-
     // First let's create an array of tiles based on the cube size.
-    tiles = _.times(Math.pow(size, 2), function(index) {
-      return this._placeTile(index);
-    }, this);
+    var tiles = _.times(Math.pow(size, 2), index => new Tile(this, index)),
 
     // Now we'll create lines from the tiles.
     lines = {
@@ -99,17 +95,6 @@ Side.prototype = {
 
     // Return the tiles.
     return tiles;
-  },
-
-  _placeTile: function(index) {
-
-    var tile = new Tile(this, index);
-
-    window.setTimeout(function() {
-      tile.addClass('init');
-    }, Math.random() * 2000);
-
-    return tile;
   }
 
 };

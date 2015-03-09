@@ -22,6 +22,11 @@ Player.prototype = {
     tile.release();
   },
 
+  releaseAll: function() {
+    _.forEach(this._cubeCache.getAllTiles(), tile => tile.release());
+    this._cubeCache.initialize();
+  },
+
   getLines: function() {
     return this._cubeCache.getLines();
   },

@@ -24,9 +24,14 @@ Tile.prototype = {
   },
 
   build: function(id) {
+
+    // Create the tile element.
     var el = document.createElement('div');
     el.id = id;
     el.className = 'tile';
+
+    // Initialize after a random time. This begins the tile drop animation.
+    window.setTimeout(() => this.addClass('init'), Math.random() * 2000);
 
     // debug
     var idData = id.split('-');
@@ -36,32 +41,25 @@ Tile.prototype = {
   },
 
   claim: function(player) {
-    var self = this;
-    if (self.claimedBy) {
-      self.removeClass(self.claimedBy.tileClass);
-    }
-    self.claimedBy = player;
-    self
+    this.claimedBy = player;
+    this
       .removeClass('unclaimed')
       .addClass('preclaimed')
       .addClass(player.tileClass);
 
-    self.el.addEventListener(Vendor.EVENT.animationEnd, function animEnd(evt) {
-      self
-        .removeClass('preclaimed')
-        .addClass('claimed')
-        .el.removeEventListener(Vendor.EVENT.animationEnd, animEnd);
+    UTIL.listenOnce(this.el, Vendor.EVENT.animationEnd, () => {
+      this.removeClass('preclaimed').addClass('claimed');
     });
   },
 
   release: function() {
-    var self = this;
-    if (self.claimedBy) {
-      self.removeClass(self.claimedBy.tileClass);
-      self.claimedBy = null;
-      self
+    if (this.claimedBy) {
+      this
         .addClass('unclaimed')
-        .removeClass('claimed');
+        .removeClass('claimed')
+        .removeClass(this.claimedBy.tileClass)
+        .removeClass('win');
+      this.claimedBy = null;
     }
   },
 

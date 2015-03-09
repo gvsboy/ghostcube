@@ -39,31 +39,26 @@ App.prototype = {
    */
   idle: function() {
 
-    var self = this,
-        cube = this.cube,
+    var cube = this.cube,
         cubeEl = cube.el,
         container = this.container;
 
-    function cubeClicked() {
-      cubeEl.classList.remove('splash');
-      cubeEl.removeEventListener('click', cubeClicked);
-      container.classList.add('game');
-      container.addEventListener(Vendor.EVENT.animationEnd, beginGame);
-    }
-
-    function beginGame(evt) {
-      // Every animated cube face will bubble up their animation events
-      // so let's react to only one of them.
-      if (evt.target === container) {
-        container.removeEventListener(Vendor.EVENT.animationEnd, beginGame);
-        cube
-          .build()
-          .then(_.bind(self.initializeGame, self));
-      }
-    }
-
     // Click the cube to begin the game.
-    cubeEl.addEventListener('click', cubeClicked);
+    UTIL.listenOnce(cubeEl, 'click', () => {
+
+      cubeEl.classList.remove('splash');
+      container.classList.add('game');
+
+      UTIL.listenOnce(container, Vendor.EVENT.animationEnd, evt => {
+        // Every animated cube face will bubble up their animation events
+        // so let's react to only one of them.
+        if (evt.target === container) {
+          cube
+            .build()
+            .then(_.bind(this.initializeGame, this));
+        }
+      });
+    });
   },
 
   /**
@@ -72,11 +67,10 @@ App.prototype = {
    */
   initializeGame: function() {
 
-    var cube = this.cube;
-
     // Create the players and set the first one as current.
-    var human = new Player('Kevin', 'player1', cube);
-    var bot = new Bot('CPU', 'player2', cube, human);
+    var human = new Player('Kevin', 'player1', this.cube),
+        bot = new Bot('CPU', 'player2', this.cube, human);
+
     this.players = [human, bot];
 
     // The message box listens for messages to display.
@@ -147,17 +141,13 @@ App.prototype = {
 
   showCrosshairs: function(tile) {
     tile.addClass('selected');
-    this.cube.updateCrosshairs(tile, tile => {
-      tile.addClass('highlighted');
-    });
+    this.cube.updateCrosshairs(tile, tile => tile.addClass('highlighted'));
     this.tutorial.next();
   },
 
   hideCrosshairs: function(tile) {
     tile.removeClass('selected');
-    this.cube.updateCrosshairs(tile, tile => {
-      tile.removeClass('highlighted');
-    });
+    this.cube.updateCrosshairs(tile, tile => tile.removeClass('highlighted'));
   },
 
   clearHelperTile: function() {
@@ -198,15 +188,33 @@ App.prototype = {
         modifier;
 
     if (winBy) {
+
+      // Display message with modifier.
       modifier = winBy > 1 ? ' x' + winBy + '!' : '!';
       this.messages.add(this.currentPlayer.name + ' wins' + modifier, 'alert persist');
+
+      // Show the winning lines.
       _.invoke(lines, 'pulsate');
+
+      // After a brief pause, alert the user that clicking anywhere will restart the game.
+      // Set a listener to do just that.
       setTimeout(() => {
+
         this.messages.add('newGame', 'persist');
+
+        UTIL.listenOnce(document, 'click', () => {
+          _.forEach(this.players, player => player.releaseAll());
+          this.messages.removeAll();
+          this.setCurrentPlayer(_.first(this.players));
+        });
+
       }, 2000);
+
+      // Yes, the game has ended.
       return true;
     }
 
+    // Nobody has won yet. Continue!
     return false;
   },
 

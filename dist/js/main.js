@@ -39,31 +39,26 @@ App.prototype = {
    */
   idle: function() {
 
-    var self = this,
-        cube = this.cube,
+    var cube = this.cube,
         cubeEl = cube.el,
         container = this.container;
 
-    function cubeClicked() {
-      cubeEl.classList.remove('splash');
-      cubeEl.removeEventListener('click', cubeClicked);
-      container.classList.add('game');
-      container.addEventListener(Vendor.EVENT.animationEnd, beginGame);
-    }
-
-    function beginGame(evt) {
-      // Every animated cube face will bubble up their animation events
-      // so let's react to only one of them.
-      if (evt.target === container) {
-        container.removeEventListener(Vendor.EVENT.animationEnd, beginGame);
-        cube
-          .build()
-          .then(_.bind(self.initializeGame, self));
-      }
-    }
-
     // Click the cube to begin the game.
-    cubeEl.addEventListener('click', cubeClicked);
+    UTIL.listenOnce(cubeEl, 'click', () => {
+
+      cubeEl.classList.remove('splash');
+      container.classList.add('game');
+
+      UTIL.listenOnce(container, Vendor.EVENT.animationEnd, evt => {
+        // Every animated cube face will bubble up their animation events
+        // so let's react to only one of them.
+        if (evt.target === container) {
+          cube
+            .build()
+            .then(_.bind(this.initializeGame, this));
+        }
+      });
+    });
   },
 
   /**
@@ -72,11 +67,10 @@ App.prototype = {
    */
   initializeGame: function() {
 
-    var cube = this.cube;
-
     // Create the players and set the first one as current.
-    var human = new Player('Kevin', 'player1', cube);
-    var bot = new Bot('CPU', 'player2', cube, human);
+    var human = new Player('Kevin', 'player1', this.cube),
+        bot = new Bot('CPU', 'player2', this.cube, human);
+
     this.players = [human, bot];
 
     // The message box listens for messages to display.
@@ -147,17 +141,13 @@ App.prototype = {
 
   showCrosshairs: function(tile) {
     tile.addClass('selected');
-    this.cube.updateCrosshairs(tile, tile => {
-      tile.addClass('highlighted');
-    });
+    this.cube.updateCrosshairs(tile, tile => tile.addClass('highlighted'));
     this.tutorial.next();
   },
 
   hideCrosshairs: function(tile) {
     tile.removeClass('selected');
-    this.cube.updateCrosshairs(tile, tile => {
-      tile.removeClass('highlighted');
-    });
+    this.cube.updateCrosshairs(tile, tile => tile.removeClass('highlighted'));
   },
 
   clearHelperTile: function() {
@@ -198,15 +188,33 @@ App.prototype = {
         modifier;
 
     if (winBy) {
+
+      // Display message with modifier.
       modifier = winBy > 1 ? ' x' + winBy + '!' : '!';
       this.messages.add(this.currentPlayer.name + ' wins' + modifier, 'alert persist');
+
+      // Show the winning lines.
       _.invoke(lines, 'pulsate');
+
+      // After a brief pause, alert the user that clicking anywhere will restart the game.
+      // Set a listener to do just that.
       setTimeout(() => {
+
         this.messages.add('newGame', 'persist');
+
+        UTIL.listenOnce(document, 'click', () => {
+          _.forEach(this.players, player => player.releaseAll());
+          this.messages.removeAll();
+          this.setCurrentPlayer(_.first(this.players));
+        });
+
       }, 2000);
+
+      // Yes, the game has ended.
       return true;
     }
 
+    // Nobody has won yet. Continue!
     return false;
   },
 
@@ -980,9 +988,7 @@ Line.prototype = {
    * Updates the UI to display a winning state involving the line.
    */
   pulsate: function() {
-    _.forEach(this.getTiles(), tile => {
-      tile.addClass('win');
-    });
+    _.forEach(this.getTiles(), tile => tile.addClass('win'));
   },
 
   /**
@@ -1142,12 +1148,8 @@ Side.prototype = {
 
   _buildTiles: function(size) {
 
-    var tiles, lines;
-
     // First let's create an array of tiles based on the cube size.
-    tiles = _.times(Math.pow(size, 2), function(index) {
-      return this._placeTile(index);
-    }, this);
+    var tiles = _.times(Math.pow(size, 2), index => new Tile(this, index)),
 
     // Now we'll create lines from the tiles.
     lines = {
@@ -1178,17 +1180,6 @@ Side.prototype = {
 
     // Return the tiles.
     return tiles;
-  },
-
-  _placeTile: function(index) {
-
-    var tile = new Tile(this, index);
-
-    window.setTimeout(function() {
-      tile.addClass('init');
-    }, Math.random() * 2000);
-
-    return tile;
   }
 
 };
@@ -1219,9 +1210,14 @@ Tile.prototype = {
   },
 
   build: function(id) {
+
+    // Create the tile element.
     var el = document.createElement('div');
     el.id = id;
     el.className = 'tile';
+
+    // Initialize after a random time. This begins the tile drop animation.
+    window.setTimeout(() => this.addClass('init'), Math.random() * 2000);
 
     // debug
     var idData = id.split('-');
@@ -1231,32 +1227,25 @@ Tile.prototype = {
   },
 
   claim: function(player) {
-    var self = this;
-    if (self.claimedBy) {
-      self.removeClass(self.claimedBy.tileClass);
-    }
-    self.claimedBy = player;
-    self
+    this.claimedBy = player;
+    this
       .removeClass('unclaimed')
       .addClass('preclaimed')
       .addClass(player.tileClass);
 
-    self.el.addEventListener(Vendor.EVENT.animationEnd, function animEnd(evt) {
-      self
-        .removeClass('preclaimed')
-        .addClass('claimed')
-        .el.removeEventListener(Vendor.EVENT.animationEnd, animEnd);
+    UTIL.listenOnce(this.el, Vendor.EVENT.animationEnd, () => {
+      this.removeClass('preclaimed').addClass('claimed');
     });
   },
 
   release: function() {
-    var self = this;
-    if (self.claimedBy) {
-      self.removeClass(self.claimedBy.tileClass);
-      self.claimedBy = null;
-      self
+    if (this.claimedBy) {
+      this
         .addClass('unclaimed')
-        .removeClass('claimed');
+        .removeClass('claimed')
+        .removeClass(this.claimedBy.tileClass)
+        .removeClass('win');
+      this.claimedBy = null;
     }
   },
 
@@ -1376,14 +1365,28 @@ function CubeCache(cube) {
   // The size to check completed lines against.
   this._cubeSize = cube.size;
 
-  // A collection of lines created by side.
-  this._lineMap = this._buildCollection(cube);
-
-  // A collection of claimed tiles that are not part of lines.
-  this._singles = [];
+  // Create cache objects to hold claimed tiles.
+  this.initialize();
 }
 
 CubeCache.prototype = {
+
+  /**
+   * Called on instantiation and reset, this initialize a fresh cache
+   * in two collecitons: An object keyed by cube side id to contain lines
+   * and an array to contain single tiles.
+   */
+  initialize: function() {
+
+    // A collection of lines created by side.
+    this._lineMap = _.reduce(this._cube.getSides(), (sides, side, id) => {
+      sides[id] = [];
+      return sides;
+    }, {});
+
+    // A collection of claimed tiles that are not part of lines.
+    this._singles = [];
+  },
 
   add: function(tile) {
 
@@ -1445,27 +1448,34 @@ CubeCache.prototype = {
    * @return {Array} A collection of lines.
    */
   getLines: function() {
-    return _.chain(this._lineMap)
-      .values()
-      .flatten()
-      .compact()
-      .sortBy(function(line) {
-        return line._tiles.length;
-      })
+    return this._getLinesAsChain()
+      .sortBy(line => line._tiles.length)
       .value();
   },
 
   /**
-   * Create an object keyed by cube side id with array values for containing
-   * various Tile data objects.
-   * @param  {Cube} cube The Cube object to base the collection on.
-   * @return {Object}    An object representation of the cube, keyed by side id.
+   * Retrieves all cached tiles.
+   * @return {Array} A colleciton of all the cached tiles.
    */
-  _buildCollection: function(cube) {
-    return _.reduce(cube._sides, function(sides, side, id) {
-      sides[id] = [];
-      return sides;
-    }, {});
+  getAllTiles: function() {
+    return this._getLinesAsChain()
+      .map(line => line.getTiles())
+      .flatten()
+      .uniq()
+      .concat(this._singles)
+      .value();
+  },
+
+  /**
+   * Fetches a chain-wrapped collection of cached lines, flattened and
+   * compacted into one array.
+   * @return {lodash} A lodash chain-wrapped collection.
+   */
+  _getLinesAsChain: function() {
+    return _.chain(this._lineMap)
+      .values()
+      .flatten()
+      .compact()
   },
 
   _getPartialLineTiles: function(line, claimedBy) {
@@ -1609,9 +1619,7 @@ Messages.prototype = {
    * class to each one.
    */
   removeAll: function() {
-    _.forEach(this.container.children, item => {
-      item.classList.add('hide');
-    });
+    _.forEach(this.container.children, item => item.classList.add('hide'));
   },
 
   _enqueue: function(item) {
@@ -1682,6 +1690,11 @@ Player.prototype = {
   release: function(tile) {
     this._cubeCache.remove(tile);
     tile.release();
+  },
+
+  releaseAll: function() {
+    _.forEach(this._cubeCache.getAllTiles(), tile => tile.release());
+    this._cubeCache.initialize();
   },
 
   getLines: function() {
@@ -2272,6 +2285,22 @@ Tutorial.stepMessages = [
   'Nice! A third tile was selected automatically for you.',
   'Try to make a line on one side.'
 ];
+
+(function(win) {
+
+  win.UTIL = {
+
+    listenOnce: function(target, type, callback) {
+      var handler = evt => {
+        target.removeEventListener(type, handler);
+        callback(evt);
+      };
+      target.addEventListener(type, handler);
+    }
+
+  };
+
+}(window));
 
 (function(win) {
 

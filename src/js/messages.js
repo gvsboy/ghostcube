@@ -46,9 +46,7 @@ Messages.prototype = {
    * class to each one.
    */
   removeAll: function() {
-    _.forEach(this.container.children, item => {
-      item.classList.add('hide');
-    });
+    _.forEach(this.container.children, item => item.classList.add('hide'));
   },
 
   _enqueue: function(item) {
