@@ -11,14 +11,29 @@
 
   <body>
 
-    <!-- Cube Markup -->
-    <div id="cube" class="cube splash" style="display:none">
-      <div id="front" class="face"></div>
-      <div id="back" class="face"></div>
-      <div id="left" class="face"></div>
-      <div id="right" class="face"></div>
-      <div id="top" class="face"></div>
-      <div id="bottom" class="face"></div>
+    <!-- Markup -->
+    <div id="container" style="display:none">
+
+      <div id="wrap">
+
+        <div id="header">
+          <h1>Kevin Mikles</h1>
+          <h2>builds awesome things on the web.</h2>
+        </div>
+
+        <div id="stage">
+          <div id="cube" class="cube splash">
+            <div id="front" class="face"></div>
+            <div id="back" class="face"></div>
+            <div id="left" class="face"></div>
+            <div id="right" class="face"></div>
+            <div id="top" class="face"></div>
+            <div id="bottom" class="face"></div>
+          </div>
+        </div>
+
+      </div>
+
     </div>
 
     <!-- Jasmine Includes -->
@@ -32,6 +47,7 @@
 
     <!-- Specs -->
     <script src="spec/SpecHelper.js"></script>
+    <script src="spec/CubeCacheSpec.js"></script>
     <script src="spec/AppSpec.js"></script>
     <script src="spec/CubeSpec.js"></script>
     <script src="spec/SideSpec.js"></script>
