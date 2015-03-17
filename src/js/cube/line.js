@@ -25,14 +25,25 @@ Line.prototype = {
   /**
    * Checks to see if the line contains all of the passed tiles.
    * @param  {Array} tiles The tiles to check.
-   * @return {Boolean}     Does the line contain the passed tiles?
+   * @return {Boolean} Does the line contain the passed tiles?
    */
   all: function(tiles) {
-    return _.intersection(tiles, this._tiles).length >= this.length();
+    var lineTiles = this.getTiles();
+    return _.every(tiles, tile => {
+      return _.includes(lineTiles, tile);
+    });
   },
 
+  /**
+   * Checks to see if all the tiles in the line are included in
+   * the passed tiles array.
+   * @param  {[type]} tiles [description]
+   * @return {[type]}       [description]
+   */
   some: function(tiles) {
-    return !!_.intersection(tiles, this._tiles).length;
+    return _.every(this.getTiles(), tile => {
+      return _.includes(tiles, tile);
+    });
   },
 
   update: function(tiles) {

@@ -235,7 +235,7 @@ describe('CubeCache', function() {
           xox -> xox -> xxx -> ooo
           oxx    oxx    xxx    ooo
      */
-    xit('passes scenario 12', function() {
+    it('passes scenario 12', function() {
 
       this.add('top 1', 'top 3', 'top 5', 'top 7', 'top 8');
       expect(this.singlesLength()).toEqual(0);
@@ -249,7 +249,7 @@ describe('CubeCache', function() {
       expect(this.singlesLength()).toEqual(0);
       expect(this.linesLength()).toEqual(6);
 
-      this.remove('top 0', 'top 1', 'top 2', 'top 3', 'top 4', 'top 5');
+      this.remove('top 0', 'top 1', 'top 2', 'top 3', 'top 4', 'top 5', 'top 6', 'top 7', 'top 8');
       expect(this.singlesLength()).toEqual(0);
       expect(this.linesLength()).toEqual(0);
     });

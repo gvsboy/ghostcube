@@ -965,14 +965,25 @@ Line.prototype = {
   /**
    * Checks to see if the line contains all of the passed tiles.
    * @param  {Array} tiles The tiles to check.
-   * @return {Boolean}     Does the line contain the passed tiles?
+   * @return {Boolean} Does the line contain the passed tiles?
    */
   all: function(tiles) {
-    return _.intersection(tiles, this._tiles).length >= this.length();
+    var lineTiles = this.getTiles();
+    return _.every(tiles, tile => {
+      return _.includes(lineTiles, tile);
+    });
   },
 
+  /**
+   * Checks to see if all the tiles in the line are included in
+   * the passed tiles array.
+   * @param  {[type]} tiles [description]
+   * @return {[type]}       [description]
+   */
   some: function(tiles) {
-    return !!_.intersection(tiles, this._tiles).length;
+    return _.every(this.getTiles(), tile => {
+      return _.includes(tiles, tile);
+    });
   },
 
   update: function(tiles) {
@@ -1414,8 +1425,8 @@ CubeCache.prototype = {
     _.pull(xPartial, tile);
     _.pull(yPartial, tile);
 
-    xShrink = this._shrinkLine(xPartial);
-    yShrink = this._shrinkLine(yPartial);
+    xShrink = this._shrinkLine(xPartial, true);
+    yShrink = this._shrinkLine(yPartial, false);
 
     // If there's some shrinkage, update the singles collection accordingly.
     if (xShrink || yShrink) {
@@ -1485,7 +1496,7 @@ CubeCache.prototype = {
 
       side = this._lineMap[_.first(tiles).side.id];
       line = _.find(side, function(ln) {
-        return ln && ln.all(tiles);
+        return ln.some(tiles);
       });
 
       // If a line exists already, update it with the new tiles.
@@ -1511,7 +1522,7 @@ CubeCache.prototype = {
    * @param  {Array} tiles The tiles used in the shrinkage
    * @return {Boolean} Was a line disassebled?
    */
-  _shrinkLine: function(tiles) {
+  _shrinkLine: function(tiles, isHorizontal) {
 
     var side, line;
 
@@ -1519,15 +1530,15 @@ CubeCache.prototype = {
 
       side = this._lineMap[_.first(tiles).side.id];
       line = _.find(side, function(ln) {
-        return ln && ln.some(tiles);
+        return ln.isHorizontal() === isHorizontal && ln.all(tiles);
       });
 
       // Line should exist but just in case...
       if (line) {
 
-        // If there's only one tile, it's not a line. Clear it.
+        // If there's only one tile, it's not a line. Pull it.
         if (tiles.length === 1) {
-          side[side.indexOf(line)] = null;
+          _.pull(side, line);
 
           // A line was disassembled. Return true.
           return true;
@@ -1547,7 +1558,7 @@ CubeCache.prototype = {
   _composesLines: function(tiles) {
     var side = this._lineMap[_.first(tiles).side.id];
     return _.find(side, function(line) {
-      return line && line.some(tiles);
+      return line.all(tiles);
     });
   }
 

@@ -6,6 +6,16 @@ describe('Line', function() {
     expect(Line).toBeDefined();
   });
 
+  describe('all()', function() {
+
+    it('returns true if the line contains all the passed tiles', function() {
+      var line = new Line(side.getTiles([0, 1, 2]));
+          tiles = side.getTiles([1, 2]);
+      expect(line.all(tiles)).toBeTruthy();
+    });
+
+  });
+
   describe('isHorizontal()', function() {
 
     it('returns true if a complete line is horizontal', function() {
