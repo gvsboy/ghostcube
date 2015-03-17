@@ -116,22 +116,29 @@ App.prototype = {
    *                            Used in recorder mode to pause auto playback.
    */
   setCurrentPlayer: function(player, botManual) {
-    var cubeEl = this.cube.el;
-    cubeEl.classList.add(player.tileClass + '-turn');
-    if (this.currentPlayer) {
-      cubeEl.classList.remove(this.currentPlayer.tileClass + '-turn');
-    }
-    this.currentPlayer = player;
+
+    // Broadcast that it's the passed player's turn.
     this.messages.add(player.name + '\'s turn!', 'alert');
 
-    if (player.isBot()) {
-      this.disableCubeInteraction();
-      if (!botManual) {
-        player.play();
+    // Don't set the same player twice.
+    if (this.currentPlayer !== player) {
+
+      this.cube.el.classList.add(player.tileClass + '-turn');
+      if (this.currentPlayer) {
+        this.cube.el.classList.remove(this.currentPlayer.tileClass + '-turn');
       }
-    }
-    else {
-      this.enableCubeInteraction();
+
+      this.currentPlayer = player;
+
+      if (player.isBot()) {
+        this.disableCubeInteraction();
+        if (!botManual) {
+          player.play();
+        }
+      }
+      else {
+        this.enableCubeInteraction();
+      }
     }
   },
 
