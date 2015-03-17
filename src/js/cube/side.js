@@ -86,7 +86,7 @@ Side.prototype = {
     // For each tile, assign the correct lines.
     _.forEach(tiles, function(tile, index) {
 
-      var mod = index % size;
+      var mod = index % size,
           xLine = lines.x[(index - mod) / size],
           yLine = lines.y[mod];
 

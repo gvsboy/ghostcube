@@ -1,3 +1,5 @@
+"use strict";
+
 function App(containerId) {
 
   // The site container which houses the cube and intro text.
@@ -7,7 +9,7 @@ function App(containerId) {
   this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent);
 
   // The fun part!
-  this.cube = new Cube(this.container.getElementsByClassName('cube')[0]);
+  this.cube = new Cube(this.container.getElementsByClassName("cube")[0]);
 
   // UI for displaying various messages.
   this.messages = new Messages();
@@ -37,25 +39,24 @@ App.prototype = {
   /**
    * Configures the cube object's default pre-game state.
    */
-  idle: function() {
+  idle: function idle() {
+    var _this = this;
 
     var cube = this.cube,
         cubeEl = cube.el,
         container = this.container;
 
     // Click the cube to begin the game.
-    UTIL.listenOnce(cubeEl, 'click', () => {
+    UTIL.listenOnce(cubeEl, "click", function () {
 
-      cubeEl.classList.remove('splash');
-      container.classList.add('game');
+      cubeEl.classList.remove("splash");
+      container.classList.add("game");
 
-      UTIL.listenOnce(container, Vendor.EVENT.animationEnd, evt => {
+      UTIL.listenOnce(container, Vendor.EVENT.animationEnd, function (evt) {
         // Every animated cube face will bubble up their animation events
         // so let's react to only one of them.
         if (evt.target === container) {
-          cube
-            .build()
-            .then(_.bind(this.initializeGame, this));
+          cube.build().then(_.bind(_this.initializeGame, _this));
         }
       });
     });
@@ -65,11 +66,11 @@ App.prototype = {
    * Configures the cube for game mode by creating players, setting listeners,
    * and initializing the renderer.
    */
-  initializeGame: function() {
+  initializeGame: function initializeGame() {
 
     // Create the players and set the first one as current.
-    var human = new Player('Kevin', 'player1', this.cube),
-        bot = new Bot('CPU', 'player2', this.cube, human);
+    var human = new Player("Kevin", "player1", this.cube),
+        bot = new Bot("CPU", "player2", this.cube, human);
 
     this.players = [human, bot];
 
@@ -81,31 +82,22 @@ App.prototype = {
     // Begin the rendering.
     this.renderer.initialize();
 
-    this.renderer.on('start', _.bind(this.clearHelperTile, this));
+    this.renderer.on("start", _.bind(this.clearHelperTile, this));
 
     // Not really into this but sure for now.
-    _.forEach(this.players, function(player) {
-      player
-        .on('player:initialSelected', _.bind(this.showCrosshairs, this))
-        .on('player:initialDeselected', _.bind(this.hideCrosshairs, this))
-        .on('player:claim', _.bind(this._endTurn, this))
+    _.forEach(this.players, function (player) {
+      player.on("player:initialSelected", _.bind(this.showCrosshairs, this)).on("player:initialDeselected", _.bind(this.hideCrosshairs, this)).on("player:claim", _.bind(this._endTurn, this));
     }, this);
 
     this.tutorial.next().next();
   },
 
-  enableCubeInteraction: function() {
-    this.cube
-      .listenTo('click', this._handleClick, this)
-      .listenTo('mouseover', this._handleMouseOver, this)
-      .listenTo('mouseout', this._handleMouseOut, this);
+  enableCubeInteraction: function enableCubeInteraction() {
+    this.cube.listenTo("click", this._handleClick, this).listenTo("mouseover", this._handleMouseOver, this).listenTo("mouseout", this._handleMouseOut, this);
   },
 
-  disableCubeInteraction: function() {
-    this.cube
-      .stopListeningTo('click')
-      .stopListeningTo('mouseover')
-      .stopListeningTo('mouseout');
+  disableCubeInteraction: function disableCubeInteraction() {
+    this.cube.stopListeningTo("click").stopListeningTo("mouseover").stopListeningTo("mouseout");
   },
 
   /**
@@ -115,17 +107,17 @@ App.prototype = {
    * @param {Boolean} botManual Should the bot play it's turn automatically?
    *                            Used in recorder mode to pause auto playback.
    */
-  setCurrentPlayer: function(player, botManual) {
+  setCurrentPlayer: function setCurrentPlayer(player, botManual) {
 
     // Broadcast that it's the passed player's turn.
-    this.messages.add(player.name + '\'s turn!', 'alert');
+    this.messages.add(player.name + "'s turn!", "alert");
 
     // Don't set the same player twice.
     if (this.currentPlayer !== player) {
 
-      this.cube.el.classList.add(player.tileClass + '-turn');
+      this.cube.el.classList.add(player.tileClass + "-turn");
       if (this.currentPlayer) {
-        this.cube.el.classList.remove(this.currentPlayer.tileClass + '-turn');
+        this.cube.el.classList.remove(this.currentPlayer.tileClass + "-turn");
       }
 
       this.currentPlayer = player;
@@ -135,31 +127,34 @@ App.prototype = {
         if (!botManual) {
           player.play();
         }
-      }
-      else {
+      } else {
         this.enableCubeInteraction();
       }
     }
   },
 
-  getOpponent: function(player) {
+  getOpponent: function getOpponent(player) {
     return this.players[this.players.indexOf(player) === 1 ? 0 : 1];
   },
 
-  showCrosshairs: function(tile) {
-    tile.addClass('selected');
-    this.cube.updateCrosshairs(tile, tile => tile.addClass('highlighted'));
+  showCrosshairs: function showCrosshairs(tile) {
+    tile.addClass("selected");
+    this.cube.updateCrosshairs(tile, function (tile) {
+      return tile.addClass("highlighted");
+    });
     this.tutorial.next();
   },
 
-  hideCrosshairs: function(tile) {
-    tile.removeClass('selected');
-    this.cube.updateCrosshairs(tile, tile => tile.removeClass('highlighted'));
+  hideCrosshairs: function hideCrosshairs(tile) {
+    tile.removeClass("selected");
+    this.cube.updateCrosshairs(tile, function (tile) {
+      return tile.removeClass("highlighted");
+    });
   },
 
-  clearHelperTile: function() {
+  clearHelperTile: function clearHelperTile() {
     if (this._helperTile) {
-      this._helperTile.removeClass('helper');
+      this._helperTile.removeClass("helper");
     }
     this._helperTile = null;
   },
@@ -169,7 +164,7 @@ App.prototype = {
    * in a win state.
    * @param  {Array} tiles The tiles selected to end the turn.
    */
-  _endTurn: function(tiles) {
+  _endTurn: function _endTurn(tiles) {
 
     var player = this.currentPlayer,
         lines = player.getWinLines();
@@ -189,7 +184,8 @@ App.prototype = {
    * @param  {Array} lines The lines used to win.
    * @return {Boolean} Is the game in a win state?
    */
-  _endGame: function(lines) {
+  _endGame: function _endGame(lines) {
+    var _this = this;
 
     var winBy = lines.length,
         modifier;
@@ -197,17 +193,17 @@ App.prototype = {
     if (winBy) {
 
       // Display message with modifier.
-      modifier = winBy > 1 ? ' x' + winBy + '!' : '!';
-      this.messages.add(this.currentPlayer.name + ' wins' + modifier, 'alert persist');
+      modifier = winBy > 1 ? " x" + winBy + "!" : "!";
+      this.messages.add(this.currentPlayer.name + " wins" + modifier, "alert persist");
 
       // Show the winning lines.
-      _.invoke(lines, 'pulsate');
+      _.invoke(lines, "pulsate");
 
       // After a brief pause, alert the user that clicking anywhere will restart the game.
       // Set a listener to do just that.
-      setTimeout(() => {
-        this.messages.add('newGame', 'persist');
-        UTIL.listenOnce(document, 'click', _.bind(this._resetGameState, this));
+      setTimeout(function () {
+        _this.messages.add("newGame", "persist");
+        UTIL.listenOnce(document, "click", _.bind(_this._resetGameState, _this));
       }, 2000);
 
       // Yes, the game has ended.
@@ -218,24 +214,26 @@ App.prototype = {
     return false;
   },
 
-  _resetGameState: function() {
-    _.forEach(this.players, player => player.releaseAll());
+  _resetGameState: function _resetGameState() {
+    _.forEach(this.players, function (player) {
+      return player.releaseAll();
+    });
     this.messages.removeAll();
     this.setCurrentPlayer(_.first(this.players));
   },
 
   // Potentially dangerous as this is hackable...
   // Perhaps do a straigh-up element match too?
-  _getTileFromElement: function(el) {
+  _getTileFromElement: function _getTileFromElement(el) {
     var data;
-    if (el.classList.contains('tile')) {
-      data = el.id.split('-');
+    if (el.classList.contains("tile")) {
+      data = el.id.split("-");
       return this.cube.getSides(data[0]).getTiles(data[1])[0];
     }
     return null;
   },
 
-  _handleClick: function(evt) {
+  _handleClick: function _handleClick(evt) {
 
     // Get the target element from the event.
     var tile = this._getTileFromElement(evt.target);
@@ -248,35 +246,34 @@ App.prototype = {
       }
 
       // An error was thrown in the tile selection process. Handle it.
-      catch(e) {
+      catch (e) {
         if (e instanceof SelectTileError) {
           this.messages.add(e.message);
-        }
-        else {
+        } else {
           throw e;
         }
       }
     }
   },
 
-  _handleMouseOver: function(evt) {
+  _handleMouseOver: function _handleMouseOver(evt) {
 
     // The tile the user is interacting with.
     var tile = this._getTileFromElement(evt.target),
 
-        // The first tile that has been selected.
-        initialTile = this.currentPlayer.getInitialTile();
+    // The first tile that has been selected.
+    initialTile = this.currentPlayer.getInitialTile();
 
     // If the user is hovering on a neighboring side of the initial tile,
     // highlight some targeting help on a visible side.
     this._helperTile = this.cube.getAttackTile(tile, initialTile);
 
     if (this._helperTile) {
-      this._helperTile.addClass('helper');
+      this._helperTile.addClass("helper");
     }
   },
 
-  _handleMouseOut: function(evt) {
+  _handleMouseOut: function _handleMouseOut(evt) {
     this.clearHelperTile();
   }
 
@@ -291,15 +288,15 @@ Bot.THINKING_SPEED = 600;
 
 Bot.prototype = {
 
-  getInitialTriedTile: function() {
+  getInitialTriedTile: function getInitialTriedTile() {
     return _.first(this._triedTiles);
   },
 
-  play: function() {
+  play: function play() {
 
     this._initLog();
 
-    this._log('================== BOT MOVE ==================');
+    this._log("================== BOT MOVE ==================");
 
     this._triedTiles = [];
 
@@ -307,35 +304,29 @@ Bot.prototype = {
       First, gather all the Bot's tiles to see if a win is possible this turn
       (there are lines that are missing one tile).
       If so, attempt to claim those tiles.
-
-      If no win is possible, gather the opponent's tiles to see if a win is possible.
+       If no win is possible, gather the opponent's tiles to see if a win is possible.
       If so, see which method can block:
-
-        - Neutralizing a tile?
+         - Neutralizing a tile?
         - Claiming the missing tile?
      */
 
-    this._selectWin() ||
-    this._selectOpponentBlocker() ||
-    this._selectSingles() ||
-    this._selectOpponentSingles() ||
-    this._selectLastResort();
+    this._selectWin() || this._selectOpponentBlocker() || this._selectSingles() || this._selectOpponentSingles() || this._selectLastResort();
   },
 
-  _selectWin: function() {
+  _selectWin: function _selectWin() {
 
     var lines = this.getLines(),
         initialTile,
         tile;
 
-    this._log('++++++ WIN lines:', lines);
+    this._log("++++++ WIN lines:", lines);
 
     for (var i = 0, len = lines.length; i < len; i++) {
 
       initialTile = this.getInitialTriedTile();
       tile = lines[i].missingTiles()[0];
 
-      this._log('+++ WIN loop [initial, tile] :', initialTile, tile);
+      this._log("+++ WIN loop [initial, tile] :", initialTile, tile);
 
       // If there's a tile selected already, try to seal the deal with two more.
       if (initialTile && tile) {
@@ -346,8 +337,7 @@ Bot.prototype = {
         if (attackTile && this._tryTiles(tile, attackTile)) {
           return true; // Done! The tiles will be claimed.
         }
-      }
-      else {
+      } else {
         this._tryTiles(tile);
       }
     }
@@ -356,20 +346,20 @@ Bot.prototype = {
     return false;
   },
 
-  _selectOpponentBlocker: function() {
+  _selectOpponentBlocker: function _selectOpponentBlocker() {
 
     var lines = this.opponent.getLines(),
         initialTile,
         tile;
 
-    this._log('@@@@@@ BLOCK lines:', lines);
+    this._log("@@@@@@ BLOCK lines:", lines);
 
     for (var i = 0, len = lines.length; i < len; i++) {
 
       initialTile = this.getInitialTriedTile();
       tile = lines[i].missingTiles()[0];
 
-      this._log('@@@ BLOCK loop [initial, tile] :', initialTile, tile);
+      this._log("@@@ BLOCK loop [initial, tile] :", initialTile, tile);
 
       // If there's a tile selected already, try to seal the deal with two more.
       if (initialTile && tile) {
@@ -377,8 +367,7 @@ Bot.prototype = {
         if (attackTile && this._tryTiles(tile, attackTile)) {
           return true; // Done! The tiles will be claimed.
         }
-      }
-      else {
+      } else {
         this._tryTiles(tile);
       }
     }
@@ -387,17 +376,17 @@ Bot.prototype = {
     return false;
   },
 
-  _selectOpponentSingles: function() {
+  _selectOpponentSingles: function _selectOpponentSingles() {
     return this._selectSingles(true);
   },
 
-  _selectSingles: function(useOpponent) {
+  _selectSingles: function _selectSingles(useOpponent) {
 
     var singles = _.shuffle(useOpponent ? this.opponent.getSingles() : this.getSingles()),
         initialTile,
         tile;
 
-    this._log('------ SINGLES' + (useOpponent ? ' OPPONENT:' : ':'), singles);
+    this._log("------ SINGLES" + (useOpponent ? " OPPONENT:" : ":"), singles);
 
     for (var t = 0, len = singles.length; t < len; t++) {
 
@@ -409,7 +398,7 @@ Bot.prototype = {
         tile = this._selectByTileLine(singles[t]);
       }
 
-      this._log('--- singles loop [initial, tile] :', initialTile, tile);
+      this._log("--- singles loop [initial, tile] :", initialTile, tile);
 
       if (initialTile && tile) {
         var attackTile = this.getAttackTile(initialTile, tile);
@@ -428,7 +417,7 @@ Bot.prototype = {
     return false;
   },
 
-  _selectLastResort: function() {
+  _selectLastResort: function _selectLastResort() {
 
     var self = this;
 
@@ -449,7 +438,7 @@ Bot.prototype = {
     var initialTile = this.getInitialTriedTile(),
         tiles = this._cubeCache._cube.getAvailableTiles(initialTile);
 
-    this._log('$$$$$ LAST RESORT');
+    this._log("$$$$$ LAST RESORT");
 
     // If there is an initial tile, try to match it first.
     if (initialTile) {
@@ -466,7 +455,6 @@ Bot.prototype = {
         return true;
       }
     }
-
   },
 
   /**
@@ -475,37 +463,38 @@ Bot.prototype = {
    * @param  {Tile} tile The target tile.
    * @return {Tile}      The selected tile.
    */
-  _selectByTileLine: function(tile) {
+  _selectByTileLine: function _selectByTileLine(tile) {
 
     // Grab all the tiles on the same line as the passed tile.
     var lineTiles = _.shuffle(tile.getAllLineTiles());
 
     // Return the first tile that is a valid selection.
-    return _.find(lineTiles, function(ti) {
+    return _.find(lineTiles, function (ti) {
       return this._tryTiles(ti);
     }, this);
   },
 
-  _selectTiles: function() {
+  _selectTiles: function _selectTiles() {
+    var _this = this;
 
     var tiles = _.union(this._triedTiles, arguments);
 
     this._triedTiles = tiles;
 
-    this._log('^^^^^^^^^^^^^^^^^^^^ _triedTiles is now:', this._triedTiles);
+    this._log("^^^^^^^^^^^^^^^^^^^^ _triedTiles is now:", this._triedTiles);
 
     if (this._triedTiles.length === 3) {
-      setTimeout(() => {
-        this._report();
-        this._cubeCache._cube.rotateToTiles(this._triedTiles).then(() => {
-          this._animateClaim();
+      setTimeout(function () {
+        _this._report();
+        _this._cubeCache._cube.rotateToTiles(_this._triedTiles).then(function () {
+          _this._animateClaim();
         });
       }, Bot.THINKING_SPEED);
     }
   },
 
-  _animateClaim: function() {
-    setTimeout(_.bind(function() {
+  _animateClaim: function _animateClaim() {
+    setTimeout(_.bind(function () {
       var tile = this._triedTiles.shift();
       Player.prototype._selectTiles.call(this, tile);
       if (!_.isEmpty(this._triedTiles)) {
@@ -514,12 +503,11 @@ Bot.prototype = {
     }, this), Bot.THINKING_SPEED);
   },
 
-  _tryTiles: function(tile1, tile2) {
+  _tryTiles: function _tryTiles(tile1, tile2) {
     try {
       this.selectTile(tile1, tile2);
       return true;
-    }
-    catch (e) {
+    } catch (e) {
       if (!(e instanceof SelectTileError)) {
         throw e;
       }
@@ -527,25 +515,25 @@ Bot.prototype = {
     return false;
   },
 
-  _report: function() {
-    var info = _.reduce(this._triedTiles, function(all, tile) {
+  _report: function _report() {
+    var info = _.reduce(this._triedTiles, function (all, tile) {
       all.push(tile.toString ? tile.toString() : tile);
       return all;
     }, []);
-    this._log('### Bot will try:', info.join(' | '));
+    this._log("### Bot will try:", info.join(" | "));
   },
 
-  _initLog: function() {
-    this._logText = '';
+  _initLog: function _initLog() {
+    this._logText = "";
   },
 
-  _log: function() {
-    var text = _.reduce(arguments, function(lines, data) {
-      lines.push(!_.isEmpty(data) ? data.toString() : 'NONE');
+  _log: function _log() {
+    var text = _.reduce(arguments, function (lines, data) {
+      lines.push(!_.isEmpty(data) ? data.toString() : "NONE");
       return lines;
-    }, []).join(' ');
+    }, []).join(" ");
     console.log(text);
-    this._logText += text + '\n';
+    this._logText += text + "\n";
   }
 
 };
@@ -553,13 +541,13 @@ Bot.prototype = {
 function Cube(el, size) {
 
   // The HTML element representing the cube.
-  this.el                     = el;
+  this.el = el;
 
   // The cube's size regarding tiles across a side. Default to 3.
-  this.size                   = size || 3;
+  this.size = size || 3;
 
   // Cached reference to the style object.
-  this.style                  = this.el.style;
+  this.style = this.el.style;
 
   // This will be set in beginGame.
   this._sides = null;
@@ -567,9 +555,9 @@ function Cube(el, size) {
   this._eventMap = {};
 }
 
-Cube.ROTATE_X_PREFIX = 'rotateX(';
-Cube.ROTATE_Y_PREFIX = 'rotateY(';
-Cube.ROTATE_UNIT_SUFFIX = 'deg)';
+Cube.ROTATE_X_PREFIX = "rotateX(";
+Cube.ROTATE_Y_PREFIX = "rotateY(";
+Cube.ROTATE_UNIT_SUFFIX = "deg)";
 Cube.REVOLUTION = 360;
 Cube.ROTATION_UNIT = 90;
 Cube.ORIGIN = 0;
@@ -583,29 +571,30 @@ Cube.prototype = {
    * child tiles.
    * @return {Promise} A promise that resolves when the transition ends.
    */
-  build: function() {
+  build: function build() {
+    var _this = this;
 
     // Create the game sides. The tiles will animate into existence from a
     // trigger function during each side's creation.
     this._sides = this._buildSides(this.size);
 
     // Set the initial rotated state. Cut at 45 degrees to always display three sides.
-    this.x = this.y = Cube.REVOLUTION - (Cube.ROTATION_UNIT / 2);
+    this.x = this.y = Cube.REVOLUTION - Cube.ROTATION_UNIT / 2;
 
-    return new Promise(resolve => {
+    return new Promise(function (resolve) {
 
       // A reference to the cube's element.
-      var el = this.el;
+      var el = _this.el;
 
       // After the cube's rotation animation has made one loop, begin to slow it down.
-      el.addEventListener(Vendor.EVENT.animationIteration, function() {
-        el.classList.add('transition');
+      el.addEventListener(Vendor.EVENT.animationIteration, function () {
+        el.classList.add("transition");
         el.addEventListener(Vendor.EVENT.animationEnd, function animEnd(evt) {
           if (evt.target === el) {
 
             // Remove the transition class and append the init class. Done!
-            el.classList.remove('transition');
-            el.classList.add('init');
+            el.classList.remove("transition");
+            el.classList.add("init");
 
             // Let's go!
             resolve();
@@ -620,16 +609,15 @@ Cube.prototype = {
    * another way to accomplish self-rendering.
    * @param {Renderer} renderer The renderer to set on the cube.
    */
-  setRenderer: function(renderer) {
+  setRenderer: function setRenderer(renderer) {
     this._renderer = renderer;
   },
 
-  rotate: function(x, y) {
+  rotate: function rotate(x, y) {
     this.x = this._calculateCoordinate(this.x, x);
     this.y = this._calculateCoordinate(this.y, y);
 
-    this.style[Vendor.JS.transform] =
-      Cube.ROTATE_X_PREFIX + this.x + Cube.ROTATE_UNIT_SUFFIX + ' ' + Cube.ROTATE_Y_PREFIX + this.y + Cube.ROTATE_UNIT_SUFFIX;
+    this.style[Vendor.JS.transform] = Cube.ROTATE_X_PREFIX + this.x + Cube.ROTATE_UNIT_SUFFIX + " " + Cube.ROTATE_Y_PREFIX + this.y + Cube.ROTATE_UNIT_SUFFIX;
   },
 
   /**
@@ -638,23 +626,22 @@ Cube.prototype = {
    * @param  {Array} tiles A collection of tiles (three maximum).
    * @return {Promise} A promise that resolves when the rotation is complete.
    */
-  rotateToTiles: function(tiles) {
+  rotateToTiles: function rotateToTiles(tiles) {
+    var _this = this;
 
     // First, collect all the common coordinates each tile shares when visible.
     var pairs = this._getCommonVisibleCoordinates(tiles),
 
-        // Next, get calculate the shortest rotation distance from the pairs.
-        coors = this._getShortestRotationDistance(pairs);
+    // Next, get calculate the shortest rotation distance from the pairs.
+    coors = this._getShortestRotationDistance(pairs);
 
     // Return a promise that will resolve when the cube's rotation render completes.
-    return new Promise(resolve => {
-      this._renderer
-        .setMovement(coors[0], coors[1])
-        .then(resolve);
+    return new Promise(function (resolve) {
+      _this._renderer.setMovement(coors[0], coors[1]).then(resolve);
     });
   },
 
-  listenTo: function(eventName, callback, context) {
+  listenTo: function listenTo(eventName, callback, context) {
 
     var events = this._eventMap,
         handler = _.bind(callback, context || this);
@@ -669,9 +656,9 @@ Cube.prototype = {
     return this;
   },
 
-  stopListeningTo: function(eventName) {
+  stopListeningTo: function stopListeningTo(eventName) {
 
-    _.forEach(this._eventMap[eventName], function(handler) {
+    _.forEach(this._eventMap[eventName], function (handler) {
       this.el.removeEventListener(eventName, handler);
     }, this);
 
@@ -683,16 +670,14 @@ Cube.prototype = {
    * @param  {String} name The name of the side you want.
    * @return {Side}      The Side object by name.
    */
-  getSides: function(name) {
+  getSides: function getSides(name) {
     return name ? this._sides[name] : this._sides;
   },
 
   /**
    * @return {Array} The three visible sides.
    */
-  getVisibleSides: function() {
-
-  },
+  getVisibleSides: function getVisibleSides() {},
 
   /**
    * Retrieves all the unclaimed tiles and sorts them by the amount per
@@ -701,10 +686,10 @@ Cube.prototype = {
    * @param  {Tile} except The tile whose side to exclude.
    * @return {Array} A list of all the available tiles.
    */
-  getAvailableTiles: function(except) {
+  getAvailableTiles: function getAvailableTiles(except) {
 
     // Get all the tiles by side and push each array to the main array list.
-    var tilesBySide = _.reduce(this.getSides(), function(list, side) {
+    var tilesBySide = _.reduce(this.getSides(), function (list, side) {
       if (!except || side !== except.side) {
         list.push(_.shuffle(side.getAvailableTiles()));
       }
@@ -712,7 +697,7 @@ Cube.prototype = {
     }, []);
 
     // Sort each side's array by length and then flatten the whole thing.
-    return _.flatten(_.sortBy(tilesBySide, 'length'));
+    return _.flatten(_.sortBy(tilesBySide, "length"));
   },
 
   /**
@@ -722,13 +707,13 @@ Cube.prototype = {
    * @param  {DOMElement}   tile The selected tile as a raw DOM element.
    * @param  {Function}     callback   The method to invoke passing each tile as an argument.
    */
-  updateCrosshairs: function(tile, callback) {
+  updateCrosshairs: function updateCrosshairs(tile, callback) {
 
     // Run the callback on all tiles in the lines associated with the given tile.
     _.forEach(tile.getAllLineTiles(), callback);
 
     // For each neighbor, pass in the side and the orientation id (e.g. 'left').
-    _.forEach(tile.side.getNeighbors(), neighbor => {
+    _.forEach(tile.side.getNeighbors(), function (neighbor) {
 
       // Find the translated tiles and run the callback on each.
       _.forEach(tile.translate(neighbor), callback);
@@ -741,7 +726,8 @@ Cube.prototype = {
    * @param {Tile} [tile2] The second tile selected.
    * @return {Tile}       The tile being attacked.
    */
-  getAttackTile: function(tile1, tile2) {
+  getAttackTile: function getAttackTile(tile1, tile2) {
+    var _this = this;
 
     var neighbors, side;
 
@@ -751,7 +737,9 @@ Cube.prototype = {
       neighbors = _.without(tile2.side.getNeighbors(), tile1.side),
 
       // Get the neighbor that is visible.
-      side = _.find(neighbors, neighbor => neighbor.isVisible(this.x, this.y));
+      side = _.find(neighbors, function (neighbor) {
+        return neighbor.isVisible(_this.x, _this.y);
+      });
 
       // Return the tile that intersects the two passed tiles.
       return _.intersection(tile1.translate(side), tile2.translate(side))[0];
@@ -768,15 +756,14 @@ Cube.prototype = {
    * @param  {Number} difference The value to update the current coordinate by.
    * @return {Number}            The normalized result.
    */
-  _calculateCoordinate: function(current, difference) {
+  _calculateCoordinate: function _calculateCoordinate(current, difference) {
 
     var REVOLUTION = Cube.REVOLUTION,
         result = current + difference;
 
     if (result > REVOLUTION) {
       result = result - REVOLUTION;
-    }
-    else if (result <= Cube.ORIGIN) {
+    } else if (result <= Cube.ORIGIN) {
       result = REVOLUTION - result;
     }
 
@@ -790,20 +777,22 @@ Cube.prototype = {
    * @return {Array}       A collection of valid coordinate collections.
    *                       e.g. [[225, 225], [315, 45]]
    */
-  _getCommonVisibleCoordinates: function(tiles) {
+  _getCommonVisibleCoordinates: function _getCommonVisibleCoordinates(tiles) {
 
     // Collect the visibility map of each passed tile into an array.
-    var visibilityMap = _.map(tiles, tile => tile.side._visibilityMap),
+    var visibilityMap = _.map(tiles, function (tile) {
+      return tile.side._visibilityMap;
+    }),
 
-        // Find all the x coordinates shared by all the tiles.
-        xCoors = _.intersection.apply(_, _.map(visibilityMap, function(map) {
-          return _.map(_.keys(map), _.parseInt);
-        })),
+    // Find all the x coordinates shared by all the tiles.
+    xCoors = _.intersection.apply(_, _.map(visibilityMap, function (map) {
+      return _.map(_.keys(map), _.parseInt);
+    })),
 
-        // Given the available x coordinates, find the shared y coordinates.
-        yCoors = _.flatten(_.map(xCoors, function(coor) {
-          return _.intersection.apply(_, _.pluck(visibilityMap, coor));
-        }));
+    // Given the available x coordinates, find the shared y coordinates.
+    yCoors = _.flatten(_.map(xCoors, function (coor) {
+      return _.intersection.apply(_, _.pluck(visibilityMap, coor));
+    }));
 
     // Return a collection of x/y collections shared among all the passed tiles.
     return _.zip(xCoors, yCoors);
@@ -817,7 +806,7 @@ Cube.prototype = {
    * @param  {Number} targetCoor The coordinate you wish to be at.
    * @return {Number}            The shortest rotation movement to reach the target.
    */
-  _getShortestCoordinateDiff: function(originCoor, targetCoor) {
+  _getShortestCoordinateDiff: function _getShortestCoordinateDiff(originCoor, targetCoor) {
 
     var revolution = Cube.REVOLUTION,
         diff = targetCoor - originCoor;
@@ -847,16 +836,13 @@ Cube.prototype = {
    * @param  {Array} pairs A collection of coordinate pairs.
    * @return {Array}       A single coordinate pair. e.g. [45, 135]
    */
-  _getShortestRotationDistance: function(pairs) {
+  _getShortestRotationDistance: function _getShortestRotationDistance(pairs) {
 
-    return _.reduce(pairs, function(lowest, current) {
+    return _.reduce(pairs, function (lowest, current) {
 
       // First, determine shortest differences for each coordinate so we can
       // compare them to a previous lowest pair.
-      var diff = [
-        this._getShortestCoordinateDiff(this.x, current[0]),
-        this._getShortestCoordinateDiff(this.y, current[1])
-      ];
+      var diff = [this._getShortestCoordinateDiff(this.x, current[0]), this._getShortestCoordinateDiff(this.y, current[1])];
 
       // If a lowest pair hasn't been set yet or the sum of the current coor
       // differences is less than the previously set lowest pair's, then return
@@ -870,10 +856,10 @@ Cube.prototype = {
     }, null, this);
   },
 
-  _buildSides: function(size) {
+  _buildSides: function _buildSides(size) {
 
     // Create sides.
-    var sides = _.reduce(this.el.children, function(list, el) {
+    var sides = _.reduce(this.el.children, function (list, el) {
       list[el.id] = new Side(el, size);
       return list;
     }, {});
@@ -898,46 +884,46 @@ Cube.prototype = {
     var visibilityMap = {
       // x: [y]
       front: {
-        '315':    [45, 315],
-        '45':     [45, 315],
-        '135':    [135, 225],
-        '225':    [135, 225]
+        "315": [45, 315],
+        "45": [45, 315],
+        "135": [135, 225],
+        "225": [135, 225]
       },
 
       back: {
-        '315':    [135, 225],
-        '45':     [135, 225],
-        '135':    [45, 315],
-        '225':    [45, 315]
+        "315": [135, 225],
+        "45": [135, 225],
+        "135": [45, 315],
+        "225": [45, 315]
       },
 
       top: {
-        '315':    [45, 135, 225, 315],
-        '225':    [45, 135, 225, 315]
+        "315": [45, 135, 225, 315],
+        "225": [45, 135, 225, 315]
       },
 
       bottom: {
-        '135':    [45, 135, 225, 315],
-        '45':     [45, 135, 225, 315]
+        "135": [45, 135, 225, 315],
+        "45": [45, 135, 225, 315]
       },
 
       left: {
-        '315':    [45, 135],
-        '45':     [45, 135],
-        '135':    [225, 315],
-        '225':    [225, 315]
+        "315": [45, 135],
+        "45": [45, 135],
+        "135": [225, 315],
+        "225": [225, 315]
       },
 
       right: {
-        '315':    [225, 315],
-        '45':     [225, 315],
-        '135':    [45, 135],
-        '225':    [45, 135]
+        "315": [225, 315],
+        "45": [225, 315],
+        "135": [45, 135],
+        "225": [45, 135]
       }
     };
 
     // Now set the neighbors for each side.
-    return _.forIn(sides, function(side) {
+    return _.forIn(sides, function (side) {
       side.setNeighbors(neighborMap[side.id]);
       side.setVisibilityMap(visibilityMap[side.id]);
     });
@@ -961,12 +947,12 @@ Line.prototype = {
    * Outputs useful identifying information for troubleshooting.
    * @return {String} String information.
    */
-  toString: function() {
-    var info = _.reduce(this.getTiles(), function(tiles, tile) {
+  toString: function toString() {
+    var info = _.reduce(this.getTiles(), function (tiles, tile) {
       tiles.push(tile.toString());
       return tiles;
     }, []);
-    return '(' + info.join(' ') + ')';
+    return "(" + info.join(" ") + ")";
   },
 
   /**
@@ -974,9 +960,9 @@ Line.prototype = {
    * @param  {Array} tiles The tiles to check.
    * @return {Boolean} Does the line contain the passed tiles?
    */
-  all: function(tiles) {
+  all: function all(tiles) {
     var lineTiles = this.getTiles();
-    return _.every(tiles, tile => {
+    return _.every(tiles, function (tile) {
       return _.includes(lineTiles, tile);
     });
   },
@@ -987,21 +973,23 @@ Line.prototype = {
    * @param  {[type]} tiles [description]
    * @return {[type]}       [description]
    */
-  some: function(tiles) {
-    return _.every(this.getTiles(), tile => {
+  some: function some(tiles) {
+    return _.every(this.getTiles(), function (tile) {
       return _.includes(tiles, tile);
     });
   },
 
-  update: function(tiles) {
+  update: function update(tiles) {
     this._tiles = tiles;
   },
 
   /**
    * Updates the UI to display a winning state involving the line.
    */
-  pulsate: function() {
-    _.forEach(this.getTiles(), tile => tile.addClass('win'));
+  pulsate: function pulsate() {
+    _.forEach(this.getTiles(), function (tile) {
+      return tile.addClass("win");
+    });
   },
 
   /**
@@ -1009,7 +997,7 @@ Line.prototype = {
    * index difference between two adjacent tiles.
    * @return {Boolean} Is this line horizontal?
    */
-  isHorizontal: function() {
+  isHorizontal: function isHorizontal() {
     var tiles = this.getTiles();
     return _.includes(tiles[0].xLine.getTiles(), tiles[1]);
   },
@@ -1017,33 +1005,33 @@ Line.prototype = {
   /**
    * @return {Array} A collection of tiles that compose the line.
    */
-  getTiles: function() {
+  getTiles: function getTiles() {
     return this._tiles;
   },
 
   /**
    * @return {Number} The number of tiles in the line.
    */
-  length: function() {
+  length: function length() {
     return this._tiles.length;
   },
 
   /**
    * @return {Array} The indicies of all the tiles.
    */
-  indicies: function() {
-    return _.map(this.getTiles(), 'index');
+  indicies: function indicies() {
+    return _.map(this.getTiles(), "index");
   },
 
   /**
    * @return {Array} A collection of the missing tiles.
    */
-  missingTiles: function() {
+  missingTiles: function missingTiles() {
 
     var tiles = this.getTiles(),
 
-        // Are we matching against a horizontal or vertical line?
-        matchedLine = this.isHorizontal() ? _.first(tiles).xLine : _.first(tiles).yLine;
+    // Are we matching against a horizontal or vertical line?
+    matchedLine = this.isHorizontal() ? _.first(tiles).xLine : _.first(tiles).yLine;
 
     // Now we can figure out which tiles are missing by diffing the two lines.
     return _.xor(tiles, matchedLine.getTiles());
@@ -1053,13 +1041,13 @@ Line.prototype = {
   // xoo      xxx
   // xoo  ->  ooo
   // xoo      ooo
-  rotate: function() {
+  rotate: function rotate() {
 
     // Where the line begins, starting from top-left.
     var originIndex = _.first(this.getTiles()).index;
 
     if (this.isHorizontal()) {
-      return this.side.getTiles(originIndex + (originIndex / this.length()))[0].yLine;
+      return this.side.getTiles(originIndex + originIndex / this.length())[0].yLine;
     }
 
     return this.side.getTiles(originIndex * this.length())[0].xLine;
@@ -1069,19 +1057,19 @@ Line.prototype = {
   //    xoo      oox
   //    xoo  ->  oox
   //    xoo      oox
-  flip: function() {
+  flip: function flip() {
 
     // Where the line begins, starting from top-left.
     var originIndex = _.first(this.getTiles()).index,
 
-        // The middle line.
-        middle;
+    // The middle line.
+    middle;
 
     if (this.isHorizontal()) {
 
       // The middle row, which is the size squared cut in half and floored.
       // NOTE: This could be buggy with other sizes!
-      middle = Math.floor((Math.pow(this.length(), 2) / 2) - 1);
+      middle = Math.floor(Math.pow(this.length(), 2) / 2 - 1);
 
       // Determine the difference and get the calculated x line.
       return this.side.getTiles(middle * 2 - originIndex)[0].xLine;
@@ -1113,11 +1101,11 @@ function Side(el, size) {
 
 Side.prototype = {
 
-  getNeighbors: function() {
+  getNeighbors: function getNeighbors() {
     return this._neighbors;
   },
 
-  setNeighbors: function(sides) {
+  setNeighbors: function setNeighbors(sides) {
     this._neighbors = sides;
   },
 
@@ -1126,15 +1114,15 @@ Side.prototype = {
    * @param  {Side}  side The side object to check.
    * @return {Boolean}      Is the passed side a neighbor?
    */
-  isNeighbor: function(side) {
+  isNeighbor: function isNeighbor(side) {
     return _.contains(this._neighbors, side);
   },
 
-  setVisibilityMap: function(map) {
+  setVisibilityMap: function setVisibilityMap(map) {
     this._visibilityMap = map;
   },
 
-  isVisible: function(cubeX, cubeY) {
+  isVisible: function isVisible(cubeX, cubeY) {
     return _.contains(this._visibilityMap[cubeX], cubeY);
   },
 
@@ -1144,7 +1132,7 @@ Side.prototype = {
    * @param  {[String|Number|Number[]]} indicies An array of indicies.
    * @return {Tile[]}          An array of selected tiles.
    */
-  getTiles: function(indicies) {
+  getTiles: function getTiles(indicies) {
     if (_.isUndefined(indicies)) {
       return this._tiles;
     }
@@ -1155,36 +1143,39 @@ Side.prototype = {
    * Returns all the tiles that are still unclaimed.
    * @return {Array} A collection of unclaimed tiles.
    */
-  getAvailableTiles: function() {
-    return _.reject(this._tiles, 'claimedBy');
+  getAvailableTiles: function getAvailableTiles() {
+    return _.reject(this._tiles, "claimedBy");
   },
 
-  _buildTiles: function(size) {
+  _buildTiles: function _buildTiles(size) {
+    var _this = this;
 
     // First let's create an array of tiles based on the cube size.
-    var tiles = _.times(Math.pow(size, 2), index => new Tile(this, index)),
+    var tiles = _.times(Math.pow(size, 2), function (index) {
+      return new Tile(_this, index);
+    }),
 
     // Now we'll create lines from the tiles.
     lines = {
 
       // Creating x coordinate lines.
-      x: _.times(size, function(n) {
-          return new Line(tiles.slice(n * size, (n + 1) * size));
-        }),
+      x: _.times(size, function (n) {
+        return new Line(tiles.slice(n * size, (n + 1) * size));
+      }),
 
       // Creating y coordinate lines.
-      y: _.times(size, function(n) {
-          var arr = _.times(size, function(i) {
-            return n + i * size;
-          });
-          return new Line(_.at(tiles, arr));
-        })
+      y: _.times(size, function (n) {
+        var arr = _.times(size, function (i) {
+          return n + i * size;
+        });
+        return new Line(_.at(tiles, arr));
+      })
     };
 
     // For each tile, assign the correct lines.
-    _.forEach(tiles, function(tile, index) {
+    _.forEach(tiles, function (tile, index) {
 
-      var mod = index % size;
+      var mod = index % size,
           xLine = lines.x[(index - mod) / size],
           yLine = lines.y[mod];
 
@@ -1200,7 +1191,7 @@ Side.prototype = {
 function Tile(side, index) {
 
   // Set properties.
-  this.el = this.build(side.id + '-' + index);
+  this.el = this.build(side.id + "-" + index);
   this.side = side;
   this.index = index;
 
@@ -1218,65 +1209,63 @@ Tile.prototype = {
    * Outputs useful identifying information for troubleshooting.
    * @return {String} Tile information.
    */
-  toString: function() {
+  toString: function toString() {
     return this.el.id;
   },
 
-  build: function(id) {
+  build: function build(id) {
+    var _this = this;
 
     // Create the tile element.
-    var el = document.createElement('div');
+    var el = document.createElement("div");
     el.id = id;
-    el.className = 'tile';
+    el.className = "tile";
 
     // Initialize after a random time. This begins the tile drop animation.
-    window.setTimeout(() => this.addClass('init'), Math.random() * 2000);
+    window.setTimeout(function () {
+      return _this.addClass("init");
+    }, Math.random() * 2000);
 
     // debug
-    var idData = id.split('-');
+    var idData = id.split("-");
     el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
 
     return el;
   },
 
-  claim: function(player) {
-    this.claimedBy = player;
-    this
-      .removeClass('unclaimed')
-      .addClass('preclaimed')
-      .addClass(player.tileClass);
+  claim: function claim(player) {
+    var _this = this;
 
-    UTIL.listenOnce(this.el, Vendor.EVENT.animationEnd, () => {
-      this.removeClass('preclaimed').addClass('claimed');
+    this.claimedBy = player;
+    this.removeClass("unclaimed").addClass("preclaimed").addClass(player.tileClass);
+
+    UTIL.listenOnce(this.el, Vendor.EVENT.animationEnd, function () {
+      _this.removeClass("preclaimed").addClass("claimed");
     });
   },
 
-  release: function() {
+  release: function release() {
     if (this.claimedBy) {
-      this
-        .addClass('unclaimed')
-        .removeClass('claimed')
-        .removeClass(this.claimedBy.tileClass)
-        .removeClass('win');
+      this.addClass("unclaimed").removeClass("claimed").removeClass(this.claimedBy.tileClass).removeClass("win");
       this.claimedBy = null;
     }
   },
 
-  isNeighboringSide: function(tile) {
+  isNeighboringSide: function isNeighboringSide(tile) {
     return this.side.isNeighbor(tile.side);
   },
 
-  addClass: function(name) {
+  addClass: function addClass(name) {
     this.el.classList.add(name);
     return this;
   },
 
-  removeClass: function(name) {
+  removeClass: function removeClass(name) {
     this.el.classList.remove(name);
     return this;
   },
 
-  updateLines: function(x, y) {
+  updateLines: function updateLines(x, y) {
     this.xLine = x;
     this.yLine = y;
   },
@@ -1284,11 +1273,11 @@ Tile.prototype = {
   /**
    * @return {Array} All the tiles composing both lines.
    */
-  getAllLineTiles: function() {
+  getAllLineTiles: function getAllLineTiles() {
     return _.union(this.xLine.getTiles(), this.yLine.getTiles());
   },
 
-  translate: function(toSide) {
+  translate: function translate(toSide) {
 
     // A translation is a recipe for morphing one line into another.
     // It looks like this: [1, flip]
@@ -1296,13 +1285,13 @@ Tile.prototype = {
     //        The remaining indicies are methods to invoke on the line
     var translation = Tile.translationMap[this.side.id][toSide ? toSide.id : null],
 
-        // The line from the line pair to use.
-        line = _.first(translation) === 'x' ? this.xLine : this.yLine;
+    // The line from the line pair to use.
+    line = _.first(translation) === "x" ? this.xLine : this.yLine;
 
     if (translation) {
 
       // Run through each translation method (flip, rotate) and return the result.
-      var newLine = _.reduce(_.rest(translation), function(transformedLine, method) {
+      var newLine = _.reduce(_.rest(translation), function (transformedLine, method) {
         return transformedLine[method]();
       }, line);
 
@@ -1314,61 +1303,59 @@ Tile.prototype = {
 
 };
 
-Tile.translationMap = (function() {
+Tile.translationMap = (function () {
 
-  var X = 'x',
-      Y = 'y',
-      FLIP = 'flip',
-      ROTATE = 'rotate';
+  var X = "x",
+      Y = "y",
+      FLIP = "flip",
+      ROTATE = "rotate";
 
   // Line coordinate mapping to side id.
   // [coordinate, methods...]
   return {
 
     front: {
-      top:      [Y],                // top
-      bottom:   [Y],                // bottom
-      left:     [X],                // left
-      right:    [X]                 // right
+      top: [Y], // top
+      bottom: [Y], // bottom
+      left: [X], // left
+      right: [X] // right
     },
 
     back: {
-      bottom:   [Y, FLIP],          // top
-      top:      [Y, FLIP],          // bottom
-      left:     [X],                // left
-      right:    [X]                 // right
+      bottom: [Y, FLIP], // top
+      top: [Y, FLIP], // bottom
+      left: [X], // left
+      right: [X] // right
     },
 
     top: {
-      back:     [Y, FLIP],          // top
-      front:    [Y],                // bottom
-      left:     [X, ROTATE],        // left
-      right:    [X, FLIP, ROTATE],  // right
-    },
+      back: [Y, FLIP], // top
+      front: [Y], // bottom
+      left: [X, ROTATE], // left
+      right: [X, FLIP, ROTATE] },
 
     bottom: {
-      front:    [Y],                // top
-      back:     [Y, FLIP],          // bottom
-      left:     [X, FLIP, ROTATE],  // left
-      right:    [X, ROTATE]         // right
+      front: [Y], // top
+      back: [Y, FLIP], // bottom
+      left: [X, FLIP, ROTATE], // left
+      right: [X, ROTATE] // right
     },
 
     left: {
-      top:      [Y, ROTATE],        // top
-      bottom:   [Y, FLIP, ROTATE],    // bottom
-      back:     [X],                // left
-      front:    [X]                 // right
+      top: [Y, ROTATE], // top
+      bottom: [Y, FLIP, ROTATE], // bottom
+      back: [X], // left
+      front: [X] // right
     },
 
     right: {
-      top:      [Y, FLIP, ROTATE],  // top
-      bottom:   [Y, ROTATE],        // bottom
-      front:    [X],                // left
-      back:     [X]                 // right
+      top: [Y, FLIP, ROTATE], // top
+      bottom: [Y, ROTATE], // bottom
+      front: [X], // left
+      back: [X] // right
     }
   };
-
-}());
+})();
 
 function CubeCache(cube) {
 
@@ -1389,10 +1376,10 @@ CubeCache.prototype = {
    * in two collecitons: An object keyed by cube side id to contain lines
    * and an array to contain single tiles.
    */
-  initialize: function() {
+  initialize: function initialize() {
 
     // A collection of lines created by side.
-    this._lineMap = _.reduce(this._cube.getSides(), (sides, side, id) => {
+    this._lineMap = _.reduce(this._cube.getSides(), function (sides, side, id) {
       sides[id] = [];
       return sides;
     }, {});
@@ -1401,7 +1388,7 @@ CubeCache.prototype = {
     this._singles = [];
   },
 
-  add: function(tile) {
+  add: function add(tile) {
 
     var claimedBy = tile.claimedBy,
         xPartial = this._getPartialLineTiles(tile.xLine, claimedBy),
@@ -1421,7 +1408,7 @@ CubeCache.prototype = {
     }
   },
 
-  remove: function(tile) {
+  remove: function remove(tile) {
 
     var claimedBy = tile.claimedBy,
         xPartial = this._getPartialLineTiles(tile.xLine, claimedBy),
@@ -1460,23 +1447,20 @@ CubeCache.prototype = {
    * in each line.
    * @return {Array} A collection of lines.
    */
-  getLines: function() {
-    return this._getLinesAsChain()
-      .sortBy(line => line._tiles.length)
-      .value();
+  getLines: function getLines() {
+    return this._getLinesAsChain().sortBy(function (line) {
+      return line._tiles.length;
+    }).value();
   },
 
   /**
    * Retrieves all cached tiles.
    * @return {Array} A colleciton of all the cached tiles.
    */
-  getAllTiles: function() {
-    return this._getLinesAsChain()
-      .map(line => line.getTiles())
-      .flatten()
-      .uniq()
-      .concat(this._singles)
-      .value();
+  getAllTiles: function getAllTiles() {
+    return this._getLinesAsChain().map(function (line) {
+      return line.getTiles();
+    }).flatten().uniq().concat(this._singles).value();
   },
 
   /**
@@ -1484,25 +1468,24 @@ CubeCache.prototype = {
    * compacted into one array.
    * @return {lodash} A lodash chain-wrapped collection.
    */
-  _getLinesAsChain: function() {
-    return _.chain(this._lineMap)
-      .values()
-      .flatten()
-      .compact()
+  _getLinesAsChain: function _getLinesAsChain() {
+    return _.chain(this._lineMap).values().flatten().compact();
   },
 
-  _getPartialLineTiles: function(line, claimedBy) {
-    return _.filter(line.getTiles(), tile => tile.claimedBy === claimedBy);
+  _getPartialLineTiles: function _getPartialLineTiles(line, claimedBy) {
+    return _.filter(line.getTiles(), function (tile) {
+      return tile.claimedBy === claimedBy;
+    });
   },
 
-  _growLine: function(tiles) {
+  _growLine: function _growLine(tiles) {
 
     var side, line;
 
     if (tiles.length > 1) {
 
       side = this._lineMap[_.first(tiles).side.id];
-      line = _.find(side, function(ln) {
+      line = _.find(side, function (ln) {
         return ln.some(tiles);
       });
 
@@ -1529,14 +1512,14 @@ CubeCache.prototype = {
    * @param  {Array} tiles The tiles used in the shrinkage
    * @return {Boolean} Was a line disassebled?
    */
-  _shrinkLine: function(tiles, isHorizontal) {
+  _shrinkLine: function _shrinkLine(tiles, isHorizontal) {
 
     var side, line;
 
     if (tiles.length) {
 
       side = this._lineMap[_.first(tiles).side.id];
-      line = _.find(side, function(ln) {
+      line = _.find(side, function (ln) {
         return ln.isHorizontal() === isHorizontal && ln.all(tiles);
       });
 
@@ -1562,9 +1545,9 @@ CubeCache.prototype = {
     return false;
   },
 
-  _composesLines: function(tiles) {
+  _composesLines: function _composesLines(tiles) {
     var side = this._lineMap[_.first(tiles).side.id];
-    return _.find(side, function(line) {
+    return _.find(side, function (line) {
       return line.all(tiles);
     });
   }
@@ -1572,13 +1555,13 @@ CubeCache.prototype = {
 };
 
 function SelectTileError(message) {
-  this.name = 'SelectTileError';
+  this.name = "SelectTileError";
   this.message = message;
 }
 
-SelectTileError.CLAIMED = 'claimed';
-SelectTileError.NOT_NEIGHBOR = 'notNeighbor';
-SelectTileError.TARGET_CLAIMED = 'targetClaimed';
+SelectTileError.CLAIMED = "claimed";
+SelectTileError.NOT_NEIGHBOR = "notNeighbor";
+SelectTileError.TARGET_CLAIMED = "targetClaimed";
 
 SelectTileError.prototype = new Error();
 
@@ -1591,8 +1574,8 @@ function Messages() {
 
 Messages.prototype = {
 
-  listenTo: function(source) {
-    source.on('message', _.bind(this.add, this));
+  listenTo: function listenTo(source) {
+    source.on("message", _.bind(this.add, this));
   },
 
   /**
@@ -1601,20 +1584,20 @@ Messages.prototype = {
    * @param {String} classes A space-separated list of classes to append to the message.
    * @return {Messages} Returns itself for chaining.
    */
-  add: function(message, classes) {
+  add: function add(message, classes) {
 
     // Generate a new element to contain the message.
-    var item = document.createElement('li');
+    var item = document.createElement("li");
 
     // Add special classes to decorate the message if passed.
     // We want to use apply here because add takes multiple arguments,
     // not an array of names.
     if (classes) {
-      DOMTokenList.prototype.add.apply(item.classList, classes.split(' '));
+      DOMTokenList.prototype.add.apply(item.classList, classes.split(" "));
     }
 
     // Get the correct message by passed key.
-    if (message.split(' ').length === 1) {
+    if (message.split(" ").length === 1) {
       message = Messages.LIST[message];
     }
 
@@ -1629,11 +1612,13 @@ Messages.prototype = {
    * Removes all persisted messages from the queue by adding the 'hide'
    * class to each one.
    */
-  removeAll: function() {
-    _.forEach(this.container.children, item => item.classList.add('hide'));
+  removeAll: function removeAll() {
+    _.forEach(this.container.children, function (item) {
+      return item.classList.add("hide");
+    });
   },
 
-  _enqueue: function(item) {
+  _enqueue: function _enqueue(item) {
 
     var container = this.container,
         queue = this.queue,
@@ -1641,7 +1626,7 @@ Messages.prototype = {
 
     queue.push(item);
 
-    _.delay(function(i) {
+    _.delay(function (i) {
       container.appendChild(item);
       if (_.last(queue) === i) {
         queue.length = 0;
@@ -1655,16 +1640,16 @@ Messages.prototype = {
    * the 'hide' class.
    * @param  {animationend} evt An animationend event.
    */
-  _remove: function(evt) {
+  _remove: function _remove(evt) {
     var classList = evt.target.classList;
-    if (!classList.contains('persist') || classList.contains('hide')) {
+    if (!classList.contains("persist") || classList.contains("hide")) {
       this.container.removeChild(evt.target);
     }
   },
 
-  _buildContainer: function() {
-    var container = document.createElement('ul');
-    container.id = 'messages';
+  _buildContainer: function _buildContainer() {
+    var container = document.createElement("ul");
+    container.id = "messages";
     document.body.appendChild(container);
     return container;
   }
@@ -1672,11 +1657,11 @@ Messages.prototype = {
 };
 
 Messages.LIST = {
-  claimed: 'This tile is already claimed!',
-  targetClaimed: 'The attack target is already claimed by you!',
-  sameSide: 'Same side! Choose a tile on a different side.',
-  notNeighbor: 'Not a neighboring side! Choose a tile different side.',
-  newGame: 'Click anywhere to begin a new game.'
+  claimed: "This tile is already claimed!",
+  targetClaimed: "The attack target is already claimed by you!",
+  sameSide: "Same side! Choose a tile on a different side.",
+  notNeighbor: "Not a neighboring side! Choose a tile different side.",
+  newGame: "Click anywhere to begin a new game."
 };
 
 function Player(name, tileClass, cube) {
@@ -1689,44 +1674,46 @@ function Player(name, tileClass, cube) {
 
 Player.prototype = {
 
-  isBot: function() {
+  isBot: function isBot() {
     return this instanceof Bot;
   },
 
-  claim: function(tile) {
+  claim: function claim(tile) {
     tile.claim(this);
     this._cubeCache.add(tile);
   },
 
-  release: function(tile) {
+  release: function release(tile) {
     this._cubeCache.remove(tile);
     tile.release();
   },
 
-  releaseAll: function() {
-    _.forEach(this._cubeCache.getAllTiles(), tile => tile.release());
+  releaseAll: function releaseAll() {
+    _.forEach(this._cubeCache.getAllTiles(), function (tile) {
+      return tile.release();
+    });
     this._cubeCache.initialize();
   },
 
-  getLines: function() {
+  getLines: function getLines() {
     return this._cubeCache.getLines();
   },
 
   /**
    * @return {Array[Tile]} All the tiles claimed that do not compose lines.
    */
-  getSingles: function() {
+  getSingles: function getSingles() {
     return this._cubeCache._singles;
   },
 
   /**
    * @return {Tile} The first tile selected to be claimed.
    */
-  getInitialTile: function() {
+  getInitialTile: function getInitialTile() {
     return _.first(this._selectedTiles);
   },
 
-  getAttackTile: function(tile1, tile2) {
+  getAttackTile: function getAttackTile(tile1, tile2) {
     return this._cubeCache._cube.getAttackTile(tile1, tile2);
   },
 
@@ -1735,9 +1722,9 @@ Player.prototype = {
    * lines claimed by the player.
    * @return {Array} A collection of this player's win lines.
    */
-  getWinLines: function() {
+  getWinLines: function getWinLines() {
     var size = this._cubeCache._cubeSize;
-    return _.filter(this.getLines(), function(line) {
+    return _.filter(this.getLines(), function (line) {
       return line.length() === size;
     });
   },
@@ -1749,13 +1736,13 @@ Player.prototype = {
    * @param  {Tile} tile The tile to check.
    * @return {Boolean} Can the given tile be attacked by this player?
    */
-  canAttack: function(tile) {
+  canAttack: function canAttack(tile) {
     return tile.claimedBy !== this;
   },
 
-  claimAll: function() {
+  claimAll: function claimAll() {
 
-    _.forEach(this._selectedTiles, function(tile, index, array) {
+    _.forEach(this._selectedTiles, function (tile, index, array) {
 
       // If the tile is already claimed, this is an attack! Release it.
       // Also, replace it with attack data so the recorder will work.
@@ -1770,7 +1757,7 @@ Player.prototype = {
       }
     }, this);
 
-    this.emit('player:claim', this._selectedTiles);
+    this.emit("player:claim", this._selectedTiles);
     this._selectedTiles = [];
   },
 
@@ -1780,13 +1767,13 @@ Player.prototype = {
    * @param {Tile} [attackTile] The tile being attacked (if this is not the initial selection).
    * @return {Boolean} Was this the last tile that needed to be selected?
    */
-  selectTile: function(tile, attackTile) {
+  selectTile: function selectTile(tile, attackTile) {
 
     // Get a reference to all the selected tiles.
     var selectedTiles = this._selectedTiles,
 
-        // Get a reference to the first tile selected.
-        initialTile = _.first(selectedTiles);
+    // Get a reference to the first tile selected.
+    initialTile = _.first(selectedTiles);
 
     // If the tile is already claimed, get outta dodge.
     if (tile.claimedBy) {
@@ -1822,8 +1809,7 @@ Player.prototype = {
       if (this.canAttack(attackTile)) {
         this._selectTiles(tile, attackTile);
         return true;
-      }
-      else {
+      } else {
         throw new SelectTileError(SelectTileError.TARGET_CLAIMED);
       }
     }
@@ -1838,24 +1824,24 @@ Player.prototype = {
     return false;
   },
 
-  deselectTile: function(tile) {
+  deselectTile: function deselectTile(tile) {
     _.pull(this._selectedTiles, tile);
-    this.emit('player:initialDeselected', tile);
+    this.emit("player:initialDeselected", tile);
   },
 
-  _createAttackData: function(tile) {
+  _createAttackData: function _createAttackData(tile) {
     return {
       player: tile.claimedBy,
       tile: tile,
-      toString: function() {
-        return '(attack -> ' + tile.toString() + ')'
+      toString: function toString() {
+        return "(attack -> " + tile.toString() + ")";
       }
     };
   },
 
-  _selectTiles: function() {
+  _selectTiles: function _selectTiles() {
     if (!this.getInitialTile()) {
-      this.emit('player:initialSelected', arguments[0]);
+      this.emit("player:initialSelected", arguments[0]);
     }
     Array.prototype.push.apply(this._selectedTiles, arguments);
     if (this._selectedTiles.length >= 3) {
@@ -1871,11 +1857,11 @@ _.assign(Player.prototype, EventEmitter2.prototype);
 // Assign Bot inheritence here because Bot is getting included first.
 // Need to switch to modules next go-round. For reals.
 // This is cheesey.
-(function() {
+(function () {
   var botSelect = Bot.prototype._selectTiles;
   _.assign(Bot.prototype, Player.prototype);
   Bot.prototype._selectTiles = botSelect;
-}());
+})();
 
 function Recorder(app) {
   this._timeline = [];
@@ -1884,14 +1870,14 @@ function Recorder(app) {
 }
 
 Recorder.MESSAGES = {
-  NOT_FOUND: 'Could not locate a turn at ',
-  REWRITE: 'Turns are now being rewritten as the timeline was behind by ',
-  NO_LOG: '[No log for this turn]'
+  NOT_FOUND: "Could not locate a turn at ",
+  REWRITE: "Turns are now being rewritten as the timeline was behind by ",
+  NO_LOG: "[No log for this turn]"
 };
 
 Recorder.prototype = {
 
-  record: function(player, tiles) {
+  record: function record(player, tiles) {
 
     var behind = this._timeline.length - this._cursor;
 
@@ -1904,50 +1890,46 @@ Recorder.prototype = {
     this._cursor++;
   },
 
-  forward: function() {
+  forward: function forward() {
 
     var turnData = this._timeline[this._cursor];
 
     if (turnData) {
-      _.forEach(turnData.tiles, function(tile) {
+      _.forEach(turnData.tiles, function (tile) {
         if (tile instanceof Tile) {
           turnData.player.claim(tile);
-        }
-        else {
+        } else {
           tile.player.release(tile.tile);
         }
       });
       console.log(turnData.log);
       this._cursor++;
       this._app.setCurrentPlayer(this._app.getOpponent(turnData.player), true);
-    }
-    else {
+    } else {
       throw Recorder.MESSAGES.NOT_FOUND + this._cursor;
     }
   },
 
-  reverse: function() {
+  reverse: function reverse() {
 
     var turnData = this._timeline[this._cursor - 1];
 
     if (turnData) {
-      _.forEach(turnData.tiles, function(tile) {
+      _.forEach(turnData.tiles, function (tile) {
         if (tile instanceof Tile) {
           turnData.player.release(tile);
-        }
-        else {
+        } else {
           tile.player.claim(tile.tile);
         }
       });
       this._cursor--;
       this._app.setCurrentPlayer(turnData.player, true);
-    }
-    else {
+    } else {
       throw Recorder.MESSAGES.NOT_FOUND + this._cursor;
     }
   },
 
-  _package: function(player, tiles) {
+  _package: function _package(player, tiles) {
     this._timeline.push({
       player: player,
       tiles: tiles,
@@ -1966,27 +1948,26 @@ function Keyboard(keyCodes) {
 
   this.keys = {};
 
-  if (typeof keyCodes === 'string') {
-    keyCodes = keyCodes.split(' ');
+  if (typeof keyCodes === "string") {
+    keyCodes = keyCodes.split(" ");
   }
   while (keyCodes.length) {
     this.keys[keyCodes.pop()] = false;
   }
-
 }
 
-Keyboard.prototype = { 
+Keyboard.prototype = {
 
-  listen: function(win, callback) {
+  listen: function listen(win, callback) {
 
-    var UNDEFINED = 'undefined',
+    var UNDEFINED = "undefined",
         keys = this.keys;
-        
+
     if (!win) {
       win = window;
     }
 
-    win.addEventListener('keydown', function(evt) {
+    win.addEventListener("keydown", function (evt) {
       var keyCode = evt.keyCode;
       if (typeof keys[keyCode] !== UNDEFINED && !keys[keyCode]) {
         keys[keyCode] = true;
@@ -1996,7 +1977,7 @@ Keyboard.prototype = {
       }
     });
 
-    win.addEventListener('keyup', function(evt) {
+    win.addEventListener("keyup", function (evt) {
       var keyCode = evt.keyCode;
       if (keys[keyCode]) {
         keys[keyCode] = false;
@@ -2005,21 +1986,20 @@ Keyboard.prototype = {
         }
       }
     });
-
   }
 
 };
 
-Keyboard.UP = '38';
-Keyboard.DOWN = '40';
-Keyboard.LEFT = '37';
-Keyboard.RIGHT = '39';
-Keyboard.W = '87';
-Keyboard.A = '65';
-Keyboard.S = '83';
-Keyboard.D = '68';
-Keyboard.SPACE = '32';
-Keyboard.ESCAPE = '27';
+Keyboard.UP = "38";
+Keyboard.DOWN = "40";
+Keyboard.LEFT = "37";
+Keyboard.RIGHT = "39";
+Keyboard.W = "87";
+Keyboard.A = "65";
+Keyboard.S = "83";
+Keyboard.D = "68";
+Keyboard.SPACE = "32";
+Keyboard.ESCAPE = "27";
 
 function Renderer(cube, isMobile) {
 
@@ -2056,17 +2036,16 @@ function Renderer(cube, isMobile) {
 
 Renderer.prototype = {
 
-  initialize: function() {
+  initialize: function initialize() {
     if (this.isMobile) {
       this._listenForTouch();
-    }
-    else {
+    } else {
       this._listenForKeyboard();
     }
     this.cube.setRenderer(this);
   },
 
-  draw: function() {
+  draw: function draw() {
 
     // Reduce the ticks and rotate the cube
     this.tick -= this.speed;
@@ -2079,7 +2058,7 @@ Renderer.prototype = {
 
     // Otherwise, broadcast an event signifying that the rendering has completed.
     else {
-      this.emit('end');
+      this.emit("end");
     }
   },
 
@@ -2089,63 +2068,55 @@ Renderer.prototype = {
    * @param {Number} y The target y coordinate.
    * @return {Promise} A promise that resolves when the movement animation ends.
    */
-  setMovement: function(x, y) {
+  setMovement: function setMovement(x, y) {
+    var _this = this;
 
     /**
      * Configure a move in one direction and start the render loop.
      * @param {Number} tick The distance to rotate.
      * @param {String} coorProp Which coordinate to rotate on (moveX or moveY).
      */
-    var move = (tick, coorProp) => {
-      this.tick = Math.abs(tick);
-      this[coorProp] = !tick ? 0 : tick < 0 ? -this.speed : this.speed;
-      this._loop();
+    var move = function (tick, coorProp) {
+      _this.tick = Math.abs(tick);
+      _this[coorProp] = !tick ? 0 : tick < 0 ? -_this.speed : _this.speed;
+      _this._loop();
     };
 
     // Return a promise that will resolve when both x and y movements are complete.
-    return new Promise(resolve => {
-      move(x, 'moveX');
-      this.once('end', () => {
-        move(y, 'moveY');
-        this.once('end', resolve);
+    return new Promise(function (resolve) {
+      move(x, "moveX");
+      _this.once("end", function () {
+        move(y, "moveY");
+        _this.once("end", resolve);
       });
     });
   },
 
-  _listenForKeyboard: function() {
+  _listenForKeyboard: function _listenForKeyboard() {
 
-    this.keyboard = new Keyboard([
-      Keyboard.UP,
-      Keyboard.DOWN,
-      Keyboard.LEFT,
-      Keyboard.RIGHT,
-      Keyboard.W,
-      Keyboard.A,
-      Keyboard.S,
-      Keyboard.D
-    ]);
+    this.keyboard = new Keyboard([Keyboard.UP, Keyboard.DOWN, Keyboard.LEFT, Keyboard.RIGHT, Keyboard.W, Keyboard.A, Keyboard.S, Keyboard.D]);
 
     // Listen for keystrokes.
     this.keyboard.listen(window, this._movementListener.bind(this));
   },
 
-  _listenForTouch: function() {
+  _listenForTouch: function _listenForTouch() {
     this.touch = new Touch();
     this.touch.listen(document.body, this._movementListener.bind(this));
   },
 
-  _loop: function() {
+  _loop: function _loop() {
     window.requestAnimationFrame(this.draw.bind(this));
   },
 
-  _movementListener: function() {
+  _movementListener: function _movementListener() {
     if (this.tick <= 0 && this._setMovement()) {
       this._loop();
-      this.emit('start');
+      this.emit("start");
     }
   },
 
-  _setMovement: function() {
+  _setMovement: function _setMovement() {
 
     // reset movex and movey
     this.moveX = this.moveY = 0;
@@ -2153,8 +2124,7 @@ Renderer.prototype = {
     // Set the movement direction depending on the environment.
     if (this.isMobile) {
       this._setTouchMovement();
-    }
-    else {
+    } else {
       this._setKeyboardMovement();
     }
 
@@ -2168,7 +2138,7 @@ Renderer.prototype = {
     return false;
   },
 
-  _setKeyboardMovement: function() {
+  _setKeyboardMovement: function _setKeyboardMovement() {
 
     var KB = Keyboard,
         keys = this.keyboard.keys;
@@ -2176,21 +2146,19 @@ Renderer.prototype = {
     // Detect either up or down movement.
     if (keys[KB.UP] || keys[KB.W]) {
       this.moveX = this.speed;
-    }
-    else if (keys[KB.DOWN] || keys[KB.S]) {
+    } else if (keys[KB.DOWN] || keys[KB.S]) {
       this.moveX = -this.speed;
     }
 
     // Detect either left or right movement.
     if (keys[KB.LEFT] || keys[KB.A]) {
       this.moveY = this.speed;
-    }
-    else if (keys[KB.RIGHT] || keys[KB.D]) {
+    } else if (keys[KB.RIGHT] || keys[KB.D]) {
       this.moveY = -this.speed;
     }
   },
 
-  _setTouchMovement: function() {
+  _setTouchMovement: function _setTouchMovement() {
 
     var movement = this.touch.queue.shift();
 
@@ -2222,20 +2190,18 @@ function Touch() {
 
 Touch.prototype = {
 
-  listen: function(context, callback) {
+  listen: function listen(context, callback) {
 
     var iface = new Hammer(context || document.body),
         queue = this.queue;
 
-    iface
-      .get('swipe')
-      .set({
-        direction: Hammer.DIRECTION_ALL,
-        threshold: 0.1,
-        velocity: 0.1
-      });
+    iface.get("swipe").set({
+      direction: Hammer.DIRECTION_ALL,
+      threshold: 0.1,
+      velocity: 0.1
+    });
 
-    iface.on('swipe', function(evt) {
+    iface.on("swipe", function (evt) {
       queue.push(evt.offsetDirection);
       if (callback) {
         callback();
@@ -2271,15 +2237,15 @@ function Tutorial() {
 
 Tutorial.prototype = {
 
-  next: function() {
+  next: function next() {
     if (!this.isDone()) {
-      this.emit('message', Tutorial.stepMessages[this.step], 'info');
+      this.emit("message", Tutorial.stepMessages[this.step], "info");
       this.step++;
     }
     return this;
   },
 
-  isDone: function() {
+  isDone: function isDone() {
     return this.step >= this.maxStep;
   }
 
@@ -2289,20 +2255,14 @@ Tutorial.prototype = {
 _.assign(Tutorial.prototype, EventEmitter2.prototype);
 
 // List of step messages.
-Tutorial.stepMessages = [
-  'Let\'s play! Click any tile to begin.',
-  'Rotate the cube using the arrow keys or WASD.',
-  'Great! Now, click a tile on an adjacent side.',
-  'Nice! A third tile was selected automatically for you.',
-  'Try to make a line on one side.'
-];
+Tutorial.stepMessages = ["Let's play! Click any tile to begin.", "Rotate the cube using the arrow keys or WASD.", "Great! Now, click a tile on an adjacent side.", "Nice! A third tile was selected automatically for you.", "Try to make a line on one side."];
 
-(function(win) {
+(function (win) {
 
   win.UTIL = {
 
-    listenOnce: function(target, type, callback) {
-      var handler = evt => {
+    listenOnce: function listenOnce(target, type, callback) {
+      var handler = function (evt) {
         target.removeEventListener(type, handler);
         callback(evt);
       };
@@ -2310,51 +2270,45 @@ Tutorial.stepMessages = [
     }
 
   };
+})(window);
 
-}(window));
-
-(function(win) {
+(function (win) {
 
   var STYLE = document.body.style,
+      TRANSFORM = "Transform",
 
-      TRANSFORM = 'Transform',
+  // Prefixes used for things like Transform.
+  STYLE_PREFIXES = ["ms", "O", "Moz", "Webkit"],
 
-      // Prefixes used for things like Transform.
-      STYLE_PREFIXES = ['ms', 'O', 'Moz', 'Webkit'],
+  // Animation end events. Not quite perfect as IE10+
+  // actually uses 'animation' -> 'MSAnimationEnd'
+  // I'll fix this later.
+  // So ridiculous. Can't these be consistent?!
+  // ...
+  // Map format:
+  // 'css-attribute':       [start, iteration, end]
+  ANIMATION_EVENT_MAP = {
+    animation: ["animationstart", "animationiteration", "animationend"],
+    "-o-animation": ["oAnimationStart", "oAnimationIteration", "oAnimationEnd"],
+    "-moz-animation": ["animationstart", "animationiteration", "animationend"],
+    "-webkit-animation": ["webkitAnimationStart", "webkitAnimationIteration", "webkitAnimationEnd"]
+  },
+      msAnimationEnd = "MSAnimationEnd",
+      //TODO
 
-      // Animation end events. Not quite perfect as IE10+
-      // actually uses 'animation' -> 'MSAnimationEnd'
-      // I'll fix this later.
-      // So ridiculous. Can't these be consistent?!
-      // ...
-      // Map format:
-      // 'css-attribute':       [start, iteration, end]
-      ANIMATION_EVENT_MAP = {
-        'animation':            ['animationstart', 'animationiteration', 'animationend'],
-        '-o-animation':         ['oAnimationStart', 'oAnimationIteration', 'oAnimationEnd'],
-        '-moz-animation':       ['animationstart', 'animationiteration', 'animationend'],
-        '-webkit-animation':    ['webkitAnimationStart', 'webkitAnimationIteration', 'webkitAnimationEnd']
-      },
-
-      msAnimationEnd = 'MSAnimationEnd',//TODO
-      
-      len = STYLE_PREFIXES.length,
-
+  len = STYLE_PREFIXES.length,
       stylePrefix,
-
       animationProperty,
-
       eventTypes,
-
       vendor = {
-        JS: {},
-        CSS: {},
-        EVENT: {}
-      };
+    JS: {},
+    CSS: {},
+    EVENT: {}
+  };
 
   // First, let's determine the style prefix.
   while (len--) {
-    if ((STYLE_PREFIXES[len] + TRANSFORM) in STYLE) {
+    if (STYLE_PREFIXES[len] + TRANSFORM in STYLE) {
       stylePrefix = STYLE_PREFIXES[len];
       break;
     }
@@ -2367,11 +2321,11 @@ Tutorial.stepMessages = [
 
   // Next, let's set some properties using the prefix.
   vendor.JS.transform = stylePrefix + TRANSFORM;
-  vendor.CSS.transform = stylePrefix ? '-' + stylePrefix.toLowerCase() + '-transform' : 'transform';
+  vendor.CSS.transform = stylePrefix ? "-" + stylePrefix.toLowerCase() + "-transform" : "transform";
 
   // Now, let's determine the event end name. So messed up.
   for (animationProperty in ANIMATION_EVENT_MAP) {
-    if (typeof STYLE[animationProperty] !== 'undefined') {
+    if (typeof STYLE[animationProperty] !== "undefined") {
       eventTypes = ANIMATION_EVENT_MAP[animationProperty];
       vendor.EVENT.animationStart = eventTypes[0];
       vendor.EVENT.animationIteration = eventTypes[1];
@@ -2381,9 +2335,10 @@ Tutorial.stepMessages = [
   }
 
   // Normalize requestAnimationFrame for cross-browser compatibility.
-  win.requestAnimationFrame = win.requestAnimationFrame || win.mozRequestAnimationFrame || win.webkitRequestAnimationFrame || win.msRequestAnimationFrame;    
+  win.requestAnimationFrame = win.requestAnimationFrame || win.mozRequestAnimationFrame || win.webkitRequestAnimationFrame || win.msRequestAnimationFrame;
 
   // Set the global Vendor variable.
   win.Vendor = vendor;
-
-}(window));
+})(window);
+// right
+//# sourceMappingURL=main.js.map

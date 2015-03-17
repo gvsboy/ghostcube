@@ -60,6 +60,17 @@ module.exports = function(grunt) {
           ]
         }
       }
+    },
+
+    babel: {
+      options: {
+        sourceMap: true
+      },
+      dist: {
+        files: {
+          'dist/js/main.js': 'dist/js/main.js'
+        }
+      }
     }
 
   });
@@ -70,11 +81,13 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-jasmine');
   grunt.loadNpmTasks('grunt-bower-concat');
+  grunt.loadNpmTasks('grunt-babel');
 
   grunt.registerTask('default', [
     'clean',
     'sass',
     'concat',
+    'babel',
     'bower_concat'
   ]);
 
