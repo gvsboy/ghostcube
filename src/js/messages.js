@@ -92,5 +92,6 @@ Messages.LIST = {
   targetClaimed: 'The attack target is already claimed by you!',
   sameSide: 'Same side! Choose a tile on a different side.',
   notNeighbor: 'Not a neighboring side! Choose a tile different side.',
+  stalemate: 'Stalemate!',
   newGame: 'Click anywhere to begin a new game.'
 };

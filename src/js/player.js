@@ -107,6 +107,11 @@ Player.prototype = {
         // Get a reference to the first tile selected.
         initialTile = _.first(selectedTiles);
 
+    // If a tile wasn't passed, exit immediately.
+    if (!tile) {
+      return;
+    }
+
     // If the tile is already claimed, get outta dodge.
     if (tile.claimedBy) {
       throw new SelectTileError(SelectTileError.CLAIMED);

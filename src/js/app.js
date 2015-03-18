@@ -89,6 +89,7 @@ App.prototype = {
         .on('player:initialSelected', _.bind(this.showCrosshairs, this))
         .on('player:initialDeselected', _.bind(this.hideCrosshairs, this))
         .on('player:claim', _.bind(this._endTurn, this))
+        .on('player:noMoves', _.bind(this._stalemate, this))
     }, this);
 
     this.tutorial.next().next();
@@ -198,17 +199,13 @@ App.prototype = {
 
       // Display message with modifier.
       modifier = winBy > 1 ? ' x' + winBy + '!' : '!';
-      this.messages.add(this.currentPlayer.name + ' wins' + modifier, 'alert persist');
+      this.messages.add(`${this.currentPlayer.name} wins${modifier}`, 'alert persist');
 
       // Show the winning lines.
       _.invoke(lines, 'pulsate');
 
-      // After a brief pause, alert the user that clicking anywhere will restart the game.
-      // Set a listener to do just that.
-      setTimeout(() => {
-        this.messages.add('newGame', 'persist');
-        UTIL.listenOnce(document, 'click', _.bind(this._resetGameState, this));
-      }, 2000);
+      // Alert the user on how to start a new game.
+      this._waitAndListenForReset();
 
       // Yes, the game has ended.
       return true;
@@ -218,6 +215,32 @@ App.prototype = {
     return false;
   },
 
+  /**
+   * Reveal messages regarding the stalemate and begin listening to
+   * start a new game.
+   */
+  _stalemate: function() {
+    this.messages
+      .add('stalemate', 'alert persist')
+      .add(`${this.currentPlayer.name} has no valid moves.`, 'persist');
+    this._waitAndListenForReset();
+  },
+
+  /**
+   * After a brief pause, alerts the user about how to start a new game
+   * and sets a listener.
+   */
+  _waitAndListenForReset: function() {
+    setTimeout(() => {
+      this.messages.add('newGame', 'persist');
+      UTIL.listenOnce(document, 'click', _.bind(this._resetGameState, this));
+    }, 2000);
+  },
+
+  /**
+   * Removes all claimed tiles from each player and destroys all messages.
+   * Sets the current player to the first player in the array.
+   */
   _resetGameState: function() {
     _.forEach(this.players, player => player.releaseAll());
     this.messages.removeAll();

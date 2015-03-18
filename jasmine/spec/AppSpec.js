@@ -5,6 +5,7 @@ describe('App', function() {
   beforeEach(function() {
     app = new App('container');
     spyOn(app, '_handleClick');
+    spyOn(app, '_stalemate');
     app.cube.build();
     app.initializeGame();
   });
@@ -24,6 +25,24 @@ describe('App', function() {
       app._resetGameState();
       app.cube.el.click();
       expect(app._handleClick).toHaveBeenCalled();
+    });
+
+  });
+
+  describe('_stalemate()', function() {
+
+    it('should be invoked if the bot has no valid moves', function() {
+
+      var bot = app.players[1],
+          tiles = getAllTilesForSides(app.cube, 'top', 'bottom', 'left', 'right', 'front');
+
+      _.forEach(tiles, function(tile) {
+        bot.claim(tile);
+      });
+
+      bot.play();
+
+      expect(app._stalemate).toHaveBeenCalled();
     });
 
   });

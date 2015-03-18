@@ -31,6 +31,19 @@ function getTiles(cube) {
 }
 
 /**
+ * Fetches all tiles from the provided sides. E.g. 'right'
+ * @param  {Cube} cube The cube to fetch tiles from.
+ * @return {...String} Any number of strings representing sides.
+ * @return {Array} A collection of fetched tiles.
+ */
+function getAllTilesForSides(cube) {
+  var sides = cube.getSides();
+  return _.flatten(_.map(_.rest(arguments), function(string) {
+    return sides[string].getTiles();
+  }));
+}
+
+/**
  * Like getTiles() but only fetches a single tile.
  * @param  {Cube} cube The cube to fetch tiles from.
  * @param  {String} string A string representing a tile.
