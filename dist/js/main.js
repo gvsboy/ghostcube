@@ -86,7 +86,7 @@ App.prototype = {
 
     // Not really into this but sure for now.
     _.forEach(this.players, function (player) {
-      player.on("player:initialSelected", _.bind(this.showCrosshairs, this)).on("player:initialDeselected", _.bind(this.hideCrosshairs, this)).on("player:claim", _.bind(this._endTurn, this)).on("player:noMoves", _.bind(this._stalemate, this));
+      player.on("player:initialSelected", _.bind(this.showCrosshairs, this)).on("player:initialDeselected", _.bind(this.hideCrosshairs, this)).on("player:claim", _.bind(this._endTurn, this)).on("player:stalemate", _.bind(this._stalemate, this));
     }, this);
 
     this.tutorial.next().next();
@@ -331,7 +331,7 @@ Bot.prototype = {
         - Claiming the missing tile?
      */
 
-    this._selectWin() || this._selectOpponentBlocker() || this._selectSingles() || this._selectOpponentSingles() || this._selectLastResort();
+    this._selectWin() || this._selectOpponentBlocker() || this._selectSingles() || this._selectOpponentSingles() || this._selectLastResort() || this.emit("player:stalemate", this._selectedTiles);
   },
 
   _selectWin: function _selectWin() {
@@ -438,6 +438,8 @@ Bot.prototype = {
     return false;
   },
 
+  // This is similar to 'isStalemate' and consideration should be given
+  // for consolidation.
   _selectLastResort: function _selectLastResort() {
 
     var self = this;
@@ -524,18 +526,6 @@ Bot.prototype = {
     }, this), Bot.THINKING_SPEED);
   },
 
-  _tryTiles: function _tryTiles(tile1, tile2) {
-    try {
-      this.selectTile(tile1, tile2);
-      return true;
-    } catch (e) {
-      if (!(e instanceof SelectTileError)) {
-        throw e;
-      }
-    }
-    return false;
-  },
-
   _report: function _report() {
     var info = _.reduce(this._triedTiles, function (all, tile) {
       all.push(tile.toString ? tile.toString() : tile);
@@ -549,11 +539,16 @@ Bot.prototype = {
   },
 
   _log: function _log() {
+
     var text = _.reduce(arguments, function (lines, data) {
       lines.push(!_.isEmpty(data) ? data.toString() : "NONE");
       return lines;
     }, []).join(" ");
-    console.log(text);
+
+    // Immediately output the message in the console.
+    //console.log(text);
+
+    // Append the text to the master log.
     this._logText += text + "\n";
   }
 
@@ -1248,8 +1243,8 @@ Tile.prototype = {
     }, Math.random() * 2000);
 
     // debug
-    //var idData = id.split('-');
-    //el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
+    var idData = id.split("-");
+    el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
 
     return el;
   },
@@ -1854,6 +1849,81 @@ Player.prototype = {
   deselectTile: function deselectTile(tile) {
     _.pull(this._selectedTiles, tile);
     this.emit("player:initialDeselected", tile);
+  },
+
+  /**
+   * THIS METHOD NEEDS WORK!!!!!!!!!!!!!
+   * !!!!!!!!!
+   * Checks to see if the game is in a stalemate state.
+   * @return {Boolean} Is the game a stalemate?
+   */
+  isStalemate: function isStalemate() {
+    var _this = this;
+
+    /**
+     * Given a starting tile, attempt to match two more: a secondary tile
+     * and the attack tile.
+     * @param  {Tile} tile The starting tile to test.
+     * @return {Boolean} Was a successful match made?
+     */
+    var attempt = function (tile) {
+
+      var testTile;
+
+      for (var t = 0, len = tiles.length; t < len; t++) {
+        testTile = tiles[t];
+        var attackTile = _this.getAttackTile(tile, testTile);
+        if (attackTile && _this._tryTiles(testTile, attackTile)) {
+          return true;
+        }
+      }
+      return false;
+    },
+
+    // An array of all the available tiles for this player.
+    tiles = this._cubeCache._cube.getAvailableTiles();
+
+    // Run through all the tiles and try to find a match.
+    for (var e = 0, len = tiles.length; e < len; e++) {
+
+      // Reset _selectedTiles for a new starting point.
+      this._selectedTiles = [];
+
+      // If the new tile is valid, attempt to find two more.
+      if (this._tryTiles(tiles[e])) {
+
+        // If a successful selection attempt was made, reset the
+        // _selectedTiles array and return false (not a stalemate).
+        if (attempt(tiles[e])) {
+          this._selectedTiles = [];
+          return false;
+        }
+      }
+    }
+
+    // If all the tiles were looped over and we made it this far,
+    // the game is a stalemate.
+    return true;
+  },
+
+  /**
+   * A wrapper around selectTile that swallows SelecTileErrors to
+   * prevent the UI from reacting to them. Useful for programmatically
+   * determining moves.
+   * @param  {Tile} tile1 A tile to attempt.
+   * @param  {Tile} tile2 A second tile to attempt.
+   * @return {Boolean} Can the provided tiles be selected?
+   */
+  _tryTiles: function _tryTiles(tile1, tile2) {
+    try {
+      this.selectTile(tile1, tile2);
+      return true;
+    } catch (e) {
+      if (!(e instanceof SelectTileError)) {
+        throw e;
+      }
+    }
+    return false;
   },
 
   _createAttackData: function _createAttackData(tile) {

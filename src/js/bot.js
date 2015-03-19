@@ -35,7 +35,8 @@ Bot.prototype = {
     this._selectOpponentBlocker() ||
     this._selectSingles() ||
     this._selectOpponentSingles() ||
-    this._selectLastResort();
+    this._selectLastResort() ||
+    this.emit('player:stalemate', this._selectedTiles);
   },
 
   _selectWin: function() {
@@ -144,6 +145,8 @@ Bot.prototype = {
     return false;
   },
 
+  // This is similar to 'isStalemate' and consideration should be given
+  // for consolidation.
   _selectLastResort: function() {
 
     var self = this;
@@ -230,19 +233,6 @@ Bot.prototype = {
     }, this), Bot.THINKING_SPEED);
   },
 
-  _tryTiles: function(tile1, tile2) {
-    try {
-      this.selectTile(tile1, tile2);
-      return true;
-    }
-    catch (e) {
-      if (!(e instanceof SelectTileError)) {
-        throw e;
-      }
-    }
-    return false;
-  },
-
   _report: function() {
     var info = _.reduce(this._triedTiles, function(all, tile) {
       all.push(tile.toString ? tile.toString() : tile);
@@ -256,11 +246,16 @@ Bot.prototype = {
   },
 
   _log: function() {
+
     var text = _.reduce(arguments, function(lines, data) {
       lines.push(!_.isEmpty(data) ? data.toString() : 'NONE');
       return lines;
     }, []).join(' ');
-    console.log(text);
+
+    // Immediately output the message in the console.
+    //console.log(text);
+
+    // Append the text to the master log.
     this._logText += text + '\n';
   }
 

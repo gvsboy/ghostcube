@@ -89,7 +89,7 @@ App.prototype = {
         .on('player:initialSelected', _.bind(this.showCrosshairs, this))
         .on('player:initialDeselected', _.bind(this.hideCrosshairs, this))
         .on('player:claim', _.bind(this._endTurn, this))
-        .on('player:noMoves', _.bind(this._stalemate, this))
+        .on('player:stalemate', _.bind(this._stalemate, this))
     }, this);
 
     this.tutorial.next().next();

@@ -45,6 +45,18 @@ describe('App', function() {
       expect(app._stalemate).toHaveBeenCalled();
     });
 
+    xit('should be invoked if the player has no valid moves', function() {
+
+      var player = app.players[0],
+          tiles = getAllTilesForSides(app.cube, 'top', 'bottom', 'left', 'right', 'front');
+
+       _.forEach(tiles, function(tile) {
+          player.claim(tile);
+        });
+
+       expect(app._stalemate).toHaveBeenCalled();
+    });
+
   });
 
   describe('_handleClick()', function() {
