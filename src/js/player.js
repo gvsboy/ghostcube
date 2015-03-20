@@ -101,11 +101,8 @@ Player.prototype = {
    */
   selectTile: function(tile, attackTile) {
 
-    // Get a reference to all the selected tiles.
-    var selectedTiles = this._selectedTiles,
-
-        // Get a reference to the first tile selected.
-        initialTile = _.first(selectedTiles);
+    // Get a reference to the first tile selected.
+    var initialTile = _.first(this._selectedTiles);
 
     // If a tile wasn't passed, exit immediately.
     if (!tile) {
