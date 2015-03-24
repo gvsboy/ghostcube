@@ -2454,6 +2454,16 @@ var TileSelectorResult = (function () {
 
   _createClass(TileSelectorResult, {
     success: {
+
+      /**
+       * One of the chainable callbacks, success will either return a boolean
+       * describing the success state or itself if a callback is provided.
+       * The callback will be invoked if the success state is true.
+       * @param  {Function} callback A method to invoke if the success state is true,
+       *                             passing the _data value.
+       * @return {TileSelectorResult} Returns itself for chaining.
+       */
+
       value: function success(callback) {
         if (!callback) {
           return this._success;
@@ -2465,6 +2475,16 @@ var TileSelectorResult = (function () {
       }
     },
     failure: {
+
+      /**
+       * The other chainable callback, failure will either return a boolean
+       * describing the success state or itself if a callback is provided.
+       * The callback will be invoked if the success state is false.
+       * @param  {Function} callback A method to invoke if the success state is false,
+       *                             passing the _data value.
+       * @return {TileSelectorResult} Returns itself for chaining.
+       */
+
       value: function failure(callback) {
         if (!callback) {
           return !this._success;
@@ -2477,11 +2497,27 @@ var TileSelectorResult = (function () {
     }
   }, {
     success: {
+
+      /**
+       * The recommended method for creating a new successful TileSelectorResult.
+       * @param  {Object} data A map describing the success state.
+       * @return {TileSelectorResult} A new successful TileSelectorResult.
+       * @static
+       */
+
       value: function success(data) {
         return new TileSelectorResult(true, data);
       }
     },
     failure: {
+
+      /**
+       * The recommended method for creating a new failed TileSelectorResult.
+       * @param  {String} code The failure code.
+       * @return {TileSelectorResult} A new failed TileSelectorResult.
+       * @static
+       */
+
       value: function failure(code) {
         return new TileSelectorResult(false, code);
       }
@@ -2491,6 +2527,7 @@ var TileSelectorResult = (function () {
   return TileSelectorResult;
 })();
 
+// Failure codes.
 TileSelector.FAILURE_CLAIMED = "claimed";
 TileSelector.FAILURE_NOT_NEIGHBOR = "notNeighbor";
 TileSelector.FAILURE_CANNOT_ATTACK = "cannotAttack";

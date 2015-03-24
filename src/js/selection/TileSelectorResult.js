@@ -34,6 +34,14 @@ class TileSelectorResult {
     this._data = data;
   }
 
+  /**
+   * One of the chainable callbacks, success will either return a boolean
+   * describing the success state or itself if a callback is provided.
+   * The callback will be invoked if the success state is true.
+   * @param  {Function} callback A method to invoke if the success state is true,
+   *                             passing the _data value.
+   * @return {TileSelectorResult} Returns itself for chaining.
+   */
   success(callback) {
     if (!callback) {
       return this._success;
@@ -44,6 +52,14 @@ class TileSelectorResult {
     return this;
   }
 
+  /**
+   * The other chainable callback, failure will either return a boolean
+   * describing the success state or itself if a callback is provided.
+   * The callback will be invoked if the success state is false.
+   * @param  {Function} callback A method to invoke if the success state is false,
+   *                             passing the _data value.
+   * @return {TileSelectorResult} Returns itself for chaining.
+   */
   failure(callback) {
     if (!callback) {
       return !this._success;
@@ -54,16 +70,29 @@ class TileSelectorResult {
     return this;
   }
 
+  /**
+   * The recommended method for creating a new successful TileSelectorResult.
+   * @param  {Object} data A map describing the success state.
+   * @return {TileSelectorResult} A new successful TileSelectorResult.
+   * @static
+   */
   static success(data) {
     return new TileSelectorResult(true, data);
   }
 
+  /**
+   * The recommended method for creating a new failed TileSelectorResult.
+   * @param  {String} code The failure code.
+   * @return {TileSelectorResult} A new failed TileSelectorResult.
+   * @static
+   */
   static failure(code) {
     return new TileSelectorResult(false, code);
   }
 
 }
 
+// Failure codes.
 TileSelector.FAILURE_CLAIMED = 'claimed';
 TileSelector.FAILURE_NOT_NEIGHBOR = 'notNeighbor';
 TileSelector.FAILURE_CANNOT_ATTACK = 'cannotAttack';
