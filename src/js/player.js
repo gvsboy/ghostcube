@@ -166,78 +166,48 @@ Player.prototype = {
 
 
   /**
-   * THIS METHOD NEEDS WORK!!!!!!!!!!!!!
-   * !!!!!!!!!
-   * Checks to see if the game is in a stalemate state.
-   * @return {Boolean} Is the game a stalemate?
+   * Checks to see if the player has at least one valid move.
+   * @return {Boolean} Does a valid move exist?
    */
-  isStalemate: function() {
+  hasValidMoves: function() {
 
     /**
      * Given a starting tile, attempt to match two more: a secondary tile
      * and the attack tile.
-     * @param  {Tile} tile The starting tile to test.
+     * @param  {Tile} initial The starting tile to test.
      * @return {Boolean} Was a successful match made?
      */
-    var attempt = tile => {
+    var attempt = initial => {
 
-      var testTile;
+        // Loop through the tiles until two more selections are valid.
+        // If no matches are found, the attempt fails and returns false.
+        return _.some(tiles, function(tile) {
 
-      for (var t = 0, len = tiles.length; t < len; t++) {
-        testTile = tiles[t];
-        var attackTile = this.getAttackTile(tile, testTile);
-        if (attackTile && this._tryTiles(testTile, attackTile)) {
-          return true;
-        }
-      }
-      return false;
-    },
+          // Get the attack tile from the initial and tile intersection.
+          var attackTile = this.getAttackTile(initial, tile);
 
-    // An array of all the available tiles for this player.
-    tiles = this._cubeCache._cube.getAvailableTiles();
+          // If the attack tile and loop tile are valid, we're good!
+          return attackTile && selector.validate(tile, attackTile).success();
+        }, this);
+      },
+
+      // An array of all the available tiles for this player.
+      tiles = this._cubeCache._cube.getAvailableTiles(),
+
+      // A fresh TileSelector for making this discovery.
+      selector = new TileSelector(this);
 
     // Run through all the tiles and try to find a match.
-    for (var e = 0, len = tiles.length; e < len; e++) {
+    // If no match is found, false is returned.
+    return _.some(tiles, function(tile) {
 
-      // Reset _selectedTiles for a new starting point.
-      this._selectedTiles = [];
+      // Reset the selector for a new starting point.
+      selector.reset();
 
-      // If the new tile is valid, attempt to find two more.
-      if (this._tryTiles(tiles[e])) {
-
-        // If a successful selection attempt was made, reset the
-        // _selectedTiles array and return false (not a stalemate).
-        if (attempt(tiles[e])) {
-          this._selectedTiles = [];
-          return false;
-        }
-      }
-    }
-
-    // If all the tiles were looped over and we made it this far,
-    // the game is a stalemate.
-    return true;
-  },
-
-  /**
-   * A wrapper around selectTile that swallows SelecTileErrors to
-   * prevent the UI from reacting to them. Useful for programmatically
-   * determining moves.
-   * @param  {Tile} tile1 A tile to attempt.
-   * @param  {Tile} tile2 A second tile to attempt.
-   * @return {Boolean} Can the provided tiles be selected?
-   */
-  _tryTiles: function(tile1, tile2) {
-    try {
-      this.selectTile(tile1, tile2);
-      return true;
-    }
-    catch (e) {
-      if (!(e instanceof SelectTileError)) {
-        throw e;
-      }
-    }
-    return false;
+      // If the new tile is valid and the attempt to find two more succeeds,
+      // there is at least one valid move and true will be returned.
+      return selector.validate(tile).success() && attempt(tile);
+    });
   },
 
   _createAttackData: function(tile) {

@@ -19,12 +19,12 @@ class TileSelector {
 
     // If a tile wasn't passed, exit immediately.
     if (!tile) {
-      return Promise.reject();
+      return TileSelectorResult.failure();
     }
 
     // If the tile is already claimed, get outta dodge.
     if (tile.claimedBy) {
-      return Promise.reject(TileSelector.REJECT_CLAIMED);
+      return TileSelectorResult.failure(TileSelectorResult.FAILURE_CLAIMED);
     }
 
     // If an initial tile exists, run some tests.
@@ -32,20 +32,20 @@ class TileSelector {
 
       // If the initial tile is selected, deselected it and bail out.
       if (tile === initial) {
-        return Promise.resolve(
-          this.deselect(tile)
+        return TileSelectorResult.success(
+          this._deselect(tile)
         );
       }
 
       // If the new selected tile is on the same side as the
       // initial tile, deselect the initial tile.
       if (tile.side === initial.side) {
-        resolveData = this.deselect(initial);
+        resolveData = this._deselect(initial);
       }
 
       // Else, if the side selected is not a neighbor, bail out.
       else if (!initial.isNeighboringSide(tile)) {
-        return Promise.reject(TileSelector.REJECT_NOT_NEIGHBOR);
+        return TileSelectorResult.failure(TileSelectorResult.FAILURE_NOT_NEIGHBOR);
       }
     }
 
@@ -55,25 +55,25 @@ class TileSelector {
       // If the attack tile is valid, that means both tiles can be selected
       // and everything can be claimed. Exit true as we're done selecting tiles.
       if (this._player.canAttack(attackTile)) {
-        return Promise.resolve(
+        return TileSelectorResult.success(
           _.merge(resolveData, this._select(tile, attackTile))
         );
       }
       else {
-        return Promise.reject(TileSelector.REJECT_CANNOT_ATTACK);
+        return TileSelectorResult.failure(TileSelectorResult.FAILURE_CANNOT_ATTACK);
       }
     }
 
     // Otherwise, the initial tile must have been selected. Pass the resolve data
     // along in case a tile was deselected first (as in the side === side case).
     else {
-      return Promise.resolve(
+      return TileSelectorResult.success(
         _.merge(resolveData, this._select(tile))
       );
     }
 
     // We'll probably never make it this far but let's return a promise just in case.
-    return Promise.reject();
+    return TileSelectorResult.failure();
   }
 
   _select() {
@@ -100,8 +100,3 @@ class TileSelector {
   }
 
 }
-
-TileSelector.REJECT_CLAIMED = 'claimed';
-TileSelector.REJECT_NOT_NEIGHBOR = 'notNeighbor';
-TileSelector.REJECT_CANNOT_ATTACK = 'cannotAttack';
-TileSelector.RESOLVE_DESELECT = 'deselect';

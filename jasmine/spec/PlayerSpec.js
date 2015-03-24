@@ -11,13 +11,13 @@ describe('Player', function() {
     expect(Player).toBeDefined();
   });
 
-  describe('isStalemate()', function() {
+  describe('hasValidMoves()', function() {
 
-    it('returns false if there are available tiles to select', function() {
-      expect(this.player.isStalemate()).not.toBeTruthy();
+    it('returns true if there are available tiles to select', function() {
+      expect(this.player.hasValidMoves()).toBeTruthy();
     });
 
-    it('returns true if there are no valid matches', function() {
+    it('returns false if there are no valid matches', function() {
 
       var player = this.player,
           tiles = getAllTilesForSides(this.app.cube, 'top', 'bottom', 'left', 'right', 'front');
@@ -26,10 +26,10 @@ describe('Player', function() {
         player.claim(tile);
       });
 
-      expect(player.isStalemate()).toBeTruthy();
+      expect(player.hasValidMoves()).not.toBeTruthy();
     });
 
-    it('returns false if there is only one valid match', function() {
+    it('returns true if there is only one valid match', function() {
 
       var player = this.player,
           cube = this.app.cube,
@@ -43,7 +43,7 @@ describe('Player', function() {
       player.release(getTile(cube, 'top 4'));
       player.release(getTile(cube, 'right 4'));
 
-      expect(player.isStalemate()).not.toBeTruthy();
+      expect(player.hasValidMoves()).toBeTruthy();
     });
   });
 

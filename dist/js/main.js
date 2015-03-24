@@ -4,118 +4,6 @@ var _createClass = (function () { function defineProperties(target, props) { for
 
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
-var TileSelector = (function () {
-  function TileSelector(player) {
-    _classCallCheck(this, TileSelector);
-
-    this._player = player;
-    this.reset();
-  }
-
-  _createClass(TileSelector, {
-    reset: {
-      value: function reset() {
-        this._selected = [];
-      }
-    },
-    validate: {
-      value: function validate(tile, attackTile) {
-
-        // Get a reference to the first tile selected.
-        var initial = _.first(this._selected),
-
-        // A package of data sent in resolved promises.
-        resolveData = {};
-
-        // If a tile wasn't passed, exit immediately.
-        if (!tile) {
-          return Promise.reject();
-        }
-
-        // If the tile is already claimed, get outta dodge.
-        if (tile.claimedBy) {
-          return Promise.reject(TileSelector.REJECT_CLAIMED);
-        }
-
-        // If an initial tile exists, run some tests.
-        if (initial) {
-
-          // If the initial tile is selected, deselected it and bail out.
-          if (tile === initial) {
-            return Promise.resolve(this.deselect(tile));
-          }
-
-          // If the new selected tile is on the same side as the
-          // initial tile, deselect the initial tile.
-          if (tile.side === initial.side) {
-            resolveData = this.deselect(initial);
-          }
-
-          // Else, if the side selected is not a neighbor, bail out.
-          else if (!initial.isNeighboringSide(tile)) {
-            return Promise.reject(TileSelector.REJECT_NOT_NEIGHBOR);
-          }
-        }
-
-        // If the attack tile exists, run even more tests.
-        if (attackTile) {
-
-          // If the attack tile is valid, that means both tiles can be selected
-          // and everything can be claimed. Exit true as we're done selecting tiles.
-          if (this._player.canAttack(attackTile)) {
-            return Promise.resolve(_.merge(resolveData, this._select(tile, attackTile)));
-          } else {
-            return Promise.reject(TileSelector.REJECT_CANNOT_ATTACK);
-          }
-        }
-
-        // Otherwise, the initial tile must have been selected. Pass the resolve data
-        // along in case a tile was deselected first (as in the side === side case).
-        else {
-          return Promise.resolve(_.merge(resolveData, this._select(tile)));
-        }
-
-        // We'll probably never make it this far but let's return a promise just in case.
-        return Promise.reject();
-      }
-    },
-    _select: {
-      value: function _select() {
-        var tiles = _.toArray(arguments);
-        Array.prototype.push.apply(this._selected, tiles);
-        return {
-          select: tiles,
-          length: this._selected.length
-        };
-      }
-    },
-    _deselect: {
-
-      /**
-       * Removes a tile from the _selected array and returns a command object
-       * describing the action. This object will eventually be passed to a
-       * Promise returned from validate().
-       * @param  {Tile} tile The tile to remove.
-       * @return {Object} A command object describing the action.
-       */
-
-      value: function _deselect(tile) {
-        _.pull(this._selected, tile);
-        return {
-          deselect: [tile]
-        };
-      }
-    }
-  });
-
-  return TileSelector;
-})();
-
-TileSelector.REJECT_CLAIMED = "claimed";
-TileSelector.REJECT_NOT_NEIGHBOR = "notNeighbor";
-TileSelector.REJECT_CANNOT_ATTACK = "cannotAttack";
-TileSelector.RESOLVE_DESELECT = "deselect";
-
 function App(containerId) {
 
   // The site container which houses the cube and intro text.
@@ -611,6 +499,26 @@ Bot.prototype = {
     return _.find(lineTiles, function (ti) {
       return this._tryTiles(ti);
     }, this);
+  },
+
+  /**
+   * A wrapper around selectTile that swallows SelecTileErrors to
+   * prevent the UI from reacting to them. Useful for programmatically
+   * determining moves.
+   * @param  {Tile} tile1 A tile to attempt.
+   * @param  {Tile} tile2 A second tile to attempt.
+   * @return {Boolean} Can the provided tiles be selected?
+   */
+  _tryTiles: function _tryTiles(tile1, tile2) {
+    try {
+      this.selectTile(tile1, tile2);
+      return true;
+    } catch (e) {
+      if (!(e instanceof SelectTileError)) {
+        throw e;
+      }
+    }
+    return false;
   },
 
   _selectTiles: function _selectTiles() {
@@ -1489,203 +1397,6 @@ Tile.translationMap = (function () {
   };
 })();
 
-function CubeCache(cube) {
-
-  // A reference to the cube.
-  this._cube = cube;
-
-  // The size to check completed lines against.
-  this._cubeSize = cube.size;
-
-  // Create cache objects to hold claimed tiles.
-  this.initialize();
-}
-
-CubeCache.prototype = {
-
-  /**
-   * Called on instantiation and reset, this initialize a fresh cache
-   * in two collecitons: An object keyed by cube side id to contain lines
-   * and an array to contain single tiles.
-   */
-  initialize: function initialize() {
-
-    // A collection of lines created by side.
-    this._lineMap = _.reduce(this._cube.getSides(), function (sides, side, id) {
-      sides[id] = [];
-      return sides;
-    }, {});
-
-    // A collection of claimed tiles that are not part of lines.
-    this._singles = [];
-  },
-
-  add: function add(tile) {
-
-    var claimedBy = tile.claimedBy,
-        xPartial = this._getPartialLineTiles(tile.xLine, claimedBy),
-        yPartial = this._getPartialLineTiles(tile.yLine, claimedBy),
-        xGrow = this._growLine(xPartial),
-        yGrow = this._growLine(yPartial);
-
-    // If a line was grown or created from this tile, ensure it's removed from
-    // the singles collection.
-    if (xGrow || yGrow) {
-      this._singles = _.difference(this._singles, tile.getAllLineTiles());
-    }
-
-    // Else, add the tile to the singles collection.
-    else {
-      this._singles.push(tile);
-    }
-  },
-
-  remove: function remove(tile) {
-
-    var claimedBy = tile.claimedBy,
-        xPartial = this._getPartialLineTiles(tile.xLine, claimedBy),
-        yPartial = this._getPartialLineTiles(tile.yLine, claimedBy),
-        xShrink,
-        yShrink;
-
-    _.pull(xPartial, tile);
-    _.pull(yPartial, tile);
-
-    xShrink = this._shrinkLine(xPartial, true);
-    yShrink = this._shrinkLine(yPartial, false);
-
-    // If there's some shrinkage, update the singles collection accordingly.
-    if (xShrink || yShrink) {
-
-      // We need to make sure that the tiles gathered in the partial are
-      // not part of another line. If they are, don't add them as singles.
-      if (xShrink && !this._composesLines(xPartial)) {
-        this._singles = _.union(this._singles, xPartial);
-      }
-      if (yShrink && !this._composesLines(yPartial)) {
-        this._singles = _.union(this._singles, yPartial);
-      }
-    }
-
-    // Otherwise, safely remove the tile from the singles collection
-    // if it exists in there.
-    else {
-      _.pull(this._singles, tile);
-    }
-  },
-
-  /**
-   * Retrieves all the lines, sorted by the number of tiles contained
-   * in each line.
-   * @return {Array} A collection of lines.
-   */
-  getLines: function getLines() {
-    return this._getLinesAsChain().sortBy(function (line) {
-      return line._tiles.length;
-    }).value();
-  },
-
-  /**
-   * Retrieves all cached tiles.
-   * @return {Array} A colleciton of all the cached tiles.
-   */
-  getAllTiles: function getAllTiles() {
-    return this._getLinesAsChain().map(function (line) {
-      return line.getTiles();
-    }).flatten().uniq().concat(this._singles).value();
-  },
-
-  /**
-   * Fetches a chain-wrapped collection of cached lines, flattened and
-   * compacted into one array.
-   * @return {lodash} A lodash chain-wrapped collection.
-   */
-  _getLinesAsChain: function _getLinesAsChain() {
-    return _.chain(this._lineMap).values().flatten().compact();
-  },
-
-  _getPartialLineTiles: function _getPartialLineTiles(line, claimedBy) {
-    return _.filter(line.getTiles(), function (tile) {
-      return tile.claimedBy === claimedBy;
-    });
-  },
-
-  _growLine: function _growLine(tiles) {
-
-    var side, line;
-
-    if (tiles.length > 1) {
-
-      side = this._lineMap[_.first(tiles).side.id];
-      line = _.find(side, function (ln) {
-        return ln.some(tiles);
-      });
-
-      // If a line exists already, update it with the new tiles.
-      if (line) {
-        line.update(tiles);
-      }
-
-      // Otherwise, create a new line with the given tiles.
-      else {
-        side.push(new Line(tiles));
-      }
-
-      // A line was created or updated.
-      return true;
-    }
-
-    // A line was not created.
-    return false;
-  },
-
-  /**
-   * Shrinks a line.
-   * @param  {Array} tiles The tiles used in the shrinkage
-   * @return {Boolean} Was a line disassebled?
-   */
-  _shrinkLine: function _shrinkLine(tiles, isHorizontal) {
-
-    var side, line;
-
-    if (tiles.length) {
-
-      side = this._lineMap[_.first(tiles).side.id];
-      line = _.find(side, function (ln) {
-        return ln.isHorizontal() === isHorizontal && ln.all(tiles);
-      });
-
-      // Line should exist but just in case...
-      if (line) {
-
-        // If there's only one tile, it's not a line. Pull it.
-        if (tiles.length === 1) {
-          _.pull(side, line);
-
-          // A line was disassembled. Return true.
-          return true;
-        }
-
-        // Otherwise, update the line with the remaining tiles.
-        else {
-          line.update(tiles);
-        }
-      }
-    }
-
-    // A line was not disassembled.
-    return false;
-  },
-
-  _composesLines: function _composesLines(tiles) {
-    var side = this._lineMap[_.first(tiles).side.id];
-    return _.find(side, function (line) {
-      return line.all(tiles);
-    });
-  }
-
-};
-
 function SelectTileError(message) {
   this.name = "SelectTileError";
   this.message = message;
@@ -1965,78 +1676,49 @@ Player.prototype = {
   },
 
   /**
-   * THIS METHOD NEEDS WORK!!!!!!!!!!!!!
-   * !!!!!!!!!
-   * Checks to see if the game is in a stalemate state.
-   * @return {Boolean} Is the game a stalemate?
+   * Checks to see if the player has at least one valid move.
+   * @return {Boolean} Does a valid move exist?
    */
-  isStalemate: function isStalemate() {
+  hasValidMoves: function hasValidMoves() {
     var _this = this;
 
     /**
      * Given a starting tile, attempt to match two more: a secondary tile
      * and the attack tile.
-     * @param  {Tile} tile The starting tile to test.
+     * @param  {Tile} initial The starting tile to test.
      * @return {Boolean} Was a successful match made?
      */
-    var attempt = function (tile) {
+    var attempt = function (initial) {
 
-      var testTile;
+      // Loop through the tiles until two more selections are valid.
+      // If no matches are found, the attempt fails and returns false.
+      return _.some(tiles, function (tile) {
 
-      for (var t = 0, len = tiles.length; t < len; t++) {
-        testTile = tiles[t];
-        var attackTile = _this.getAttackTile(tile, testTile);
-        if (attackTile && _this._tryTiles(testTile, attackTile)) {
-          return true;
-        }
-      }
-      return false;
+        // Get the attack tile from the initial and tile intersection.
+        var attackTile = this.getAttackTile(initial, tile);
+
+        // If the attack tile and loop tile are valid, we're good!
+        return attackTile && selector.validate(tile, attackTile).success();
+      }, _this);
     },
 
     // An array of all the available tiles for this player.
-    tiles = this._cubeCache._cube.getAvailableTiles();
+    tiles = this._cubeCache._cube.getAvailableTiles(),
+
+    // A fresh TileSelector for making this discovery.
+    selector = new TileSelector(this);
 
     // Run through all the tiles and try to find a match.
-    for (var e = 0, len = tiles.length; e < len; e++) {
+    // If no match is found, false is returned.
+    return _.some(tiles, function (tile) {
 
-      // Reset _selectedTiles for a new starting point.
-      this._selectedTiles = [];
+      // Reset the selector for a new starting point.
+      selector.reset();
 
-      // If the new tile is valid, attempt to find two more.
-      if (this._tryTiles(tiles[e])) {
-
-        // If a successful selection attempt was made, reset the
-        // _selectedTiles array and return false (not a stalemate).
-        if (attempt(tiles[e])) {
-          this._selectedTiles = [];
-          return false;
-        }
-      }
-    }
-
-    // If all the tiles were looped over and we made it this far,
-    // the game is a stalemate.
-    return true;
-  },
-
-  /**
-   * A wrapper around selectTile that swallows SelecTileErrors to
-   * prevent the UI from reacting to them. Useful for programmatically
-   * determining moves.
-   * @param  {Tile} tile1 A tile to attempt.
-   * @param  {Tile} tile2 A second tile to attempt.
-   * @return {Boolean} Can the provided tiles be selected?
-   */
-  _tryTiles: function _tryTiles(tile1, tile2) {
-    try {
-      this.selectTile(tile1, tile2);
-      return true;
-    } catch (e) {
-      if (!(e instanceof SelectTileError)) {
-        throw e;
-      }
-    }
-    return false;
+      // If the new tile is valid and the attempt to find two more succeeds,
+      // there is at least one valid move and true will be returned.
+      return selector.validate(tile).success() && attempt(tile);
+    });
   },
 
   _createAttackData: function _createAttackData(tile) {
@@ -2425,6 +2107,393 @@ Touch.UP = Hammer.DIRECTION_UP;
 Touch.DOWN = Hammer.DIRECTION_DOWN;
 Touch.LEFT = Hammer.DIRECTION_LEFT;
 Touch.RIGHT = Hammer.DIRECTION_RIGHT;
+
+function CubeCache(cube) {
+
+  // A reference to the cube.
+  this._cube = cube;
+
+  // The size to check completed lines against.
+  this._cubeSize = cube.size;
+
+  // Create cache objects to hold claimed tiles.
+  this.initialize();
+}
+
+CubeCache.prototype = {
+
+  /**
+   * Called on instantiation and reset, this initialize a fresh cache
+   * in two collecitons: An object keyed by cube side id to contain lines
+   * and an array to contain single tiles.
+   */
+  initialize: function initialize() {
+
+    // A collection of lines created by side.
+    this._lineMap = _.reduce(this._cube.getSides(), function (sides, side, id) {
+      sides[id] = [];
+      return sides;
+    }, {});
+
+    // A collection of claimed tiles that are not part of lines.
+    this._singles = [];
+  },
+
+  add: function add(tile) {
+
+    var claimedBy = tile.claimedBy,
+        xPartial = this._getPartialLineTiles(tile.xLine, claimedBy),
+        yPartial = this._getPartialLineTiles(tile.yLine, claimedBy),
+        xGrow = this._growLine(xPartial),
+        yGrow = this._growLine(yPartial);
+
+    // If a line was grown or created from this tile, ensure it's removed from
+    // the singles collection.
+    if (xGrow || yGrow) {
+      this._singles = _.difference(this._singles, tile.getAllLineTiles());
+    }
+
+    // Else, add the tile to the singles collection.
+    else {
+      this._singles.push(tile);
+    }
+  },
+
+  remove: function remove(tile) {
+
+    var claimedBy = tile.claimedBy,
+        xPartial = this._getPartialLineTiles(tile.xLine, claimedBy),
+        yPartial = this._getPartialLineTiles(tile.yLine, claimedBy),
+        xShrink,
+        yShrink;
+
+    _.pull(xPartial, tile);
+    _.pull(yPartial, tile);
+
+    xShrink = this._shrinkLine(xPartial, true);
+    yShrink = this._shrinkLine(yPartial, false);
+
+    // If there's some shrinkage, update the singles collection accordingly.
+    if (xShrink || yShrink) {
+
+      // We need to make sure that the tiles gathered in the partial are
+      // not part of another line. If they are, don't add them as singles.
+      if (xShrink && !this._composesLines(xPartial)) {
+        this._singles = _.union(this._singles, xPartial);
+      }
+      if (yShrink && !this._composesLines(yPartial)) {
+        this._singles = _.union(this._singles, yPartial);
+      }
+    }
+
+    // Otherwise, safely remove the tile from the singles collection
+    // if it exists in there.
+    else {
+      _.pull(this._singles, tile);
+    }
+  },
+
+  /**
+   * Retrieves all the lines, sorted by the number of tiles contained
+   * in each line.
+   * @return {Array} A collection of lines.
+   */
+  getLines: function getLines() {
+    return this._getLinesAsChain().sortBy(function (line) {
+      return line._tiles.length;
+    }).value();
+  },
+
+  /**
+   * Retrieves all cached tiles.
+   * @return {Array} A colleciton of all the cached tiles.
+   */
+  getAllTiles: function getAllTiles() {
+    return this._getLinesAsChain().map(function (line) {
+      return line.getTiles();
+    }).flatten().uniq().concat(this._singles).value();
+  },
+
+  /**
+   * Fetches a chain-wrapped collection of cached lines, flattened and
+   * compacted into one array.
+   * @return {lodash} A lodash chain-wrapped collection.
+   */
+  _getLinesAsChain: function _getLinesAsChain() {
+    return _.chain(this._lineMap).values().flatten().compact();
+  },
+
+  _getPartialLineTiles: function _getPartialLineTiles(line, claimedBy) {
+    return _.filter(line.getTiles(), function (tile) {
+      return tile.claimedBy === claimedBy;
+    });
+  },
+
+  _growLine: function _growLine(tiles) {
+
+    var side, line;
+
+    if (tiles.length > 1) {
+
+      side = this._lineMap[_.first(tiles).side.id];
+      line = _.find(side, function (ln) {
+        return ln.some(tiles);
+      });
+
+      // If a line exists already, update it with the new tiles.
+      if (line) {
+        line.update(tiles);
+      }
+
+      // Otherwise, create a new line with the given tiles.
+      else {
+        side.push(new Line(tiles));
+      }
+
+      // A line was created or updated.
+      return true;
+    }
+
+    // A line was not created.
+    return false;
+  },
+
+  /**
+   * Shrinks a line.
+   * @param  {Array} tiles The tiles used in the shrinkage
+   * @return {Boolean} Was a line disassebled?
+   */
+  _shrinkLine: function _shrinkLine(tiles, isHorizontal) {
+
+    var side, line;
+
+    if (tiles.length) {
+
+      side = this._lineMap[_.first(tiles).side.id];
+      line = _.find(side, function (ln) {
+        return ln.isHorizontal() === isHorizontal && ln.all(tiles);
+      });
+
+      // Line should exist but just in case...
+      if (line) {
+
+        // If there's only one tile, it's not a line. Pull it.
+        if (tiles.length === 1) {
+          _.pull(side, line);
+
+          // A line was disassembled. Return true.
+          return true;
+        }
+
+        // Otherwise, update the line with the remaining tiles.
+        else {
+          line.update(tiles);
+        }
+      }
+    }
+
+    // A line was not disassembled.
+    return false;
+  },
+
+  _composesLines: function _composesLines(tiles) {
+    var side = this._lineMap[_.first(tiles).side.id];
+    return _.find(side, function (line) {
+      return line.all(tiles);
+    });
+  }
+
+};
+
+var TileSelector = (function () {
+  function TileSelector(player) {
+    _classCallCheck(this, TileSelector);
+
+    this._player = player;
+    this.reset();
+  }
+
+  _createClass(TileSelector, {
+    reset: {
+      value: function reset() {
+        this._selected = [];
+      }
+    },
+    validate: {
+      value: function validate(tile, attackTile) {
+
+        // Get a reference to the first tile selected.
+        var initial = _.first(this._selected),
+
+        // A package of data sent in resolved promises.
+        resolveData = {};
+
+        // If a tile wasn't passed, exit immediately.
+        if (!tile) {
+          return TileSelectorResult.failure();
+        }
+
+        // If the tile is already claimed, get outta dodge.
+        if (tile.claimedBy) {
+          return TileSelectorResult.failure(TileSelectorResult.FAILURE_CLAIMED);
+        }
+
+        // If an initial tile exists, run some tests.
+        if (initial) {
+
+          // If the initial tile is selected, deselected it and bail out.
+          if (tile === initial) {
+            return TileSelectorResult.success(this._deselect(tile));
+          }
+
+          // If the new selected tile is on the same side as the
+          // initial tile, deselect the initial tile.
+          if (tile.side === initial.side) {
+            resolveData = this._deselect(initial);
+          }
+
+          // Else, if the side selected is not a neighbor, bail out.
+          else if (!initial.isNeighboringSide(tile)) {
+            return TileSelectorResult.failure(TileSelectorResult.FAILURE_NOT_NEIGHBOR);
+          }
+        }
+
+        // If the attack tile exists, run even more tests.
+        if (attackTile) {
+
+          // If the attack tile is valid, that means both tiles can be selected
+          // and everything can be claimed. Exit true as we're done selecting tiles.
+          if (this._player.canAttack(attackTile)) {
+            return TileSelectorResult.success(_.merge(resolveData, this._select(tile, attackTile)));
+          } else {
+            return TileSelectorResult.failure(TileSelectorResult.FAILURE_CANNOT_ATTACK);
+          }
+        }
+
+        // Otherwise, the initial tile must have been selected. Pass the resolve data
+        // along in case a tile was deselected first (as in the side === side case).
+        else {
+          return TileSelectorResult.success(_.merge(resolveData, this._select(tile)));
+        }
+
+        // We'll probably never make it this far but let's return a promise just in case.
+        return TileSelectorResult.failure();
+      }
+    },
+    _select: {
+      value: function _select() {
+        var tiles = _.toArray(arguments);
+        Array.prototype.push.apply(this._selected, tiles);
+        return {
+          select: tiles,
+          length: this._selected.length
+        };
+      }
+    },
+    _deselect: {
+
+      /**
+       * Removes a tile from the _selected array and returns a command object
+       * describing the action. This object will eventually be passed to a
+       * Promise returned from validate().
+       * @param  {Tile} tile The tile to remove.
+       * @return {Object} A command object describing the action.
+       */
+
+      value: function _deselect(tile) {
+        _.pull(this._selected, tile);
+        return {
+          deselect: [tile]
+        };
+      }
+    }
+  });
+
+  return TileSelector;
+})();
+
+/**
+ * Used in TileSelector, the TileSelectorResult object provides an
+ * easy to use API for interacting with validate calls.
+ * In general, these objects should be created with the static methods.
+ *
+ * Common use cases with TileSelector:
+ *
+ * var selector = new TileSelector(player);
+ *
+ * 1.
+ * selector.validate(tile).success() -> Returns a boolean
+ *
+ * 2.
+ * selector
+ *   .validate(tile)
+ *   .success(function(data) {
+ *     // Do something with success data.
+ *   })
+ *   .failure(function(code) {
+ *     // React to error code.
+ *   });
+ */
+
+var TileSelectorResult = (function () {
+
+  /**
+   * Constructor method. Sets properties intended to be private.
+   * @param  {Boolean} success Is the result successful?
+   * @param  {String|Object} data A payload describing the result.
+   *                              Strings for failure codes and objects for result metadata.
+   * @constructor
+   */
+
+  function TileSelectorResult(success, data) {
+    _classCallCheck(this, TileSelectorResult);
+
+    this._success = success;
+    this._data = data;
+  }
+
+  _createClass(TileSelectorResult, {
+    success: {
+      value: function success(callback) {
+        if (!callback) {
+          return this._success;
+        }
+        if (this._success) {
+          callback(this._data);
+        }
+        return this;
+      }
+    },
+    failure: {
+      value: function failure(callback) {
+        if (!callback) {
+          return !this._success;
+        }
+        if (!this._success) {
+          callback(this._data);
+        }
+        return this;
+      }
+    }
+  }, {
+    success: {
+      value: function success(data) {
+        return new TileSelectorResult(true, data);
+      }
+    },
+    failure: {
+      value: function failure(code) {
+        return new TileSelectorResult(false, code);
+      }
+    }
+  });
+
+  return TileSelectorResult;
+})();
+
+TileSelector.FAILURE_CLAIMED = "claimed";
+TileSelector.FAILURE_NOT_NEIGHBOR = "notNeighbor";
+TileSelector.FAILURE_CANNOT_ATTACK = "cannotAttack";
 
 /**
  * A lightweight guided tutorial helper that is attached to a specific

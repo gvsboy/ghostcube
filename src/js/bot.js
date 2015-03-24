@@ -205,6 +205,27 @@ Bot.prototype = {
     }, this);
   },
 
+  /**
+   * A wrapper around selectTile that swallows SelecTileErrors to
+   * prevent the UI from reacting to them. Useful for programmatically
+   * determining moves.
+   * @param  {Tile} tile1 A tile to attempt.
+   * @param  {Tile} tile2 A second tile to attempt.
+   * @return {Boolean} Can the provided tiles be selected?
+   */
+  _tryTiles: function(tile1, tile2) {
+    try {
+      this.selectTile(tile1, tile2);
+      return true;
+    }
+    catch (e) {
+      if (!(e instanceof SelectTileError)) {
+        throw e;
+      }
+    }
+    return false;
+  },
+
   _selectTiles: function() {
 
     var tiles = _.union(this._triedTiles, arguments);
