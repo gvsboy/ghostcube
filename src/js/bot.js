@@ -7,17 +7,12 @@ Bot.THINKING_SPEED = 600;
 
 Bot.prototype = {
 
-  getInitialTriedTile: function() {
-    return _.first(this._triedTiles);
-  },
-
   play: function() {
 
-    this._initLog();
+    // Init log.
+    this._logText = '';
 
     this._log('================== BOT MOVE ==================');
-
-    this._triedTiles = [];
 
     /*
       First, gather all the Bot's tiles to see if a win is possible this turn
@@ -35,8 +30,9 @@ Bot.prototype = {
     this._selectOpponentBlocker() ||
     this._selectSingles() ||
     this._selectOpponentSingles() ||
-    this._selectLastResort() ||
-    this.emit('player:stalemate', this._selectedTiles);
+    this._selectLastResort();
+
+    return this._selector.getSelected();
   },
 
   _selectWin: function() {
@@ -49,7 +45,7 @@ Bot.prototype = {
 
     for (var i = 0, len = lines.length; i < len; i++) {
 
-      initialTile = this.getInitialTriedTile();
+      initialTile = this.getInitialTile();
       tile = lines[i].missingTiles()[0];
 
       this._log('+++ WIN loop [initial, tile] :', initialTile, tile);
@@ -60,12 +56,12 @@ Bot.prototype = {
         // First try to claim another win situation.
         // If that doesn't work out, try to claim by any means necessary.
         var attackTile = this.getAttackTile(initialTile, tile);
-        if (attackTile && this._tryTiles(tile, attackTile)) {
+        if (attackTile && this.selectTile(tile, attackTile).success()) {
           return true; // Done! The tiles will be claimed.
         }
       }
       else {
-        this._tryTiles(tile);
+        this.selectTile(tile);
       }
     }
 
@@ -83,7 +79,7 @@ Bot.prototype = {
 
     for (var i = 0, len = lines.length; i < len; i++) {
 
-      initialTile = this.getInitialTriedTile();
+      initialTile = this.getInitialTile();
       tile = lines[i].missingTiles()[0];
 
       this._log('@@@ BLOCK loop [initial, tile] :', initialTile, tile);
@@ -91,12 +87,12 @@ Bot.prototype = {
       // If there's a tile selected already, try to seal the deal with two more.
       if (initialTile && tile) {
         var attackTile = this.getAttackTile(initialTile, tile);
-        if (attackTile && this._tryTiles(tile, attackTile)) {
+        if (attackTile && this.selectTile(tile, attackTile).success()) {
           return true; // Done! The tiles will be claimed.
         }
       }
       else {
-        this._tryTiles(tile);
+        this.selectTile(tile);
       }
     }
 
@@ -118,7 +114,7 @@ Bot.prototype = {
 
     for (var t = 0, len = singles.length; t < len; t++) {
 
-      initialTile = this.getInitialTriedTile();
+      initialTile = this.getInitialTile();
 
       // If there is no initial tile or this singles selection is on a neighboring
       // side, make a selection attempt.
@@ -130,13 +126,11 @@ Bot.prototype = {
 
       if (initialTile && tile) {
         var attackTile = this.getAttackTile(initialTile, tile);
-        if (attackTile && this._tryTiles(tile, attackTile)) {
-          return true; // Done! The tiles will be claimed.
-        }
 
-        // Otherwise, remove the last tried tile. The attack combo won't work.
-        else {
-          this._triedTiles = _.dropRight(this._triedTiles);
+        this._selector.revert();
+
+        if (attackTile && this.selectTile(tile, attackTile).success()) {
+          return true; // Done! The tiles will be claimed.
         }
       }
     }
@@ -145,7 +139,10 @@ Bot.prototype = {
     return false;
   },
 
-  // This is similar to 'isStalemate' and consideration should be given
+
+
+  // YES TO THE BELOW!!!!! Just use 'hasValidMoves'...
+  // This is similar to 'hasValidMoves' and consideration should be given
   // for consolidation.
   _selectLastResort: function() {
 
@@ -165,14 +162,14 @@ Bot.prototype = {
       return false;
     }
 
-    var initialTile = this.getInitialTriedTile(),
+    var initialTile = this.getInitialTile(),
         tiles = this._cubeCache._cube.getAvailableTiles(initialTile);
 
     this._log('$$$$$ LAST RESORT');
 
     // If there is an initial tile, try to match it first.
     if (initialTile) {
-      if (attempt(this.getInitialTriedTile())) {
+      if (attempt(this.getInitialTile())) {
         return true;
       }
     }
@@ -188,6 +185,8 @@ Bot.prototype = {
 
   },
 
+
+
   /**
    * Attempts to select a tile on the same line as the given tile.
    * Scans both x and y lines, shuffling the collection.
@@ -201,29 +200,8 @@ Bot.prototype = {
 
     // Return the first tile that is a valid selection.
     return _.find(lineTiles, function(ti) {
-      return this._tryTiles(ti);
+      return this.selectTile(ti).success();
     }, this);
-  },
-
-  /**
-   * A wrapper around selectTile that swallows SelecTileErrors to
-   * prevent the UI from reacting to them. Useful for programmatically
-   * determining moves.
-   * @param  {Tile} tile1 A tile to attempt.
-   * @param  {Tile} tile2 A second tile to attempt.
-   * @return {Boolean} Can the provided tiles be selected?
-   */
-  _tryTiles: function(tile1, tile2) {
-    try {
-      this.selectTile(tile1, tile2);
-      return true;
-    }
-    catch (e) {
-      if (!(e instanceof SelectTileError)) {
-        throw e;
-      }
-    }
-    return false;
   },
 
   _selectTiles: function() {
@@ -254,18 +232,6 @@ Bot.prototype = {
     }, this), Bot.THINKING_SPEED);
   },
 
-  _report: function() {
-    var info = _.reduce(this._triedTiles, function(all, tile) {
-      all.push(tile.toString ? tile.toString() : tile);
-      return all;
-    }, []);
-    this._log('### Bot will try:', info.join(' | '));
-  },
-
-  _initLog: function() {
-    this._logText = '';
-  },
-
   _log: function() {
 
     var text = _.reduce(arguments, function(lines, data) {
@@ -274,7 +240,7 @@ Bot.prototype = {
     }, []).join(' ');
 
     // Immediately output the message in the console.
-    //console.log(text);
+    console.log(text);
 
     // Append the text to the master log.
     this._logText += text + '\n';

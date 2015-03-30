@@ -29,7 +29,7 @@ describe('App', function() {
 
   });
 
-  describe('_stalemate()', function() {
+  xdescribe('_stalemate()', function() {
 
     it('should be invoked if the bot has no valid moves', function() {
 

@@ -67,7 +67,7 @@ App.prototype = {
    */
   initializeGame: function() {
 
-    // Create the players and set the first one as current.
+    // Create the players: A human and a bot.
     var human = new Player('Kevin', 'player1', this.cube),
         bot = new Bot('CPU', 'player2', this.cube, human);
 
@@ -76,21 +76,14 @@ App.prototype = {
     // The message box listens for messages to display.
     this.messages.listenTo(this.tutorial);
 
+    // Set the current player as the first player.
     this.setCurrentPlayer(_.first(this.players));
 
     // Begin the rendering.
     this.renderer.initialize();
 
+    // Let's clear the helper tile when the cube is rotating.
     this.renderer.on('start', _.bind(this.clearHelperTile, this));
-
-    // Not really into this but sure for now.
-    _.forEach(this.players, function(player) {
-      player
-        .on('player:initialSelected', _.bind(this.showCrosshairs, this))
-        .on('player:initialDeselected', _.bind(this.hideCrosshairs, this))
-        .on('player:claim', _.bind(this._endTurn, this))
-        .on('player:stalemate', _.bind(this._stalemate, this))
-    }, this);
 
     this.tutorial.next().next();
   },
@@ -131,14 +124,22 @@ App.prototype = {
 
       this.currentPlayer = player;
 
-      if (player.isBot()) {
-        this.disableCubeInteraction();
-        if (!botManual) {
-          player.play();
+      // If the player has valid moves, start the turn as usual.
+      if (player.hasValidMoves()) {
+        if (player.isBot()) {
+          this.disableCubeInteraction();
+          if (!botManual) {
+            this._botTileSelection(player.play());
+          }
+        }
+        else {
+          this.enableCubeInteraction();
         }
       }
+
+      // Otherwise, declare a stalemate. Nobody wins.
       else {
-        this.enableCubeInteraction();
+        this._stalemate()
       }
     }
   },
@@ -258,6 +259,38 @@ App.prototype = {
     return null;
   },
 
+  /**
+   * Claimes all the tiles the bot has selected and updates the UI using a
+   * flow the user is familiar with.
+   * @param  {Array} tiles The tiles the bot has selected.
+   */
+  _botTileSelection: function(tiles) {
+
+    /**
+     * A simple function that returns a promise after after the bot is
+     * finished 'thinking'.
+     * @return {Promise} A promise resolved after a set period of time.
+     */
+    var wait = () => {
+      return new Promise(resolve => {
+        setTimeout(resolve, Bot.THINKING_SPEED);
+      });
+    };
+
+    // Wait a moment before running through the selection UI updates, which
+    // include rotating the cube to display all the tiles, showing crosshairs
+    // for the first tile, and then claiming all before ending the turn.
+    wait()
+      .then(() => this.cube.rotateToTiles(tiles))
+      .then(wait)
+      .then(() => this.showCrosshairs(tiles[0]))
+      .then(wait)
+      .then(() => {
+        this.currentPlayer.claimAll();
+        this._endTurn(tiles);
+      });
+  },
+
   _handleClick: function(evt) {
 
     // Get the target element from the event.
@@ -265,20 +298,34 @@ App.prototype = {
 
     // If the tile exists, try to select it.
     if (tile) {
-      try {
-        this.currentPlayer.selectTile(tile, this._helperTile);
-        this.tutorial.next().next();
-      }
+      this.currentPlayer
+        .selectTile(tile, this._helperTile)
 
-      // An error was thrown in the tile selection process. Handle it.
-      catch(e) {
-        if (e instanceof SelectTileError) {
-          this.messages.add(e.message);
-        }
-        else {
-          throw e;
-        }
-      }
+        // On success, react based on the number of tiles currently selected.
+        .success(data => {
+
+          // Cache the selected tiles.
+          var selected = data.selected,
+              length = selected && selected.length;
+
+          // This tutorial stuff needs a new home I think. Anyways.
+          this.tutorial.next().next();
+
+          if (data.deselect) {
+            this.hideCrosshairs(data.deselect[0]);
+          }
+
+          if (length === 1) {
+            this.showCrosshairs(selected[0]);
+          }
+          else if (length === 3) {
+            this.currentPlayer.claimAll();
+            this._endTurn(selected);
+          }
+        })
+
+        // On failure, display a message based on the failure code.
+        .failure(code => this.messages.add(code));
     }
   },
 

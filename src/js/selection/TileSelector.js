@@ -1,18 +1,72 @@
+/**
+ * Instances of this class are used for making valid tile selections
+ * and returning results containing data describing the selections.
+ * The validate method is the core of TileSelector and is mostly used
+ * inside the Player.selectTile wrapper.
+ */
 class TileSelector {
 
+  /**
+   * Constructor method. This sets an internal _player property which is
+   * only currently used once (in the attack portion of validate). It also
+   * sets the _selected property as an empty array via reset().
+   * @param  {Player} player The player bound to this TileSelector instance.
+   * @constructor
+   */
   constructor(player) {
     this._player = player;
     this.reset();
   }
 
+  /**
+   * Resets the _selected array to it's initial empty state.
+   */
   reset() {
     this._selected = [];
   }
 
+  /**
+   * Removes the last n selections and returns the updated _selected array.
+   * @param  {Number} n The number of selections to revert.
+   * @return {Array} The updated _selected array.
+   */
+  revert(n = 1) {
+    var slice = _.dropRight(this._selected, n);
+    this._selected = slice;
+    return slice;
+  }
+
+  /**
+   * Retrieves the contents of the _selected array.
+   * @return {Array} The _selected array.
+   */
+  getSelected() {
+    return this._selected;
+  }
+
+  /**
+   * Retrieves the first item in the _selected array.
+   * @return {Tile} The initial selected tile.
+   */
+  getInitial() {
+    return _.first(this._selected);
+  }
+
+  /**
+   * Computes whether or not the passed tile or tiles are valid selections.
+   * Different test cases include:
+   * - Was a tile passed?
+   * - Is the tile already claimed?
+   * - Is there an initial tile? Should it be deselected? Is it a neighbor?
+   * - Was an attack tile passed? Is it a valid target?
+   * @param {Tile} tile A tile to validate.
+   * @param {Tile} attackTile Another tile to validate.
+   * @return {TileSelectorResult} A result object containing data describing the action.
+   */
   validate(tile, attackTile) {
 
     // Get a reference to the first tile selected.
-    var initial = _.first(this._selected),
+    var initial = this.getInitial(),
 
         // A package of data sent in resolved promises.
         resolveData = {};
@@ -76,12 +130,17 @@ class TileSelector {
     return TileSelectorResult.failure();
   }
 
+  /**
+   * Adds tiles to the _selected array and returns a command object containing
+   * the complete _selected array contents.
+   * @param {Tile...} Any number of Tile objects that were selected.
+   * @return {Object} A command object describing the action.
+   */
   _select() {
     var tiles = _.toArray(arguments);
     Array.prototype.push.apply(this._selected, tiles);
     return {
-      select: tiles,
-      length: this._selected.length
+      selected: this._selected
     };
   }
 
