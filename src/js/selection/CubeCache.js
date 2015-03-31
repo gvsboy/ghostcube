@@ -3,9 +3,6 @@ function CubeCache(cube) {
   // A reference to the cube.
   this._cube = cube;
 
-  // The size to check completed lines against.
-  this._cubeSize = cube.size;
-
   // Create cache objects to hold claimed tiles.
   this.initialize();
 }

@@ -366,219 +366,140 @@ Bot.THINKING_SPEED = 600;
 
 Bot.prototype = {
 
+  /**
+   * Run through a list of tile selection commands in order of urgency.
+   * For instance, winning moves are more urgent than blocking single tiles.
+   * @return {Array} A collection of tiles selected.
+   */
   play: function play() {
 
     // Init log.
     this._logText = "";
-
     this._log("================== BOT MOVE ==================");
 
-    /*
-      First, gather all the Bot's tiles to see if a win is possible this turn
-      (there are lines that are missing one tile).
-      If so, attempt to claim those tiles.
-       If no win is possible, gather the opponent's tiles to see if a win is possible.
-      If so, see which method can block:
-         - Neutralizing a tile?
-        - Claiming the missing tile?
-     */
+    // Is a bot win possible?
+    this._selectLines() ||
 
-    this._selectWin() || this._selectOpponentBlocker() || this._selectSingles() || this._selectOpponentSingles() || this._selectLastResort();
+    // Is a player (opponent) win possible?
+    this._selectOpponentLines() ||
 
+    // Are there available bot singles to extend into lines?
+    this._selectSingles() ||
+
+    // Are there available player (opponent) singles to block lines?
+    this._selectOpponentSingles() ||
+
+    // Is there any possible move at all?!
+    this.selectRandom();
+
+    // Return what we have, which is hopefully a trio of selected tiles.
     return this._selector.getSelected();
   },
 
-  _selectWin: function _selectWin() {
+  /**
+   * Find lines to complete, either to win the game or to block
+   * the opponent.
+   * @param  {Boolean} useOpponent Should we use the opponent's lines?
+   * @return {Boolean} Was a match successful?
+   */
+  _selectLines: function _selectLines(useOpponent) {
+    var _this = this;
 
-    var lines = this.getLines(),
-        initialTile,
-        tile;
+    var lines = useOpponent ? this.opponent.getLines() : this.getLines();
+    this._log("++++++ LINES" + (useOpponent ? " OPPONENT:" : ":"), lines);
 
-    this._log("++++++ WIN lines:", lines);
+    return _.some(lines, function (line) {
 
-    for (var i = 0, len = lines.length; i < len; i++) {
+      var initial = _this.getInitialTile(),
+          tile = line.missingTiles()[0],
+          attack;
 
-      initialTile = this.getInitialTile();
-      tile = lines[i].missingTiles()[0];
-
-      this._log("+++ WIN loop [initial, tile] :", initialTile, tile);
-
-      // If there's a tile selected already, try to seal the deal with two more.
-      if (initialTile && tile) {
-
-        // First try to claim another win situation.
-        // If that doesn't work out, try to claim by any means necessary.
-        var attackTile = this.getAttackTile(initialTile, tile);
-        if (attackTile && this.selectTile(tile, attackTile).success()) {
-          return true; // Done! The tiles will be claimed.
-        }
-      } else {
-        this.selectTile(tile);
-      }
-    }
-
-    // More tiles must be selected to complete the turn.
-    return false;
-  },
-
-  _selectOpponentBlocker: function _selectOpponentBlocker() {
-
-    var lines = this.opponent.getLines(),
-        initialTile,
-        tile;
-
-    this._log("@@@@@@ BLOCK lines:", lines);
-
-    for (var i = 0, len = lines.length; i < len; i++) {
-
-      initialTile = this.getInitialTile();
-      tile = lines[i].missingTiles()[0];
-
-      this._log("@@@ BLOCK loop [initial, tile] :", initialTile, tile);
+      _this._log("+++ lines loop [initial, tile] :", initial, tile);
 
       // If there's a tile selected already, try to seal the deal with two more.
-      if (initialTile && tile) {
-        var attackTile = this.getAttackTile(initialTile, tile);
-        if (attackTile && this.selectTile(tile, attackTile).success()) {
-          return true; // Done! The tiles will be claimed.
-        }
+      if (initial && tile) {
+        attack = _this.getAttackTile(initial, tile);
+        return attack && _this.selectTile(tile, attack).success();
       } else {
-        this.selectTile(tile);
+        _this.selectTile(tile);
       }
-    }
-
-    // More tiles must be selected to complete the turn.
-    return false;
+    });
   },
 
-  _selectOpponentSingles: function _selectOpponentSingles() {
-    return this._selectSingles(true);
+  /**
+   * Block the opponent's lines to prevent a win.
+   * Relies on _selectLines.
+   * @return {Boolean} Was a match successful?
+   */
+  _selectOpponentLines: function _selectOpponentLines() {
+    return this._selectLines(true);
   },
 
+  /**
+   * Find singles to surround, either to build bot lines or to block the
+   * opponent from building lines.
+   * @param  {Boolean} useOpponent Should we use the opponent's singles?
+   * @return {Boolean} Was a match successful?
+   */
   _selectSingles: function _selectSingles(useOpponent) {
+    var _this = this;
 
-    var singles = _.shuffle(useOpponent ? this.opponent.getSingles() : this.getSingles()),
-        initialTile,
-        tile;
-
+    var singles = _.shuffle(useOpponent ? this.opponent.getSingles() : this.getSingles());
     this._log("------ SINGLES" + (useOpponent ? " OPPONENT:" : ":"), singles);
 
-    for (var t = 0, len = singles.length; t < len; t++) {
+    return _.some(singles, function (single) {
 
-      initialTile = this.getInitialTile();
+      var initial = _this.getInitialTile(),
+          tile,
+          attack;
 
       // If there is no initial tile or this singles selection is on a neighboring
       // side, make a selection attempt.
-      if (!initialTile || singles[t].isNeighboringSide(initialTile)) {
-        tile = this._selectByTileLine(singles[t]);
+      if (!initial || single.isNeighboringSide(initial)) {
+        tile = _this._selectByTileLine(single);
       }
 
-      this._log("--- singles loop [initial, tile] :", initialTile, tile);
+      _this._log("--- singles loop [initial, tile] :", initial, tile);
 
-      if (initialTile && tile) {
-        var attackTile = this.getAttackTile(initialTile, tile);
-
-        this._selector.revert();
-
-        if (attackTile && this.selectTile(tile, attackTile).success()) {
-          return true; // Done! The tiles will be claimed.
-        }
+      if (initial && tile) {
+        attack = _this.getAttackTile(initial, tile);
+        _this._selector.revert();
+        return attack && _this.selectTile(tile, attack).success();
       }
-    }
-
-    // More tiles must be selected to complete the turn.
-    return false;
+    });
   },
 
-  // YES TO THE BELOW!!!!! Just use 'hasValidMoves'...
-  // This is similar to 'hasValidMoves' and consideration should be given
-  // for consolidation.
-  _selectLastResort: function _selectLastResort() {
-
-    var self = this;
-
-    function attempt(tile) {
-
-      var testTile;
-
-      for (var t = 0, len = tiles.length; t < len; t++) {
-        testTile = tiles[t];
-        var attackTile = self.getAttackTile(tile, testTile);
-        if (attackTile && self._tryTiles(testTile, attackTile)) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    var initialTile = this.getInitialTile(),
-        tiles = this._cubeCache._cube.getAvailableTiles(initialTile);
-
-    this._log("$$$$$ LAST RESORT");
-
-    // If there is an initial tile, try to match it first.
-    if (initialTile) {
-      if (attempt(this.getInitialTile())) {
-        return true;
-      }
-    }
-
-    // Otherwise, go through all the tiles and try to find a match.
-    for (var e = 0, len = tiles.length; e < len; e++) {
-      this._triedTiles = [];
-      this._tryTiles(tiles[e]);
-      if (attempt(tiles[e])) {
-        return true;
-      }
-    }
+  /**
+   * Surround opponent's singles to block further line creation.
+   * Relies on _selectSingles.
+   * @return {Boolean} Was a match successful?
+   */
+  _selectOpponentSingles: function _selectOpponentSingles() {
+    return this._selectSingles(true);
   },
 
   /**
    * Attempts to select a tile on the same line as the given tile.
    * Scans both x and y lines, shuffling the collection.
    * @param  {Tile} tile The target tile.
-   * @return {Tile}      The selected tile.
+   * @return {Tile} The selected tile.
    */
   _selectByTileLine: function _selectByTileLine(tile) {
+    var _this = this;
 
     // Grab all the tiles on the same line as the passed tile.
     var lineTiles = _.shuffle(tile.getAllLineTiles());
 
     // Return the first tile that is a valid selection.
-    return _.find(lineTiles, function (ti) {
-      return this.selectTile(ti).success();
-    }, this);
+    return _.find(lineTiles, function (lineTile) {
+      return _this.selectTile(lineTile).success();
+    });
   },
 
-  _selectTiles: function _selectTiles() {
-    var _this = this;
-
-    var tiles = _.union(this._triedTiles, arguments);
-
-    this._triedTiles = tiles;
-
-    this._log("^^^^^^^^^^^^^^^^^^^^ _triedTiles is now:", this._triedTiles);
-
-    if (this._triedTiles.length === 3) {
-      setTimeout(function () {
-        _this._report();
-        _this._cubeCache._cube.rotateToTiles(_this._triedTiles).then(function () {
-          _this._animateClaim();
-        });
-      }, Bot.THINKING_SPEED);
-    }
-  },
-
-  _animateClaim: function _animateClaim() {
-    setTimeout(_.bind(function () {
-      var tile = this._triedTiles.shift();
-      Player.prototype._selectTiles.call(this, tile);
-      if (!_.isEmpty(this._triedTiles)) {
-        this._animateClaim();
-      }
-    }, this), Bot.THINKING_SPEED);
-  },
-
+  /**
+   * A simple logging mechanism to record the bot's thoughts.
+   * Used in the Recorder object which looks for the _logText property.
+   */
   _log: function _log() {
 
     var text = _.reduce(arguments, function (lines, data) {
@@ -1572,7 +1493,7 @@ Player.prototype = {
    * @return {Array} A collection of this player's win lines.
    */
   getWinLines: function getWinLines() {
-    var size = this._cubeCache._cubeSize;
+    var size = this._cubeCache._cube.size;
     return _.filter(this.getLines(), function (line) {
       return line.length() === size;
     });
@@ -1615,9 +1536,20 @@ Player.prototype = {
 
   /**
    * Checks to see if the player has at least one valid move.
+   * Resets the selector after performing the check.
    * @return {Boolean} Does a valid move exist?
    */
   hasValidMoves: function hasValidMoves() {
+    var hasMove = this.selectRandom();
+    this._selector.reset();
+    return hasMove;
+  },
+
+  /**
+   * Makes a random valid selection.
+   * @return {Boolean} Was a valid selection made?
+   */
+  selectRandom: function selectRandom() {
     var _this = this;
 
     /**
@@ -1633,18 +1565,27 @@ Player.prototype = {
       return _.some(tiles, function (tile) {
 
         // Get the attack tile from the initial and tile intersection.
-        var attackTile = this.getAttackTile(initial, tile);
+        var attackTile = _this.getAttackTile(initial, tile);
 
         // If the attack tile and loop tile are valid, we're good!
         return attackTile && selector.validate(tile, attackTile).success();
-      }, _this);
+      });
     },
 
-    // An array of all the available tiles for this player.
-    tiles = this._cubeCache._cube.getAvailableTiles(),
+    // Cached reference to the player's selector.
+    selector = this._selector,
 
-    // A fresh TileSelector for making this discovery.
-    selector = new TileSelector(this);
+    // The initial tile, if available. Otherwise undefined.
+    initial = selector.getInitial(),
+
+    // An array of all the available tiles for this player.
+    tiles = this._cubeCache._cube.getAvailableTiles(initial);
+
+    // If an initial tile is available and a match can be found, return true.
+    // This functionality is used by the bot in the last resort selection.
+    if (initial && attempt(initial)) {
+      return true;
+    }
 
     // Run through all the tiles and try to find a match.
     // If no match is found, false is returned.
@@ -2030,9 +1971,6 @@ function CubeCache(cube) {
 
   // A reference to the cube.
   this._cube = cube;
-
-  // The size to check completed lines against.
-  this._cubeSize = cube.size;
 
   // Create cache objects to hold claimed tiles.
   this.initialize();

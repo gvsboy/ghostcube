@@ -29,23 +29,9 @@ describe('App', function() {
 
   });
 
-  xdescribe('_stalemate()', function() {
+  describe('setCurrentPlayer()', function() {
 
-    it('should be invoked if the bot has no valid moves', function() {
-
-      var bot = app.players[1],
-          tiles = getAllTilesForSides(app.cube, 'top', 'bottom', 'left', 'right', 'front');
-
-      _.forEach(tiles, function(tile) {
-        bot.claim(tile);
-      });
-
-      bot.play();
-
-      expect(app._stalemate).toHaveBeenCalled();
-    });
-
-    xit('should be invoked if the player has no valid moves', function() {
+    it('invokes _stalemate if there are no valid moves', function() {
 
       var player = app.players[0],
           tiles = getAllTilesForSides(app.cube, 'top', 'bottom', 'left', 'right', 'front');
@@ -54,19 +40,17 @@ describe('App', function() {
           player.claim(tile);
         });
 
-       expect(app._stalemate).toHaveBeenCalled();
+      app.setCurrentPlayer(app.players[1]);
+
+      expect(app._stalemate).toHaveBeenCalled();
     });
 
-  });
-
-  describe('_handleClick()', function() {
-
-    it('is invoked when it\'s the user\'s turn', function() {
+    it('enables clicking when it\'s the user\'s turn', function() {
       app.cube.el.click();
       expect(app._handleClick).toHaveBeenCalled();
     });
 
-    it('is not invoked when it\'s the bot\'s turn', function() {
+    it('disables clicking when it\'s the bot\'s turn', function() {
       app.setCurrentPlayer(app.players[1], true);
       app.cube.el.click();
       expect(app._handleClick.calls.count()).toEqual(0);

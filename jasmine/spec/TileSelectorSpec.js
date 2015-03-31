@@ -11,6 +11,15 @@ describe('TileSelector', function() {
     expect(TileSelector).toBeDefined();
   });
 
+  describe('reset()', function() {
+
+    it('empties the _selected array', function() {
+      this.selector.reset();
+      expect(this.selector.getSelected().length).toBe(0);
+    });
+
+  });
+
   describe('validate()', function() {
 
     it('returns a TileSelectorResult', function() {

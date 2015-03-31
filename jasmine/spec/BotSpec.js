@@ -10,9 +10,7 @@ describe('Bot', function() {
 
   describe('play()', function() {
 
-    var tiles;
-    bot.play();
-    tiles = bot._triedTiles;
+    var tiles = bot.play();
 
     it('selects three tiles', function() {
       expect(tiles.length).toBe(3);

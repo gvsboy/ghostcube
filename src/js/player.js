@@ -54,7 +54,7 @@ Player.prototype = {
    * @return {Array} A collection of this player's win lines.
    */
   getWinLines: function() {
-    var size = this._cubeCache._cubeSize;
+    var size = this._cubeCache._cube.size;
     return _.filter(this.getLines(), function(line) {
       return line.length() === size;
     });
@@ -97,9 +97,20 @@ Player.prototype = {
 
   /**
    * Checks to see if the player has at least one valid move.
+   * Resets the selector after performing the check.
    * @return {Boolean} Does a valid move exist?
    */
   hasValidMoves: function() {
+    var hasMove = this.selectRandom();
+    this._selector.reset();
+    return hasMove;
+  },
+
+  /**
+   * Makes a random valid selection.
+   * @return {Boolean} Was a valid selection made?
+   */
+  selectRandom: function() {
 
     /**
      * Given a starting tile, attempt to match two more: a secondary tile
@@ -111,25 +122,34 @@ Player.prototype = {
 
         // Loop through the tiles until two more selections are valid.
         // If no matches are found, the attempt fails and returns false.
-        return _.some(tiles, function(tile) {
+        return _.some(tiles, tile => {
 
           // Get the attack tile from the initial and tile intersection.
           var attackTile = this.getAttackTile(initial, tile);
 
           // If the attack tile and loop tile are valid, we're good!
           return attackTile && selector.validate(tile, attackTile).success();
-        }, this);
+        });
       },
 
-      // An array of all the available tiles for this player.
-      tiles = this._cubeCache._cube.getAvailableTiles(),
+      // Cached reference to the player's selector.
+      selector = this._selector,
 
-      // A fresh TileSelector for making this discovery.
-      selector = new TileSelector(this);
+      // The initial tile, if available. Otherwise undefined.
+      initial = selector.getInitial(),
+
+      // An array of all the available tiles for this player.
+      tiles = this._cubeCache._cube.getAvailableTiles(initial);
+
+    // If an initial tile is available and a match can be found, return true.
+    // This functionality is used by the bot in the last resort selection.
+    if (initial && attempt(initial)) {
+      return true;
+    }
 
     // Run through all the tiles and try to find a match.
     // If no match is found, false is returned.
-    return _.some(tiles, function(tile) {
+    return _.some(tiles, tile => {
 
       // Reset the selector for a new starting point.
       selector.reset();
