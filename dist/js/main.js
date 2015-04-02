@@ -28,9 +28,6 @@ function App(containerId) {
   // Cross-selected tile for helping attacks.
   this._helperTile = null;
 
-  // Step-by-step instruction component.
-  this.tutorial = new Tutorial();
-
   // Records moves as they're made. Can be used to step through time.
   this.recorder = new Recorder(this);
 
@@ -55,6 +52,7 @@ App.prototype = {
 
       cubeEl.classList.remove("splash");
       container.classList.add("game");
+      _this._initializeTutorial();
 
       UTIL.listenOnce(container, Vendor.EVENT.animationEnd, function (evt) {
         // Every animated cube face will bubble up their animation events
@@ -78,9 +76,6 @@ App.prototype = {
 
     this.players = [human, bot];
 
-    // The message box listens for messages to display.
-    this.messages.listenTo(this.tutorial);
-
     // Set the current player as the first player.
     this.setCurrentPlayer(_.first(this.players));
 
@@ -89,8 +84,6 @@ App.prototype = {
 
     // Let's clear the helper tile when the cube is rotating.
     this.renderer.on("start", _.bind(this.clearHelperTile, this));
-
-    this.tutorial.next().next();
   },
 
   enableCubeInteraction: function enableCubeInteraction() {
@@ -151,7 +144,6 @@ App.prototype = {
     this.cube.updateCrosshairs(tile, function (tile) {
       return tile.addClass("highlighted");
     });
-    this.tutorial.next();
   },
 
   hideCrosshairs: function hideCrosshairs(tile) {
@@ -166,6 +158,16 @@ App.prototype = {
       this._helperTile.removeClass("helper");
     }
     this._helperTile = null;
+  },
+
+  /**
+   * Instantiates a tutorial instance and hooks into methods that should
+   * emit lesson messages.
+   */
+  _initializeTutorial: function _initializeTutorial() {
+    this.tutorial = new Tutorial();
+    this.tutorial.hook(this, "initializeGame", "start").hook(this, "showCrosshairs", "click").hook(this, "_endTurn", "turn");
+    this.messages.listenTo(this.tutorial);
   },
 
   /**
@@ -311,9 +313,6 @@ App.prototype = {
         // Cache the selected tiles.
         var selected = data.selected,
             length = selected && selected.length;
-
-        // This tutorial stuff needs a new home I think. Anyways.
-        _this.tutorial.next().next();
 
         if (data.deselect) {
           _this.hideCrosshairs(data.deselect[0]);
@@ -1350,30 +1349,21 @@ Messages.prototype = {
 
   /**
    * Creates a new message to add to the queue.
-   * @param {String} message The message text.
-   * @param {String} classes A space-separated list of classes to append to the message.
+   * @param {String|Array[String]} message The message text or an array of messages.
+   * @param {[String]} classes A space-separated list of classes to append to the message.
    * @return {Messages} Returns itself for chaining.
    */
   add: function add(message, classes) {
+    var _this = this;
 
-    // Generate a new element to contain the message.
-    var item = document.createElement("li");
+    // Format the message as an array if not already.
+    message = _.isArray(message) ? message : [message];
 
-    // Add special classes to decorate the message if passed.
-    // We want to use apply here because add takes multiple arguments,
-    // not an array of names.
-    if (classes) {
-      DOMTokenList.prototype.add.apply(item.classList, classes.split(" "));
-    }
-
-    // Get the correct message by passed key.
-    if (message.split(" ").length === 1) {
-      message = Messages.LIST[message];
-    }
-
-    // Append the message to the new element and queue it up.
-    item.appendChild(document.createTextNode(message));
-    this._enqueue(item);
+    // Generate a message item for each message.
+    // If the text matches a LIST key, use the key's value.
+    _.forEach(message, function (text) {
+      _this._generateItem(Messages.LIST[text] || text, classes);
+    });
 
     return this;
   },
@@ -1386,6 +1376,27 @@ Messages.prototype = {
     _.forEach(this.container.children, function (item) {
       return item.classList.add("hide");
     });
+  },
+
+  /**
+   * Generates a message element and queues it up for display.
+   * @param  {String} message The message to display.
+   * @param  {[String]} classes A space-separated list of classes to append to the message.
+   */
+  _generateItem: function _generateItem(message, classes) {
+
+    // Generate a new element to contain the message.
+    var item = document.createElement("li");
+
+    // Add special classes to decorate the message if passed. We want to use apply here
+    // because add takes multiple arguments, not an array of names.
+    if (classes) {
+      DOMTokenList.prototype.add.apply(item.classList, classes.split(" "));
+    }
+
+    // Append the message to the new element and queue it up.
+    item.appendChild(document.createTextNode(message));
+    this._enqueue(item);
   },
 
   _enqueue: function _enqueue(item) {
@@ -2463,9 +2474,9 @@ var TileSelectorResult = (function () {
 })();
 
 // Failure codes.
-TileSelector.FAILURE_CLAIMED = "claimed";
-TileSelector.FAILURE_NOT_NEIGHBOR = "notNeighbor";
-TileSelector.FAILURE_CANNOT_ATTACK = "cannotAttack";
+TileSelectorResult.FAILURE_CLAIMED = "claimed";
+TileSelectorResult.FAILURE_NOT_NEIGHBOR = "notNeighbor";
+TileSelectorResult.FAILURE_CANNOT_ATTACK = "cannotAttack";
 
 /**
  * A lightweight guided tutorial helper that is attached to a specific
@@ -2475,29 +2486,29 @@ TileSelector.FAILURE_CANNOT_ATTACK = "cannotAttack";
  * @class
  */
 function Tutorial() {
-
-  // What step is the tutorial on?
-  this.step = 0;
-
-  // How many steps are there?
-  this.maxStep = 5;
-
-  // EventEmitter constructor call.
   EventEmitter2.call(this);
 }
 
 Tutorial.prototype = {
 
-  next: function next() {
-    if (!this.isDone()) {
-      this.emit("message", Tutorial.stepMessages[this.step], "info");
-      this.step++;
-    }
+  /**
+   * Wraps an object's method with another method that invokes the
+   * tutorial's emission of a message event. This emission happens
+   * only once, and restores the previous method's state afterwards.
+   * @param  {Object} obj The host object.
+   * @param  {String} methodName The method name to wrap.
+   * @param  {String} key The lesson key.
+   * @return {Tutorial} This tutorial instance for chaining.
+   */
+  hook: function hook(obj, methodName, key) {
+    var oldMethod = obj[methodName];
+    obj[methodName] = _.bind(function () {
+      var result = oldMethod.apply(obj, arguments);
+      this.emit("message", Tutorial.lessons[key], "info");
+      obj[methodName] = oldMethod;
+      return result;
+    }, this);
     return this;
-  },
-
-  isDone: function isDone() {
-    return this.step >= this.maxStep;
   }
 
 };
@@ -2507,6 +2518,12 @@ _.assign(Tutorial.prototype, EventEmitter2.prototype);
 
 // List of step messages.
 Tutorial.stepMessages = ["Let's play! Click any tile to begin.", "Rotate the cube using the arrow keys or WASD.", "Great! Now, click a tile on an adjacent side.", "Nice! A third tile was selected automatically for you.", "Try to make a line on one side."];
+
+Tutorial.lessons = {
+  start: ["Let's play! Click any tile to begin.", "Rotate the cube using the arrow keys or WASD."],
+  click: "Great! Now, click a tile on an adjacent side.",
+  turn: ["Nice! A third tile was selected automatically for you.", "Try to make a line on one side!"]
+};
 
 (function (win) {
 

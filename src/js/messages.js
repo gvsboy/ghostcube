@@ -13,30 +13,20 @@ Messages.prototype = {
 
   /**
    * Creates a new message to add to the queue.
-   * @param {String} message The message text.
-   * @param {String} classes A space-separated list of classes to append to the message.
+   * @param {String|Array[String]} message The message text or an array of messages.
+   * @param {[String]} classes A space-separated list of classes to append to the message.
    * @return {Messages} Returns itself for chaining.
    */
   add: function(message, classes) {
 
-    // Generate a new element to contain the message.
-    var item = document.createElement('li');
+    // Format the message as an array if not already.
+    message = _.isArray(message) ? message : [message];
 
-    // Add special classes to decorate the message if passed.
-    // We want to use apply here because add takes multiple arguments,
-    // not an array of names.
-    if (classes) {
-      DOMTokenList.prototype.add.apply(item.classList, classes.split(' '));
-    }
-
-    // Get the correct message by passed key.
-    if (message.split(' ').length === 1) {
-      message = Messages.LIST[message];
-    }
-
-    // Append the message to the new element and queue it up.
-    item.appendChild(document.createTextNode(message));
-    this._enqueue(item);
+    // Generate a message item for each message.
+    // If the text matches a LIST key, use the key's value.
+    _.forEach(message, text => {
+      this._generateItem(Messages.LIST[text] || text, classes);
+    });
 
     return this;
   },
@@ -47,6 +37,27 @@ Messages.prototype = {
    */
   removeAll: function() {
     _.forEach(this.container.children, item => item.classList.add('hide'));
+  },
+
+  /**
+   * Generates a message element and queues it up for display.
+   * @param  {String} message The message to display.
+   * @param  {[String]} classes A space-separated list of classes to append to the message.
+   */
+  _generateItem: function(message, classes) {
+
+    // Generate a new element to contain the message.
+    var item = document.createElement('li');
+
+    // Add special classes to decorate the message if passed. We want to use apply here 
+    // because add takes multiple arguments, not an array of names.
+    if (classes) {
+      DOMTokenList.prototype.add.apply(item.classList, classes.split(' '));
+    }
+
+    // Append the message to the new element and queue it up.
+    item.appendChild(document.createTextNode(message));
+    this._enqueue(item);
   },
 
   _enqueue: function(item) {

@@ -22,9 +22,6 @@ function App(containerId) {
   // Cross-selected tile for helping attacks.
   this._helperTile = null;
 
-  // Step-by-step instruction component.
-  this.tutorial = new Tutorial();
-
   // Records moves as they're made. Can be used to step through time.
   this.recorder = new Recorder(this);
 
@@ -48,6 +45,7 @@ App.prototype = {
 
       cubeEl.classList.remove('splash');
       container.classList.add('game');
+      this._initializeTutorial();
 
       UTIL.listenOnce(container, Vendor.EVENT.animationEnd, evt => {
         // Every animated cube face will bubble up their animation events
@@ -73,9 +71,6 @@ App.prototype = {
 
     this.players = [human, bot];
 
-    // The message box listens for messages to display.
-    this.messages.listenTo(this.tutorial);
-
     // Set the current player as the first player.
     this.setCurrentPlayer(_.first(this.players));
 
@@ -84,8 +79,6 @@ App.prototype = {
 
     // Let's clear the helper tile when the cube is rotating.
     this.renderer.on('start', _.bind(this.clearHelperTile, this));
-
-    this.tutorial.next().next();
   },
 
   enableCubeInteraction: function() {
@@ -151,7 +144,6 @@ App.prototype = {
   showCrosshairs: function(tile) {
     tile.addClass('selected');
     this.cube.updateCrosshairs(tile, tile => tile.addClass('highlighted'));
-    this.tutorial.next();
   },
 
   hideCrosshairs: function(tile) {
@@ -164,6 +156,19 @@ App.prototype = {
       this._helperTile.removeClass('helper');
     }
     this._helperTile = null;
+  },
+
+  /**
+   * Instantiates a tutorial instance and hooks into methods that should
+   * emit lesson messages.
+   */
+  _initializeTutorial: function() {
+    this.tutorial = new Tutorial();
+    this.tutorial
+      .hook(this, 'initializeGame', 'start')
+      .hook(this, 'showCrosshairs', 'click')
+      .hook(this, '_endTurn', 'turn');
+    this.messages.listenTo(this.tutorial);
   },
 
   /**
@@ -307,9 +312,6 @@ App.prototype = {
           // Cache the selected tiles.
           var selected = data.selected,
               length = selected && selected.length;
-
-          // This tutorial stuff needs a new home I think. Anyways.
-          this.tutorial.next().next();
 
           if (data.deselect) {
             this.hideCrosshairs(data.deselect[0]);

@@ -93,6 +93,6 @@ class TileSelectorResult {
 }
 
 // Failure codes.
-TileSelector.FAILURE_CLAIMED = 'claimed';
-TileSelector.FAILURE_NOT_NEIGHBOR = 'notNeighbor';
-TileSelector.FAILURE_CANNOT_ATTACK = 'cannotAttack';
+TileSelectorResult.FAILURE_CLAIMED = 'claimed';
+TileSelectorResult.FAILURE_NOT_NEIGHBOR = 'notNeighbor';
+TileSelectorResult.FAILURE_CANNOT_ATTACK = 'cannotAttack';
