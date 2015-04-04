@@ -23,8 +23,8 @@ h2 {
   color: $cube-color;
   font-size: 3em;
   font-weight: normal;
-  line-height: 12px;
-  margin-left: 4px;
+  line-height: 0.4em;
+  margin-left: 0.1em;
 }
 
 
@@ -65,16 +65,16 @@ h2 {
 
 #header {
   overflow: hidden;
-  margin-top: -10px;
+  margin-top: -1.4em;
   margin-left: $header-offset;
-  padding-bottom: 12px;
+  padding-bottom: 1em;
   white-space: nowrap;
   @include animation(splash-header $splash-speed forwards);
 }
 
 #stage {
   position: absolute;
-  top: 10px;
+  top: 1em;
   left: 0;
 }
 
@@ -139,8 +139,8 @@ h2 {
   position: absolute;
   width: $cube-size;
   height: $cube-size;
-  border: 4px solid $cube-color;
-  border-radius: 8px;
+  border: 0.4em solid $cube-color;
+  border-radius: 0.8em;
   cursor: pointer;
   @include transform-style(preserve-3d);
   @include transition(background-color 0.4s, border-color 0.4s);
@@ -178,7 +178,7 @@ h2 {
   position: absolute;
   width: $tile-size;
   height: $tile-size;
-  border: 2px solid $cube-color;
+  border: 0.2em solid $cube-color;
   background-color: #000;
   @include transform(translateZ(0.01em));
 
