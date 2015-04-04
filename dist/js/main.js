@@ -13,7 +13,7 @@ function App(containerId) {
   this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry/i.test(navigator.userAgent);
 
   // The fun part!
-  this.cube = new Cube(this.container.getElementsByClassName("cube")[0]);
+  this.cube = new Cube(this.container.querySelector(".cube"));
 
   // UI for displaying various messages.
   this.messages = new Messages();
@@ -43,23 +43,18 @@ App.prototype = {
   idle: function idle() {
     var _this = this;
 
-    var cube = this.cube,
-        cubeEl = cube.el,
-        container = this.container;
+    var container = this.container,
+        hitbox = container.querySelector("#hit");
 
     // Click the cube to begin the game.
-    UTIL.listenOnce(cubeEl, "click", function () {
+    UTIL.listenOnce(hitbox, "click", function () {
 
-      cubeEl.classList.remove("splash");
+      hitbox.style.display = "none";
       container.classList.add("game");
       _this._initializeTutorial();
 
-      UTIL.listenOnce(container, Vendor.EVENT.animationEnd, function (evt) {
-        // Every animated cube face will bubble up their animation events
-        // so let's react to only one of them.
-        if (evt.target === container) {
-          cube.build().then(_.bind(_this.initializeGame, _this));
-        }
+      UTIL.listenOnce(container, Vendor.EVENT.animationEnd, function () {
+        _this.cube.build().then(_.bind(_this.initializeGame, _this));
       });
     });
   },

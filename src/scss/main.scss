@@ -16,6 +16,7 @@ h1 {
   color: #6385a7;
   font-size: 6em;
   font-weight: normal;
+  -webkit-font-smoothing: subpixel-antialiased;
 }
 
 h2 {
@@ -25,6 +26,7 @@ h2 {
   font-weight: normal;
   line-height: 0.4em;
   margin-left: 0.1em;
+  -webkit-font-smoothing: subpixel-antialiased;
 }
 
 
@@ -59,6 +61,25 @@ h2 {
   }
 }
 
+/**
+ * Click events with animated 3D elements are jank so let's use
+ * a click mask over the initial cube state instead.
+ */
+#hit {
+  position: absolute;
+  z-index: 10;
+  top: -($cube-size * 0.25);
+  left: -($cube-size * 0.25);
+  width: $cube-size * 1.5;
+  height: $cube-size * 1.5;
+  cursor: pointer;
+
+  &:hover + #wrap .face {
+    background-color: $cube-color;
+    border-color: #000;
+  }
+}
+
 #wrap {
   position: relative;
 }
@@ -67,8 +88,9 @@ h2 {
   overflow: hidden;
   margin-top: -1.4em;
   margin-left: $header-offset;
-  padding-bottom: 1em;
+  padding-bottom: 1.4em;
   white-space: nowrap;
+  -webkit-font-smoothing: subpixel-antialiased;
   @include animation(splash-header $splash-speed forwards);
 }
 
@@ -91,6 +113,7 @@ h2 {
     overflow: hidden;
     cursor: default;
     pointer-events: none;
+    -webkit-font-smoothing: subpixel-antialiased;
     @include animation(message-add 4s forwards);
 
     &.error {
@@ -119,11 +142,6 @@ h2 {
   @include backface-visibility(visible);
   @include transform-style(preserve-3d);
   @include animation(cube-rotate 4s linear infinite);
-
-  &.splash:hover .face {
-    background-color: $cube-color;
-    border-color: #000;
-  }
 
   &.transition {
     @include animation(cube-rotate-stop $BASE-SPEED ease-out forwards);
@@ -250,11 +268,11 @@ h2 {
 @for $t from 1 through 9 {
   .tile:nth-child(#{$t}) {
     @if $t <= 3           { top: 0; }
-    @else if $t <= 6      { top: $tile-size; }
-    @else                 { top: $tile-size * 2; }
+    @else if $t <= 6      { top: $tile-size + $tile-gap-size; }
+    @else                 { top: ($tile-size + $tile-gap-size) * 2; }
     @if $t % 3 == 1       { left: 0; }
-    @else if $t % 3 == 2  { left: $tile-size; }
-    @else                 { left: $tile-size * 2; }
+    @else if $t % 3 == 2  { left: $tile-size + $tile-gap-size; }
+    @else                 { left: ($tile-size + $tile-gap-size) * 2; }
   }
 }
 

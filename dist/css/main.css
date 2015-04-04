@@ -952,6 +952,7 @@ h1 {
   color: #6385a7;
   font-size: 6em;
   font-weight: normal;
+  -webkit-font-smoothing: subpixel-antialiased;
 }
 
 h2 {
@@ -961,6 +962,7 @@ h2 {
   font-weight: normal;
   line-height: 0.4em;
   margin-left: 0.1em;
+  -webkit-font-smoothing: subpixel-antialiased;
 }
 
 /*----------------------------------------------
@@ -1000,6 +1002,24 @@ h2 {
   -webkit-animation: stage 0.05s forwards;
 }
 
+/**
+ * Click events with animated 3D elements are jank so let's use
+ * a click mask over the initial cube state instead.
+ */
+#hit {
+  position: absolute;
+  z-index: 10;
+  top: -2em;
+  left: -2em;
+  width: 12em;
+  height: 12em;
+  cursor: pointer;
+}
+#hit:hover + #wrap .face {
+  background-color: #abcdef;
+  border-color: #000;
+}
+
 #wrap {
   position: relative;
 }
@@ -1008,8 +1028,9 @@ h2 {
   overflow: hidden;
   margin-top: -1.4em;
   margin-left: 13em;
-  padding-bottom: 1em;
+  padding-bottom: 1.4em;
   white-space: nowrap;
+  -webkit-font-smoothing: subpixel-antialiased;
   animation: splash-header 0.1s forwards;
   -o-animation: splash-header 0.1s forwards;
   -moz-animation: splash-header 0.1s forwards;
@@ -1035,6 +1056,7 @@ h2 {
   overflow: hidden;
   cursor: default;
   pointer-events: none;
+  -webkit-font-smoothing: subpixel-antialiased;
   animation: message-add 4s forwards;
   -o-animation: message-add 4s forwards;
   -moz-animation: message-add 4s forwards;
@@ -1075,10 +1097,6 @@ h2 {
   -o-animation: cube-rotate 4s linear infinite;
   -moz-animation: cube-rotate 4s linear infinite;
   -webkit-animation: cube-rotate 4s linear infinite;
-}
-.cube.splash:hover .face {
-  background-color: #abcdef;
-  border-color: #000;
 }
 .cube.transition {
   animation: cube-rotate-stop 0.1s ease-out forwards;
@@ -1168,8 +1186,8 @@ h2 {
 .tile {
   display: none;
   position: absolute;
-  width: 2.54em;
-  height: 2.54em;
+  width: 2.4em;
+  height: 2.4em;
   border: 0.2em solid #abcdef;
   background-color: #000;
   transform: translateZ(0.01em);
@@ -1260,40 +1278,40 @@ h2 {
 
 .tile:nth-child(2) {
   top: 0;
-  left: 2.54em;
+  left: 2.6em;
 }
 
 .tile:nth-child(3) {
   top: 0;
-  left: 5.08em;
+  left: 5.2em;
 }
 
 .tile:nth-child(4) {
-  top: 2.54em;
+  top: 2.6em;
   left: 0;
 }
 
 .tile:nth-child(5) {
-  top: 2.54em;
-  left: 2.54em;
+  top: 2.6em;
+  left: 2.6em;
 }
 
 .tile:nth-child(6) {
-  top: 2.54em;
-  left: 5.08em;
+  top: 2.6em;
+  left: 5.2em;
 }
 
 .tile:nth-child(7) {
-  top: 5.08em;
+  top: 5.2em;
   left: 0;
 }
 
 .tile:nth-child(8) {
-  top: 5.08em;
-  left: 2.54em;
+  top: 5.2em;
+  left: 2.6em;
 }
 
 .tile:nth-child(9) {
-  top: 5.08em;
-  left: 5.08em;
+  top: 5.2em;
+  left: 5.2em;
 }

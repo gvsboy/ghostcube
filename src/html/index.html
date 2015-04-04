@@ -12,6 +12,8 @@
 
     <div id="container">
 
+      <div id="hit"></div>
+
       <div id="wrap">
 
         <div id="header">
@@ -20,7 +22,7 @@
         </div>
 
         <div id="stage">
-          <div class="cube splash">
+          <div class="cube">
             <div id="front" class="face"></div>
             <div id="back" class="face"></div>
             <div id="left" class="face"></div>
@@ -38,6 +40,10 @@
     <script src="js/main.js"></script>
     <script>
       var app = new App('container');
+
+      window.addEventListener('click', function(evt) {
+        console.log('click target:', evt.target);
+      });
     </script>
 
     <script src="http://localhost:35729/livereload.js"></script>
