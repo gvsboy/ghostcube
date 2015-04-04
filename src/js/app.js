@@ -66,7 +66,7 @@ App.prototype = {
   initializeGame: function() {
 
     // Create the players: A human and a bot.
-    var human = new Player('Kevin', 'player1', this.cube),
+    var human = new Player('Player', 'player1', this.cube),
         bot = new Bot('CPU', 'player2', this.cube, human);
 
     this.players = [human, bot];
@@ -327,7 +327,7 @@ App.prototype = {
         })
 
         // On failure, display a message based on the failure code.
-        .failure(code => this.messages.add(code));
+        .failure(code => this.messages.add(code, 'error'));
     }
   },
 

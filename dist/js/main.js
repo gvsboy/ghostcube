@@ -71,7 +71,7 @@ App.prototype = {
   initializeGame: function initializeGame() {
 
     // Create the players: A human and a bot.
-    var human = new Player("Kevin", "player1", this.cube),
+    var human = new Player("Player", "player1", this.cube),
         bot = new Bot("CPU", "player2", this.cube, human);
 
     this.players = [human, bot];
@@ -328,7 +328,7 @@ App.prototype = {
 
       // On failure, display a message based on the failure code.
       .failure(function (code) {
-        return _this.messages.add(code);
+        return _this.messages.add(code, "error");
       });
     }
   },
@@ -1204,8 +1204,8 @@ Tile.prototype = {
     }, Math.random() * 2000);
 
     // debug
-    var idData = id.split("-");
-    el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
+    //var idData = id.split('-');
+    //el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
 
     return el;
   },
@@ -2504,7 +2504,7 @@ Tutorial.prototype = {
     var oldMethod = obj[methodName];
     obj[methodName] = _.bind(function () {
       var result = oldMethod.apply(obj, arguments);
-      this.emit("message", Tutorial.lessons[key], "info");
+      this.emit("message", Tutorial.lessons[key]);
       obj[methodName] = oldMethod;
       return result;
     }, this);

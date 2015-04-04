@@ -1023,6 +1023,7 @@ h2 {
 }
 
 #messages {
+  position: relative;
   margin: 2em;
   padding: 0;
   list-style-type: none;
@@ -1032,13 +1033,15 @@ h2 {
   font-size: 2em;
   color: #fff;
   overflow: hidden;
+  cursor: default;
+  pointer-events: none;
   animation: message-add 4s forwards;
   -o-animation: message-add 4s forwards;
   -moz-animation: message-add 4s forwards;
   -webkit-animation: message-add 4s forwards;
 }
-#messages li.info {
-  color: blue;
+#messages li.error {
+  color: red;
 }
 #messages li.alert {
   font-size: 4em;

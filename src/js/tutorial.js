@@ -24,7 +24,7 @@ Tutorial.prototype = {
     var oldMethod = obj[methodName];
     obj[methodName] = _.bind(function() {
       var result = oldMethod.apply(obj, arguments);
-      this.emit('message', Tutorial.lessons[key], 'info');
+      this.emit('message', Tutorial.lessons[key]);
       obj[methodName] = oldMethod;
       return result;
     }, this);
