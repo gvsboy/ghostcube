@@ -71,21 +71,23 @@ App.prototype = {
 
     this.players = [human, bot];
 
-    // Set the current player as the first player.
-    this.setCurrentPlayer(_.first(this.players));
-
     // Begin the rendering.
     this.renderer.initialize();
 
     // Let's clear the helper tile when the cube is rotating.
     this.renderer.on("start", _.bind(this.clearHelperTile, this));
+
+    // Set the current player as the first player. This "officially" begins the game.
+    this.setCurrentPlayer(_.first(this.players));
   },
 
   enableCubeInteraction: function enableCubeInteraction() {
+    this.renderer.listenForInput();
     this.cube.listenTo("click", this._handleClick, this).listenTo("mouseover", this._handleMouseOver, this).listenTo("mouseout", this._handleMouseOut, this);
   },
 
   disableCubeInteraction: function disableCubeInteraction() {
+    this.renderer.stopListeningForInput();
     this.cube.stopListeningTo("click").stopListeningTo("mouseover").stopListeningTo("mouseout");
   },
 
@@ -231,6 +233,8 @@ App.prototype = {
   _waitAndListenForReset: function _waitAndListenForReset() {
     var _this = this;
 
+    // After two seconds, display a message to begin a new game and
+    // listen for document clicks to reset.
     setTimeout(function () {
       _this.messages.add("newGame", "persist");
       UTIL.listenOnce(document, "click", _.bind(_this._resetGameState, _this));
@@ -502,7 +506,7 @@ Bot.prototype = {
     }, []).join(" ");
 
     // Immediately output the message in the console.
-    console.log(text);
+    //console.log(text);
 
     // Append the text to the master log.
     this._logText += text + "\n";
@@ -1701,52 +1705,116 @@ Recorder.prototype = {
  *
  * @param {Array || String} keyCodes A collection of all the (string) keyCodes used.
  */
-function Keyboard(keyCodes) {
+function Keyboard(keyCodes, speed) {
 
-  this.keys = {};
+  this.speed = speed;
 
+  // If the keyCodes are a string, split them into an array.
   if (typeof keyCodes === "string") {
     keyCodes = keyCodes.split(" ");
   }
-  while (keyCodes.length) {
-    this.keys[keyCodes.pop()] = false;
-  }
+
+  // Loop through the codes and set them as keys.
+  this.keys = _.reduce(keyCodes, function (collection, code) {
+    collection[code] = false;
+    return collection;
+  }, {});
 }
 
 Keyboard.prototype = {
 
-  listen: function listen(win, callback) {
+  /**
+   * Creates and binds keyboard listener handlers for interactions.
+   * @param  {Function} callback A method to call from within the handlers.
+   * @param  {Object} context The object that will listen for keyboard events.
+   */
+  listen: function listen(callback) {
+    var _this = this;
 
-    var UNDEFINED = "undefined",
-        keys = this.keys;
+    var context = arguments[1] === undefined ? window : arguments[1];
 
-    if (!win) {
-      win = window;
+    /**
+     * Creates a function bound to this Keyboard instance that
+     * partially includes the callback argument.
+     * @param  {Function} handler The core function that will be invoked.
+     * @return {Function} A new bound and filled function.
+     */
+    var generateHandler = function (handler) {
+      return _.bind(_.partialRight(handler, callback), _this);
+    };
+
+    // Configure bound listener handlers to ease removing later.
+    this._boundHandleKeydown = generateHandler(this._handleKeydown);
+    this._boundHandleKeyup = generateHandler(this._handleKeyup);
+
+    // Listen for keyup and keydown to trigger interactions.
+    context.addEventListener("keydown", this._boundHandleKeydown);
+    context.addEventListener("keyup", this._boundHandleKeyup);
+  },
+
+  /**
+   * Remove keyboard event listeners.
+   * @param  {Object} context The object to remove the listeners from.
+   */
+  stopListening: function stopListening() {
+    var context = arguments[0] === undefined ? window : arguments[0];
+
+    context.removeEventListener("keydown", this._boundHandleKeydown);
+    context.removeEventListener("keyup", this._boundHandleKeyup);
+  },
+
+  getMovement: function getMovement() {
+
+    var KB = Keyboard,
+        keys = this.keys,
+        x = 0,
+        y = 0;
+
+    // Detect either up or down movement.
+    if (keys[KB.UP] || keys[KB.W]) {
+      x = this.speed;
+    } else if (keys[KB.DOWN] || keys[KB.S]) {
+      x = -this.speed;
     }
 
-    win.addEventListener("keydown", function (evt) {
-      var keyCode = evt.keyCode;
-      if (typeof keys[keyCode] !== UNDEFINED && !keys[keyCode]) {
-        keys[keyCode] = true;
-        if (callback) {
-          callback();
-        }
-      }
-    });
+    // Detect either left or right movement.
+    if (keys[KB.LEFT] || keys[KB.A]) {
+      y = this.speed;
+    } else if (keys[KB.RIGHT] || keys[KB.D]) {
+      y = -this.speed;
+    }
 
-    win.addEventListener("keyup", function (evt) {
-      var keyCode = evt.keyCode;
-      if (keys[keyCode]) {
-        keys[keyCode] = false;
-        if (callback) {
-          callback();
-        }
+    return { x: x, y: y };
+  },
+
+  _handleKeydown: function _handleKeydown(evt, callback) {
+
+    var keyCode = evt.keyCode,
+        keys = this.keys;
+
+    if (!_.isUndefined(keys[keyCode]) && !keys[keyCode]) {
+      keys[keyCode] = true;
+      if (callback) {
+        callback();
       }
-    });
+    }
+  },
+
+  _handleKeyup: function _handleKeyup(evt, callback) {
+
+    var keyCode = evt.keyCode;
+
+    if (this.keys[keyCode]) {
+      this.keys[keyCode] = false;
+      if (callback) {
+        callback();
+      }
+    }
   }
 
 };
 
+// Keyboard constants referencing keyCodes.
 Keyboard.UP = "38";
 Keyboard.DOWN = "40";
 Keyboard.LEFT = "37";
@@ -1794,12 +1862,28 @@ function Renderer(cube, isMobile) {
 Renderer.prototype = {
 
   initialize: function initialize() {
+
     if (this.isMobile) {
-      this._listenForTouch();
+      this._input = new Touch(this.speed);
     } else {
-      this._listenForKeyboard();
+      this._input = new Keyboard([Keyboard.UP, Keyboard.DOWN, Keyboard.LEFT, Keyboard.RIGHT, Keyboard.W, Keyboard.A, Keyboard.S, Keyboard.D], this.speed);
     }
+
     this.cube.setRenderer(this);
+  },
+
+  /**
+   * Stops the input listening function from calculating a render.
+   */
+  listenForInput: function listenForInput() {
+    this._input.listen(this._movementListener.bind(this));
+  },
+
+  /**
+   * Allows the input listening function to calculate renders.
+   */
+  stopListeningForInput: function stopListeningForInput() {
+    this._input.stopListening();
   },
 
   draw: function draw() {
@@ -1809,7 +1893,7 @@ Renderer.prototype = {
     this.cube.rotate(this.moveX, this.moveY);
 
     // If there are ticks left or a key is down, keep looping.
-    if (this.tick > 0 || this._setMovement()) {
+    if (this.tick > 0 || this._setMovementFromInput()) {
       this._loop();
     }
 
@@ -1849,41 +1933,22 @@ Renderer.prototype = {
     });
   },
 
-  _listenForKeyboard: function _listenForKeyboard() {
-
-    this.keyboard = new Keyboard([Keyboard.UP, Keyboard.DOWN, Keyboard.LEFT, Keyboard.RIGHT, Keyboard.W, Keyboard.A, Keyboard.S, Keyboard.D]);
-
-    // Listen for keystrokes.
-    this.keyboard.listen(window, this._movementListener.bind(this));
-  },
-
-  _listenForTouch: function _listenForTouch() {
-    this.touch = new Touch();
-    this.touch.listen(document.body, this._movementListener.bind(this));
-  },
-
   _loop: function _loop() {
     window.requestAnimationFrame(this.draw.bind(this));
   },
 
   _movementListener: function _movementListener() {
-    if (this.tick <= 0 && this._setMovement()) {
+    if (this.tick <= 0 && this._setMovementFromInput()) {
       this._loop();
       this.emit("start");
     }
   },
 
-  _setMovement: function _setMovement() {
+  _setMovementFromInput: function _setMovementFromInput() {
 
-    // reset movex and movey
-    this.moveX = this.moveY = 0;
-
-    // Set the movement direction depending on the environment.
-    if (this.isMobile) {
-      this._setTouchMovement();
-    } else {
-      this._setKeyboardMovement();
-    }
+    var movement = this._input.getMovement();
+    this.moveX = movement.x;
+    this.moveY = movement.y;
 
     // If there is movement, set tick and return true.
     if (this.moveX !== 0 || this.moveY !== 0) {
@@ -1893,46 +1958,6 @@ Renderer.prototype = {
 
     // Movement was not set.
     return false;
-  },
-
-  _setKeyboardMovement: function _setKeyboardMovement() {
-
-    var KB = Keyboard,
-        keys = this.keyboard.keys;
-
-    // Detect either up or down movement.
-    if (keys[KB.UP] || keys[KB.W]) {
-      this.moveX = this.speed;
-    } else if (keys[KB.DOWN] || keys[KB.S]) {
-      this.moveX = -this.speed;
-    }
-
-    // Detect either left or right movement.
-    if (keys[KB.LEFT] || keys[KB.A]) {
-      this.moveY = this.speed;
-    } else if (keys[KB.RIGHT] || keys[KB.D]) {
-      this.moveY = -this.speed;
-    }
-  },
-
-  _setTouchMovement: function _setTouchMovement() {
-
-    var movement = this.touch.queue.shift();
-
-    switch (movement) {
-      case Touch.UP:
-        this.moveX = -this.speed;
-        break;
-      case Touch.DOWN:
-        this.moveX = this.speed;
-        break;
-      case Touch.LEFT:
-        this.moveY = this.speed;
-        break;
-      case Touch.RIGHT:
-        this.moveY = -this.speed;
-        break;
-    }
   }
 
 };
@@ -1941,29 +1966,59 @@ Renderer.prototype = {
 // Ditch when we migrate to Browserify.
 _.assign(Renderer.prototype, EventEmitter2.prototype);
 
-function Touch() {
+function Touch(speed) {
+  this.speed = speed;
   this.queue = [];
+  this.iface = new Hammer(context);
+
+  // Configure the swipe gesture.
+  this.iface.get("swipe").set({
+    direction: Hammer.DIRECTION_ALL,
+    threshold: 0.1,
+    velocity: 0.1
+  });
 }
 
 Touch.prototype = {
 
-  listen: function listen(context, callback) {
+  listen: function listen(callback) {
+    this._boundHandleSwipe = _.bind(_.partialRight(this._handleSwipe, callback), this);
+    this.iface.on("swipe", this._boundHandleSwipe);
+  },
 
-    var iface = new Hammer(context || document.body),
-        queue = this.queue;
+  stopListening: function stopListening() {
+    this.iface.off("swipe", this._boundHandleSwipe);
+  },
 
-    iface.get("swipe").set({
-      direction: Hammer.DIRECTION_ALL,
-      threshold: 0.1,
-      velocity: 0.1
-    });
+  getMovement: function getMovement() {
 
-    iface.on("swipe", function (evt) {
-      queue.push(evt.offsetDirection);
-      if (callback) {
-        callback();
-      }
-    });
+    var movement = this.queue.shift(),
+        x = 0,
+        y = 0;
+
+    switch (movement) {
+      case Touch.UP:
+        x = -this.speed;
+        break;
+      case Touch.DOWN:
+        x = this.speed;
+        break;
+      case Touch.LEFT:
+        y = this.speed;
+        break;
+      case Touch.RIGHT:
+        y = -this.speed;
+        break;
+    }
+
+    return { x: x, y: y };
+  },
+
+  _handleSwipe: function _handleSwipe(evt, callback) {
+    this.queue.push(evt.offsetDirection);
+    if (callback) {
+      callback();
+    }
   }
 
 };

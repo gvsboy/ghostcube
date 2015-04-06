@@ -1,28 +1,58 @@
-function Touch() {
+function Touch(speed) {
+  this.speed = speed;
   this.queue = [];
+  this.iface = new Hammer(context);
+
+  // Configure the swipe gesture.
+  this.iface
+    .get('swipe')
+    .set({
+      direction: Hammer.DIRECTION_ALL,
+      threshold: 0.1,
+      velocity: 0.1
+    });
 }
 
 Touch.prototype = {
 
-  listen: function(context, callback) {
+  listen: function(callback) {
+    this._boundHandleSwipe = _.bind(_.partialRight(this._handleSwipe, callback), this);
+    this.iface.on('swipe', this._boundHandleSwipe);
+  },
 
-    var iface = new Hammer(context || document.body),
-        queue = this.queue;
+  stopListening: function() {
+    this.iface.off('swipe', this._boundHandleSwipe);
+  },
 
-    iface
-      .get('swipe')
-      .set({
-        direction: Hammer.DIRECTION_ALL,
-        threshold: 0.1,
-        velocity: 0.1
-      });
+  getMovement: function() {
 
-    iface.on('swipe', function(evt) {
-      queue.push(evt.offsetDirection);
-      if (callback) {
-        callback();
-      }
-    });
+    var movement = this.queue.shift(),
+        x = 0,
+        y = 0;
+
+    switch (movement) {
+      case Touch.UP:
+        x = -this.speed;
+        break;
+      case Touch.DOWN:
+        x = this.speed;
+        break;
+      case Touch.LEFT:
+        y = this.speed;
+        break;
+      case Touch.RIGHT:
+        y = -this.speed;
+        break;
+    }
+
+    return {x, y};
+  },
+
+  _handleSwipe: function(evt, callback) {
+    this.queue.push(evt.offsetDirection);
+    if (callback) {
+      callback();
+    }
   }
 
 };

@@ -34,13 +34,38 @@ function Renderer(cube, isMobile) {
 Renderer.prototype = {
 
   initialize: function() {
+
     if (this.isMobile) {
-      this._listenForTouch();
+      this._input = new Touch(this.speed);
     }
     else {
-      this._listenForKeyboard();
+      this._input = new Keyboard([
+        Keyboard.UP,
+        Keyboard.DOWN,
+        Keyboard.LEFT,
+        Keyboard.RIGHT,
+        Keyboard.W,
+        Keyboard.A,
+        Keyboard.S,
+        Keyboard.D
+      ], this.speed);
     }
+
     this.cube.setRenderer(this);
+  },
+
+  /**
+   * Stops the input listening function from calculating a render.
+   */
+  listenForInput: function() {
+    this._input.listen(this._movementListener.bind(this));
+  },
+
+  /**
+   * Allows the input listening function to calculate renders.
+   */
+  stopListeningForInput: function() {
+    this._input.stopListening();
   },
 
   draw: function() {
@@ -50,7 +75,7 @@ Renderer.prototype = {
     this.cube.rotate(this.moveX, this.moveY);
 
     // If there are ticks left or a key is down, keep looping.
-    if (this.tick > 0 || this._setMovement()) {
+    if (this.tick > 0 || this._setMovementFromInput()) {
       this._loop();
     }
 
@@ -89,51 +114,22 @@ Renderer.prototype = {
     });
   },
 
-  _listenForKeyboard: function() {
-
-    this.keyboard = new Keyboard([
-      Keyboard.UP,
-      Keyboard.DOWN,
-      Keyboard.LEFT,
-      Keyboard.RIGHT,
-      Keyboard.W,
-      Keyboard.A,
-      Keyboard.S,
-      Keyboard.D
-    ]);
-
-    // Listen for keystrokes.
-    this.keyboard.listen(window, this._movementListener.bind(this));
-  },
-
-  _listenForTouch: function() {
-    this.touch = new Touch();
-    this.touch.listen(document.body, this._movementListener.bind(this));
-  },
-
   _loop: function() {
     window.requestAnimationFrame(this.draw.bind(this));
   },
 
   _movementListener: function() {
-    if (this.tick <= 0 && this._setMovement()) {
+    if (this.tick <= 0 && this._setMovementFromInput()) {
       this._loop();
       this.emit('start');
     }
   },
 
-  _setMovement: function() {
+  _setMovementFromInput: function() {
 
-    // reset movex and movey
-    this.moveX = this.moveY = 0;
-
-    // Set the movement direction depending on the environment.
-    if (this.isMobile) {
-      this._setTouchMovement();
-    }
-    else {
-      this._setKeyboardMovement();
-    }
+    var movement = this._input.getMovement();
+    this.moveX = movement.x;
+    this.moveY = movement.y;
 
     // If there is movement, set tick and return true.
     if (this.moveX !== 0 || this.moveY !== 0) {
@@ -143,48 +139,6 @@ Renderer.prototype = {
 
     // Movement was not set.
     return false;
-  },
-
-  _setKeyboardMovement: function() {
-
-    var KB = Keyboard,
-        keys = this.keyboard.keys;
-
-    // Detect either up or down movement.
-    if (keys[KB.UP] || keys[KB.W]) {
-      this.moveX = this.speed;
-    }
-    else if (keys[KB.DOWN] || keys[KB.S]) {
-      this.moveX = -this.speed;
-    }
-
-    // Detect either left or right movement.
-    if (keys[KB.LEFT] || keys[KB.A]) {
-      this.moveY = this.speed;
-    }
-    else if (keys[KB.RIGHT] || keys[KB.D]) {
-      this.moveY = -this.speed;
-    }
-  },
-
-  _setTouchMovement: function() {
-
-    var movement = this.touch.queue.shift();
-
-    switch (movement) {
-      case Touch.UP:
-        this.moveX = -this.speed;
-        break;
-      case Touch.DOWN:
-        this.moveX = this.speed;
-        break;
-      case Touch.LEFT:
-        this.moveY = this.speed;
-        break;
-      case Touch.RIGHT:
-        this.moveY = -this.speed;
-        break;
-    }
   }
 
 };

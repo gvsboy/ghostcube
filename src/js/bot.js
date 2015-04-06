@@ -145,7 +145,7 @@ Bot.prototype = {
     }, []).join(' ');
 
     // Immediately output the message in the console.
-    console.log(text);
+    //console.log(text);
 
     // Append the text to the master log.
     this._logText += text + '\n';

@@ -66,17 +66,18 @@ App.prototype = {
 
     this.players = [human, bot];
 
-    // Set the current player as the first player.
-    this.setCurrentPlayer(_.first(this.players));
-
     // Begin the rendering.
     this.renderer.initialize();
 
     // Let's clear the helper tile when the cube is rotating.
     this.renderer.on('start', _.bind(this.clearHelperTile, this));
+
+    // Set the current player as the first player. This "officially" begins the game.
+    this.setCurrentPlayer(_.first(this.players));
   },
 
   enableCubeInteraction: function() {
+    this.renderer.listenForInput();
     this.cube
       .listenTo('click', this._handleClick, this)
       .listenTo('mouseover', this._handleMouseOver, this)
@@ -84,6 +85,7 @@ App.prototype = {
   },
 
   disableCubeInteraction: function() {
+    this.renderer.stopListeningForInput();
     this.cube
       .stopListeningTo('click')
       .stopListeningTo('mouseover')
@@ -232,6 +234,9 @@ App.prototype = {
    * and sets a listener.
    */
   _waitAndListenForReset: function() {
+
+    // After two seconds, display a message to begin a new game and
+    // listen for document clicks to reset.
     setTimeout(() => {
       this.messages.add('newGame', 'persist');
       UTIL.listenOnce(document, 'click', _.bind(this._resetGameState, this));
