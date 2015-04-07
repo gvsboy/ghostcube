@@ -235,6 +235,10 @@ App.prototype = {
    */
   _waitAndListenForReset: function() {
 
+    // Remove the current player and disable cube interactions.
+    this.currentPlayer = null;
+    this.disableCubeInteraction();
+
     // After two seconds, display a message to begin a new game and
     // listen for document clicks to reset.
     setTimeout(() => {
@@ -248,9 +252,15 @@ App.prototype = {
    * Sets the current player to the first player in the array.
    */
   _resetGameState: function() {
-    _.forEach(this.players, player => player.releaseAll());
+
     this.messages.removeAll();
-    this.setCurrentPlayer(_.first(this.players));
+    this.cube.el.classList.add('reset');
+
+    this.renderer.setSyncMovement(450, 450).then(() => {
+      _.forEach(this.players, player => player.releaseAll());
+      this.cube.el.classList.remove('reset');
+      this.setCurrentPlayer(_.first(this.players));
+    });
   },
 
   // Potentially dangerous as this is hackable...

@@ -114,6 +114,19 @@ Renderer.prototype = {
     });
   },
 
+  setSyncMovement: function(x = 0, y = 0) {
+
+    var speed = this.speed;
+
+    return new Promise(resolve => {
+      this.tick = Math.max(x, y);
+      this.moveX = x === 0 ? 0 : x < 0 ? -speed : speed;
+      this.moveY = y === 0 ? 0 : y < 0 ? -speed : speed;
+      this._loop();
+      this.once('end', resolve);
+    });
+  },
+
   _loop: function() {
     window.requestAnimationFrame(this.draw.bind(this));
   },

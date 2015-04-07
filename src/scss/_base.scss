@@ -4,7 +4,7 @@
 
 ----------------------------------------------*/
 
-$BASE-SPEED: 0.1s;//2.0s;
+$BASE-SPEED: 2.0s;
 
 $splash-speed: $BASE-SPEED;
 $game-speed: $BASE-SPEED / 2;
@@ -114,6 +114,11 @@ $header-width: 54em;
 
 @include keyframes(cube-rotate-stop) {
   100%  { @include transform(rotateX($cube-init-x) rotateY($cube-init-y)); }
+}
+
+@include keyframes(cube-reset) {
+  0%    { opacity: 1 }
+  100%  { opacity: 0 }
 }
 
 @include keyframes(splash-cube) {

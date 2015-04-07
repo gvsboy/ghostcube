@@ -233,6 +233,10 @@ App.prototype = {
   _waitAndListenForReset: function _waitAndListenForReset() {
     var _this = this;
 
+    // Remove the current player and disable cube interactions.
+    this.currentPlayer = null;
+    this.disableCubeInteraction();
+
     // After two seconds, display a message to begin a new game and
     // listen for document clicks to reset.
     setTimeout(function () {
@@ -246,11 +250,18 @@ App.prototype = {
    * Sets the current player to the first player in the array.
    */
   _resetGameState: function _resetGameState() {
-    _.forEach(this.players, function (player) {
-      return player.releaseAll();
-    });
+    var _this = this;
+
     this.messages.removeAll();
-    this.setCurrentPlayer(_.first(this.players));
+    this.cube.el.classList.add("reset");
+
+    this.renderer.setSyncMovement(450, 450).then(function () {
+      _.forEach(_this.players, function (player) {
+        return player.releaseAll();
+      });
+      _this.cube.el.classList.remove("reset");
+      _this.setCurrentPlayer(_.first(_this.players));
+    });
   },
 
   // Potentially dangerous as this is hackable...
@@ -1930,6 +1941,23 @@ Renderer.prototype = {
         move(y, "moveY");
         _this.once("end", resolve);
       });
+    });
+  },
+
+  setSyncMovement: function setSyncMovement() {
+    var _this = this;
+
+    var x = arguments[0] === undefined ? 0 : arguments[0];
+    var y = arguments[1] === undefined ? 0 : arguments[1];
+
+    var speed = this.speed;
+
+    return new Promise(function (resolve) {
+      _this.tick = Math.max(x, y);
+      _this.moveX = x === 0 ? 0 : x < 0 ? -speed : speed;
+      _this.moveY = y === 0 ? 0 : y < 0 ? -speed : speed;
+      _this._loop();
+      _this.once("end", resolve);
     });
   },
 

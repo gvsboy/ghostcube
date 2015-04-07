@@ -139,7 +139,7 @@ h2 {
 .cube {
   width: $cube-size;
   height: $cube-size;
-  @include backface-visibility(visible);
+  @include backface-visibility(hidden);
   @include transform-style(preserve-3d);
   @include animation(cube-rotate 4s linear infinite);
 
@@ -150,6 +150,10 @@ h2 {
   &.init {
     @include animation(none);
     @include transform(rotateX($cube-init-x) rotateY($cube-init-y));
+  }
+
+  &.reset {
+    @include animation(cube-reset 1s forwards);
   }
 }
 
