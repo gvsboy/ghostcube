@@ -1,3 +1,8 @@
+import _ from 'lodash';
+import Bot from './bot';
+import TileSelector from './selection/TileSelector';
+import CubeCache from './selection/CubeCache';
+
 function Player(name, tileClass, cube) {
   this.name = name;
   this.tileClass = tileClass;
@@ -173,3 +178,5 @@ Player.prototype = {
 };
 
 _.assign(Bot.prototype, Player.prototype);
+
+export default Player;

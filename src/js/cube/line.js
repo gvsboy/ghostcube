@@ -1,3 +1,5 @@
+import _ from 'lodash';
+
 /**
  * Lines represent tiles in either a horizontal or vertical row
  * which serve as points or win states.
@@ -148,3 +150,5 @@ Line.prototype = {
   }
 
 };
+
+export default Line;

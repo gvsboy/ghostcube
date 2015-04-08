@@ -1,3 +1,8 @@
+import _ from 'lodash';
+import {EventEmitter} from 'events';
+import Keyboard from './keyboard';
+import Touch from './touch';
+
 function Renderer(cube, isMobile) {
 
   // A reference to the game cube.
@@ -26,9 +31,6 @@ function Renderer(cube, isMobile) {
 
   // Is the client a mobile device?
   this.isMobile = isMobile;
-
-  // EventEmitter constructor call.
-  EventEmitter2.call(this);
 }
 
 Renderer.prototype = {
@@ -158,4 +160,6 @@ Renderer.prototype = {
 
 // Mixin the EventEmitter methods for great justice.
 // Ditch when we migrate to Browserify.
-_.assign(Renderer.prototype, EventEmitter2.prototype);
+_.assign(Renderer.prototype, EventEmitter.prototype);
+
+export default Renderer;

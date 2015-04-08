@@ -1,3 +1,7 @@
+import _ from 'lodash';
+import {events} from '../util/vendor';
+import {listenOnce} from '../util/util';
+
 function Tile(side, index) {
 
   // Set properties.
@@ -47,7 +51,7 @@ Tile.prototype = {
       .addClass('preclaimed')
       .addClass(player.tileClass);
 
-    UTIL.listenOnce(this.el, Vendor.EVENT.animationEnd, () => {
+    listenOnce(this.el, events.animationEnd, () => {
       this.removeClass('preclaimed').addClass('claimed');
     });
   },
@@ -170,3 +174,5 @@ Tile.translationMap = (function() {
   };
 
 }());
+
+export default Tile;

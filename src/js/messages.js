@@ -1,8 +1,11 @@
+import _ from 'lodash';
+import {events} from './util/vendor';
+
 function Messages() {
   this.delay = 100;
   this.queue = [];
   this.container = this._buildContainer();
-  this.container.addEventListener(Vendor.EVENT.animationEnd, _.bind(this._remove, this));
+  this.container.addEventListener(events.animationEnd, _.bind(this._remove, this));
 }
 
 Messages.prototype = {
@@ -106,3 +109,5 @@ Messages.LIST = {
   stalemate: 'Stalemate!',
   newGame: 'Click anywhere to begin a new game.'
 };
+
+export default Messages;

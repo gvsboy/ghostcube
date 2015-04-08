@@ -1,3 +1,6 @@
+import _ from 'lodash';
+import Hammer from 'hammerjs';
+
 function Touch(speed) {
   this.speed = speed;
   this.queue = [];
@@ -61,3 +64,5 @@ Touch.UP = Hammer.DIRECTION_UP;
 Touch.DOWN = Hammer.DIRECTION_DOWN;
 Touch.LEFT = Hammer.DIRECTION_LEFT;
 Touch.RIGHT = Hammer.DIRECTION_RIGHT;
+
+export default Touch;

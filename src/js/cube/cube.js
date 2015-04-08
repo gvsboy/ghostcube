@@ -1,3 +1,7 @@
+import _ from 'lodash';
+import Side from './side';
+import * as vendor from '../util/vendor';
+
 function Cube(el, size) {
 
   // The HTML element representing the cube.
@@ -46,9 +50,9 @@ Cube.prototype = {
       var el = this.el;
 
       // After the cube's rotation animation has made one loop, begin to slow it down.
-      el.addEventListener(Vendor.EVENT.animationIteration, function() {
+      el.addEventListener(vendor.events.animationIteration, function() {
         el.classList.add('transition');
-        el.addEventListener(Vendor.EVENT.animationEnd, function animEnd(evt) {
+        el.addEventListener(vendor.events.animationEnd, function animEnd(evt) {
           if (evt.target === el) {
 
             // Remove the transition class and append the init class. Done!
@@ -76,7 +80,7 @@ Cube.prototype = {
     this.x = this._calculateCoordinate(this.x, x);
     this.y = this._calculateCoordinate(this.y, y);
 
-    this.style[Vendor.JS.transform] =
+    this.style[vendor.js.transform] =
       Cube.ROTATE_X_PREFIX + this.x + Cube.ROTATE_UNIT_SUFFIX + ' ' + Cube.ROTATE_Y_PREFIX + this.y + Cube.ROTATE_UNIT_SUFFIX;
   },
 
@@ -392,3 +396,5 @@ Cube.prototype = {
   }
 
 };
+
+export default Cube;

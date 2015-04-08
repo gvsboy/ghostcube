@@ -1,3 +1,6 @@
+import _ from 'lodash';
+import TileSelectorResult from './TileSelectorResult';
+
 /**
  * Instances of this class are used for making valid tile selections
  * and returning results containing data describing the selections.
@@ -159,3 +162,5 @@ class TileSelector {
   }
 
 }
+
+export default TileSelector;

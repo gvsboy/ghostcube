@@ -1,3 +1,5 @@
+import _ from 'lodash';
+
 /**
  * A software interface for determining which keyboard keys are pressed.
  *
@@ -118,3 +120,5 @@ Keyboard.S = '83';
 Keyboard.D = '68';
 Keyboard.SPACE = '32';
 Keyboard.ESCAPE = '27';
+
+export default Keyboard;

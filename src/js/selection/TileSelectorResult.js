@@ -96,3 +96,5 @@ class TileSelectorResult {
 TileSelectorResult.FAILURE_CLAIMED = 'claimed';
 TileSelectorResult.FAILURE_NOT_NEIGHBOR = 'notNeighbor';
 TileSelectorResult.FAILURE_CANNOT_ATTACK = 'cannotAttack';
+
+export default TileSelectorResult;

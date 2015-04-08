@@ -1,3 +1,6 @@
+import _ from 'lodash';
+import Line from '../cube/line';
+
 function CubeCache(cube) {
 
   // A reference to the cube.
@@ -195,3 +198,5 @@ CubeCache.prototype = {
   }
 
 };
+
+export default CubeCache;

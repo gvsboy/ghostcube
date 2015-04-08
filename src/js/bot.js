@@ -1,3 +1,6 @@
+import _ from 'lodash';
+import Player from './player';
+
 function Bot(name, tileClass, cube, opponent) {
   Player.call(this, name, tileClass, cube);
   this.opponent = opponent;
@@ -152,3 +155,5 @@ Bot.prototype = {
   }
 
 };
+
+export default Bot;

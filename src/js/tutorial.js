@@ -1,3 +1,6 @@
+import _ from 'lodash';
+import {EventEmitter} from 'events';
+
 /**
  * A lightweight guided tutorial helper that is attached to a specific
  * event-emitting object, such as the cube. Displays helpful messages
@@ -5,9 +8,7 @@
  * @param {Object} target An event-emitting object to provide guidance for.
  * @class
  */
-function Tutorial() {
-  EventEmitter2.call(this);
-}
+function Tutorial() {}
 
 Tutorial.prototype = {
 
@@ -34,7 +35,7 @@ Tutorial.prototype = {
 };
 
 // Mixin EventEmitter methods.
-_.assign(Tutorial.prototype, EventEmitter2.prototype);
+_.assign(Tutorial.prototype, EventEmitter.prototype);
 
 // List of step messages.
 Tutorial.stepMessages = [
@@ -56,3 +57,5 @@ Tutorial.lessons = {
     'Try to make a line on one side!'
   ]
 };
+
+export default Tutorial;

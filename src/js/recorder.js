@@ -1,3 +1,6 @@
+import _ from 'lodash';
+import Tile from './cube/tile';
+
 function Recorder(app) {
   this._timeline = [];
   this._cursor = 0;
@@ -77,3 +80,5 @@ Recorder.prototype = {
   }
 
 };
+
+export default Recorder;

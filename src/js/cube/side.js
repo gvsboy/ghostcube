@@ -1,3 +1,7 @@
+import _ from 'lodash';
+import Tile from './tile';
+import Line from './line';
+
 function Side(el, size) {
 
   // HTML element representing the side.
@@ -98,3 +102,5 @@ Side.prototype = {
   }
 
 };
+
+export default Side;
