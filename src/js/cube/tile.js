@@ -160,7 +160,7 @@ Tile.translationMap = (function() {
 
     left: {
       top:      [Y, ROTATE],        // top
-      bottom:   [Y, FLIP, ROTATE],    // bottom
+      bottom:   [Y, FLIP, ROTATE],  // bottom
       back:     [X],                // left
       front:    [X]                 // right
     },

@@ -60,7 +60,9 @@ gulp.task('html', function() {
     .pipe(gulp.dest('dist/'));
 });
 
-// NOT WORKING YET...
+/**
+ * Watch for SCSS changes and reload.
+ */
 gulp.task('watch', function() {
   gulp.watch('src/scss/*.scss', ['styles']);
 });
