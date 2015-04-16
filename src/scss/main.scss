@@ -30,6 +30,51 @@ h2 {
 }
 
 
+/*----------------------------------------------
+
+  Media Queries
+
+----------------------------------------------*/
+
+// iPhone 5/5S
+@media only screen 
+  and (min-device-width: 320px) 
+  and (max-device-width: 568px)
+  and (-webkit-min-device-pixel-ratio: 2) {
+  html { font-size: 20px; }
+}
+
+// iPhone 6
+@media only screen 
+  and (min-device-width: 375px) 
+  and (max-device-width: 667px) 
+  and (-webkit-min-device-pixel-ratio: 2) { 
+  html { font-size: 22px; }
+}
+
+// iPhone 6+
+@media only screen 
+  and (min-device-width: 414px) 
+  and (max-device-width: 736px) 
+  and (-webkit-min-device-pixel-ratio: 3) { 
+  html { font-size: 24px; }
+}
+
+// iPad
+@media only screen 
+  and (min-device-width: 768px) 
+  and (max-device-width: 1024px) {
+  html { font-size: 20px; }
+}
+
+// Galaxy S5
+@media screen 
+  and (device-width: 360px) 
+  and (device-height: 640px) 
+  and (-webkit-device-pixel-ratio: 3) {
+  html { font-size: 22px; }
+}
+
 
 /*----------------------------------------------
 

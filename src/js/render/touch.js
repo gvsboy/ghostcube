@@ -4,7 +4,7 @@ import Hammer from 'hammerjs';
 function Touch(speed) {
   this.speed = speed;
   this.queue = [];
-  this.iface = new Hammer(context);
+  this.iface = new Hammer(document.body);
 
   // Configure the swipe gesture.
   this.iface

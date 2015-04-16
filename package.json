@@ -8,6 +8,7 @@
     "url": "https://github.com/gvsboy/ghostcube"
   },
   "devDependencies": {
+    "babel": "^5.1.10",
     "babelify": "^6.0.1",
     "browserify": "^9.0.7",
     "gulp": "^3.8.11",
