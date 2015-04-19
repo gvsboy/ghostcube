@@ -4,6 +4,7 @@
 var gulp = require('gulp'),
     sass = require('gulp-sass'),
     gutil = require('gulp-util'),
+    rename = require('gulp-rename'),
     livereload = require('gulp-livereload'),
     source = require('vinyl-source-stream'),
     buffer = require('vinyl-buffer'),
@@ -12,62 +13,83 @@ var gulp = require('gulp'),
     watchify = require('watchify'),
     assign = require('lodash.assign'),
 
-    // Browserify config
-    browserifyConfig = {
-      debug: true,
-      entries: './src/js/app',
-      transform: [babelify]
-    },
-    browserifyOptions = assign({}, watchify.args, browserifyConfig),
-    b = watchify(browserify(browserifyOptions));
+    libraries = [
+      'lodash',
+      'hammerjs',
+      'events',
+      'babel/polyfill'
+    ];
 
-function bundle() {
+gulp.task('dev-libs', function() {
+
+  var b = browserify({debug: false});
+
+  libraries.forEach(function(lib) {
+    b.require(lib);
+  });
+
   return b.bundle()
     .on('error', gutil.log.bind(gutil, 'Browserify error'))
-    .pipe(source('main.js'))
+    .pipe(source('libs.js'))
     .pipe(buffer())
-    .pipe(gulp.dest('dist/js/'))
-    .pipe(livereload());
-}
+    .pipe(gulp.dest('dist/dev/'));
+});
 
-// Boot the livereload server.
-livereload.listen();
+gulp.task('dev', function() {
 
-/**
- * Browserify, Babelify, and uglify scripts using Watchify FTW.
- */
-gulp.task('scripts', bundle);
-b.on('update', bundle);
-b.on('log', gutil.log);
+  // Browserify config
+  var browserifyConfig = {
+        debug: true,
+        entries: './src/js/app',
+        transform: [babelify]
+      },
+      browserifyOptions = assign({}, watchify.args, browserifyConfig),
+      b = watchify(browserify(browserifyOptions));
 
-/**
- * Compile all that SASS.
- */
-gulp.task('styles', function() {
+  libraries.forEach(function(lib) {
+    b.external(lib);
+  });
+  b.on('update', compileJS);
+  b.on('log', gutil.log);
+
+  function compileJS() {
+    return b.bundle()
+      .on('error', gutil.log.bind(gutil, 'Browserify error'))
+      .pipe(source('main.js'))
+      .pipe(buffer())
+      .pipe(gulp.dest('dist/dev/'))
+      .pipe(livereload());
+  }
+
+  /**
+   * Compile all that SASS.
+   */
+  function compileSASS() {
+    gulp
+      .src('src/scss/main.scss')
+      .pipe(sass())
+      .pipe(gulp.dest('dist/dev/'))
+      .pipe(livereload());
+  }
+
+  // Copy over the index file. Nothing fancy.
   gulp
-    .src('src/scss/main.scss')
-    .pipe(sass())
-    .pipe(gulp.dest('dist/css/'))
-    .pipe(livereload());
+    .src('src/html/index.dev.html')
+    .pipe(rename('index.html'))
+    .pipe(gulp.dest('dist/dev/'));
+
+  //Watch for SCSS changes and reload.
+  gulp.watch('src/scss/*.scss', compileSASS);
+
+  // Boot the livereload server.
+  livereload.listen();
+
+  // Execute an initial compile.
+  compileJS();
+  compileSASS();
 });
 
 /**
- * Copy over the index file. Nothing fancy.
+ * Configure the default task to compile all the things for dev.
  */
-gulp.task('html', function() {
-  gulp
-    .src('src/html/index.html')
-    .pipe(gulp.dest('dist/'));
-});
-
-/**
- * Watch for SCSS changes and reload.
- */
-gulp.task('watch', function() {
-  gulp.watch('src/scss/*.scss', ['styles']);
-});
-
-/**
- * Configure the default task to compile all the things.
- */
-gulp.task('default', ['styles', 'scripts', 'html', 'watch']);
+gulp.task('default', ['dev-libs', 'dev']);
