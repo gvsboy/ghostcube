@@ -1,8 +1,13 @@
 'use strict';
 
-// Requires
-var gulp = require('gulp'),
+var DEV_DIR = 'dist/dev/',
+    PROD_DIR = 'dist/prod/',
+
+    gulp = require('gulp'),
     sass = require('gulp-sass'),
+    uglify = require('gulp-uglify'),
+    minifyCSS = require('gulp-minify-css'),
+    sourcemaps = require('gulp-sourcemaps'),
     gutil = require('gulp-util'),
     rename = require('gulp-rename'),
     livereload = require('gulp-livereload'),
@@ -32,14 +37,14 @@ gulp.task('dev-libs', function() {
     .on('error', gutil.log.bind(gutil, 'Browserify error'))
     .pipe(source('libs.js'))
     .pipe(buffer())
-    .pipe(gulp.dest('dist/dev/'));
+    .pipe(gulp.dest(DEV_DIR));
 });
 
 gulp.task('dev', function() {
 
   // Browserify config
   var browserifyConfig = {
-        debug: true,
+        debug: false,
         entries: './src/js/app',
         transform: [babelify]
       },
@@ -57,7 +62,7 @@ gulp.task('dev', function() {
       .on('error', gutil.log.bind(gutil, 'Browserify error'))
       .pipe(source('main.js'))
       .pipe(buffer())
-      .pipe(gulp.dest('dist/dev/'))
+      .pipe(gulp.dest(DEV_DIR))
       .pipe(livereload());
   }
 
@@ -68,7 +73,7 @@ gulp.task('dev', function() {
     gulp
       .src('src/scss/main.scss')
       .pipe(sass())
-      .pipe(gulp.dest('dist/dev/'))
+      .pipe(gulp.dest(DEV_DIR))
       .pipe(livereload());
   }
 
@@ -76,7 +81,7 @@ gulp.task('dev', function() {
   gulp
     .src('src/html/index.dev.html')
     .pipe(rename('index.html'))
-    .pipe(gulp.dest('dist/dev/'));
+    .pipe(gulp.dest(DEV_DIR));
 
   //Watch for SCSS changes and reload.
   gulp.watch('src/scss/*.scss', compileSASS);
@@ -89,7 +94,62 @@ gulp.task('dev', function() {
   compileSASS();
 });
 
+gulp.task('prod-libs', function() {
+
+  var b = browserify({debug: false});
+
+  libraries.forEach(function(lib) {
+    b.require(lib);
+  });
+
+  return b.bundle()
+    .on('error', gutil.log.bind(gutil, 'Browserify error'))
+    .pipe(source('libs.min.js'))
+    .pipe(buffer())
+    .pipe(uglify())
+    .pipe(gulp.dest(PROD_DIR));
+});
+
+gulp.task('prod', function() {
+
+  var b = browserify({
+    debug: true,
+    entries: './src/js/app',
+    transform: [babelify]
+  });
+
+  libraries.forEach(function(lib) {
+    b.external(lib);
+  });
+
+  b.bundle()
+    .on('error', gutil.log.bind(gutil, 'Browserify error'))
+    .pipe(source('main.min.js'))
+    .pipe(buffer())
+    .pipe(sourcemaps.init({loadMaps: true}))
+    .pipe(uglify())
+    .pipe(sourcemaps.write('./'))
+    .pipe(gulp.dest(PROD_DIR));
+
+  gulp
+    .src('src/scss/main.scss')
+    .pipe(sass())
+    .pipe(minifyCSS())
+    .pipe(rename('main.min.css'))
+    .pipe(gulp.dest(PROD_DIR))
+
+  gulp
+    .src('src/html/index.prod.html')
+    .pipe(rename('index.html'))
+    .pipe(gulp.dest(PROD_DIR));
+});
+
 /**
  * Configure the default task to compile all the things for dev.
  */
 gulp.task('default', ['dev-libs', 'dev']);
+
+/**
+ * Compile everything magically for prod.
+ */
+gulp.task('production', ['prod-libs', 'prod']);
