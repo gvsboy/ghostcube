@@ -49,7 +49,7 @@ h2 {
   and (min-device-width: 375px) 
   and (max-device-width: 667px) 
   and (-webkit-min-device-pixel-ratio: 2) { 
-  html { font-size: 22px; }
+  html { font-size: 20px; }
 }
 
 // iPhone 6+
@@ -143,6 +143,7 @@ h2 {
   position: absolute;
   top: 1em;
   left: 0;
+  -webkit-perspective: 10000px; // This prevents rendering issues introduced by the 3d-transformed cube element.
 }
 
 #messages {

@@ -820,7 +820,7 @@ h2 {
 
 @media only screen and (min-device-width: 375px) and (max-device-width: 667px) and (-webkit-min-device-pixel-ratio: 2) {
   html {
-    font-size: 22px; } }
+    font-size: 20px; } }
 
 @media only screen and (min-device-width: 414px) and (max-device-width: 736px) and (-webkit-min-device-pixel-ratio: 3) {
   html {
@@ -901,7 +901,8 @@ h2 {
 #stage {
   position: absolute;
   top: 1em;
-  left: 0; }
+  left: 0;
+  -webkit-perspective: 10000px; }
 
 #messages {
   position: relative;
