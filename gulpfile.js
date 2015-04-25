@@ -7,6 +7,7 @@ var DEV_DIR = 'dist/dev/',
     sass = require('gulp-sass'),
     uglify = require('gulp-uglify'),
     minifyCSS = require('gulp-minify-css'),
+    minifyHTML = require('gulp-minify-html'),
     sourcemaps = require('gulp-sourcemaps'),
     gutil = require('gulp-util'),
     rename = require('gulp-rename'),
@@ -141,6 +142,7 @@ gulp.task('prod', function() {
   gulp
     .src('src/html/index.prod.html')
     .pipe(rename('index.html'))
+    .pipe(minifyHTML())
     .pipe(gulp.dest(PROD_DIR));
 });
 
