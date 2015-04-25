@@ -8,6 +8,10 @@ import Messages from './messages';
 import Tutorial from './tutorial';
 import {listenOnce} from './util/util';
 import {events} from './util/vendor';
+import Tracker from './util/Tracker';
+
+// Instantiate a new Tracker instance which will send the pageview event.
+var tracker = new Tracker();
 
 function Game(containerId) {
 
@@ -77,6 +81,9 @@ Game.prototype = {
 
     this.players = [human, bot];
 
+    // Sets the game turns to 0.
+    this.turns = 0;
+
     // Begin the rendering.
     this.renderer.initialize();
 
@@ -85,6 +92,9 @@ Game.prototype = {
 
     // Set the current player as the first player. This "officially" begins the game.
     this.setCurrentPlayer(_.first(this.players));
+
+    // Fire an event that signals the first game has begun.
+    tracker.sendGameEvent(Tracker.GAME_START);
   },
 
   enableCubeInteraction: function() {
@@ -189,6 +199,7 @@ Game.prototype = {
     var player = this.currentPlayer,
         lines = player.getWinLines();
 
+    this.turns++;
     this.recorder.record(player, tiles);
     this.clearHelperTile();
     this.hideCrosshairs(_.first(tiles));
@@ -215,6 +226,9 @@ Game.prototype = {
       modifier = winBy > 1 ? ' x' + winBy + '!' : '!';
       this.messages.add(`${this.currentPlayer.name} wins${modifier}`, 'alert persist');
 
+      // Send an event describing the win state.
+      tracker.sendGameEvent(this.currentPlayer.isBot() ? Tracker.GAME_BOT_WIN : Tracker.GAME_PLAYER_WIN, this.turns);
+
       // Show the winning lines.
       _.invoke(lines, 'pulsate');
 
@@ -238,6 +252,7 @@ Game.prototype = {
       .add('stalemate', 'alert persist')
       .add(`${this.currentPlayer.name} has no valid moves.`, 'persist');
     this._waitAndListenForReset();
+    tracker.sendGameEvent(Tracker.GAME_STALEMATE);
   },
 
   /**
@@ -266,16 +281,18 @@ Game.prototype = {
 
     this.messages.removeAll();
     this.cube.el.classList.add('reset');
+    tracker.sendGameEvent(Tracker.GAME_RESET);
 
     this.renderer.setSyncMovement(450, 450).then(() => {
       _.forEach(this.players, player => player.releaseAll());
       this.cube.el.classList.remove('reset');
       this.setCurrentPlayer(_.first(this.players));
+      this.turns = 0;
     });
   },
 
   // Potentially dangerous as this is hackable...
-  // Perhaps do a straigh-up element match too?
+  // Perhaps do a straight-up element match too?
   _getTileFromElement: function(el) {
     var data;
     if (el.classList.contains('tile')) {

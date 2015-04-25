@@ -608,7 +608,7 @@ Cube.prototype = {
 exports['default'] = Cube;
 module.exports = exports['default'];
 
-},{"../util/vendor":19,"./side":5,"lodash":"lodash"}],4:[function(require,module,exports){
+},{"../util/vendor":20,"./side":5,"lodash":"lodash"}],4:[function(require,module,exports){
 'use strict';
 
 var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { 'default': obj }; };
@@ -1095,7 +1095,7 @@ exports['default'] = Tile;
 module.exports = exports['default'];
 // right
 
-},{"../util/util":18,"../util/vendor":19,"lodash":"lodash"}],7:[function(require,module,exports){
+},{"../util/util":19,"../util/vendor":20,"lodash":"lodash"}],7:[function(require,module,exports){
 'use strict';
 
 var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { 'default': obj }; };
@@ -1139,6 +1139,13 @@ var _Tutorial2 = _interopRequireWildcard(_Tutorial);
 var _listenOnce = require('./util/util');
 
 var _events = require('./util/vendor');
+
+var _Tracker = require('./util/Tracker');
+
+var _Tracker2 = _interopRequireWildcard(_Tracker);
+
+// Instantiate a new Tracker instance which will send the pageview event.
+var tracker = new _Tracker2['default']();
 
 function Game(containerId) {
 
@@ -1207,6 +1214,9 @@ Game.prototype = {
 
     this.players = [human, bot];
 
+    // Sets the game turns to 0.
+    this.turns = 0;
+
     // Begin the rendering.
     this.renderer.initialize();
 
@@ -1215,6 +1225,9 @@ Game.prototype = {
 
     // Set the current player as the first player. This "officially" begins the game.
     this.setCurrentPlayer(_import2['default'].first(this.players));
+
+    // Fire an event that signals the first game has begun.
+    tracker.sendGameEvent(_Tracker2['default'].GAME_START);
   },
 
   enableCubeInteraction: function enableCubeInteraction() {
@@ -1313,6 +1326,7 @@ Game.prototype = {
     var player = this.currentPlayer,
         lines = player.getWinLines();
 
+    this.turns++;
     this.recorder.record(player, tiles);
     this.clearHelperTile();
     this.hideCrosshairs(_import2['default'].first(tiles));
@@ -1339,6 +1353,9 @@ Game.prototype = {
       modifier = winBy > 1 ? ' x' + winBy + '!' : '!';
       this.messages.add('' + this.currentPlayer.name + ' wins' + modifier, 'alert persist');
 
+      // Send an event describing the win state.
+      tracker.sendGameEvent(this.currentPlayer.isBot() ? _Tracker2['default'].GAME_BOT_WIN : _Tracker2['default'].GAME_PLAYER_WIN, this.turns);
+
       // Show the winning lines.
       _import2['default'].invoke(lines, 'pulsate');
 
@@ -1360,6 +1377,7 @@ Game.prototype = {
   _stalemate: function _stalemate() {
     this.messages.add('stalemate', 'alert persist').add('' + this.currentPlayer.name + ' has no valid moves.', 'persist');
     this._waitAndListenForReset();
+    tracker.sendGameEvent(_Tracker2['default'].GAME_STALEMATE);
   },
 
   /**
@@ -1390,6 +1408,7 @@ Game.prototype = {
 
     this.messages.removeAll();
     this.cube.el.classList.add('reset');
+    tracker.sendGameEvent(_Tracker2['default'].GAME_RESET);
 
     this.renderer.setSyncMovement(450, 450).then(function () {
       _import2['default'].forEach(_this3.players, function (player) {
@@ -1397,11 +1416,12 @@ Game.prototype = {
       });
       _this3.cube.el.classList.remove('reset');
       _this3.setCurrentPlayer(_import2['default'].first(_this3.players));
+      _this3.turns = 0;
     });
   },
 
   // Potentially dangerous as this is hackable...
-  // Perhaps do a straigh-up element match too?
+  // Perhaps do a straight-up element match too?
   _getTileFromElement: function _getTileFromElement(el) {
     var data;
     if (el.classList.contains('tile')) {
@@ -1505,7 +1525,7 @@ Game.prototype = {
 exports['default'] = Game;
 module.exports = exports['default'];
 
-},{"./bot":2,"./cube/cube":3,"./messages":8,"./player":9,"./recorder":10,"./render/renderer":12,"./tutorial":17,"./util/util":18,"./util/vendor":19,"lodash":"lodash"}],8:[function(require,module,exports){
+},{"./bot":2,"./cube/cube":3,"./messages":8,"./player":9,"./recorder":10,"./render/renderer":12,"./tutorial":17,"./util/Tracker":18,"./util/util":19,"./util/vendor":20,"lodash":"lodash"}],8:[function(require,module,exports){
 'use strict';
 
 var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { 'default': obj }; };
@@ -1636,7 +1656,7 @@ Messages.LIST = {
 exports['default'] = Messages;
 module.exports = exports['default'];
 
-},{"./util/vendor":19,"lodash":"lodash"}],9:[function(require,module,exports){
+},{"./util/vendor":20,"lodash":"lodash"}],9:[function(require,module,exports){
 'use strict';
 
 var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { 'default': obj }; };
@@ -2950,6 +2970,117 @@ exports['default'] = Tutorial;
 module.exports = exports['default'];
 
 },{"events":"events","lodash":"lodash"}],18:[function(require,module,exports){
+'use strict';
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } };
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+Object.defineProperty(exports, '__esModule', {
+  value: true
+});
+
+// The analytics script to load.
+var SCRIPT_ENDPOINT = '//www.google-analytics.com/analytics.js',
+
+// The analytics account id.
+ACCOUNT = 'UA-2196067-3',
+
+// The analytics global namespace.
+TRACKER_NAMESPACE = 'ga';
+
+/**
+ * A lightweight wrapper around whatever tracking interface is being used.
+ * Currently, this interface is Google Analytics.
+ */
+
+var Tracker = (function () {
+
+  /**
+   * Creates a new Tracker instance and sets up the GA environment if it
+   * hasn't been initialized already.
+   * @constructor
+   */
+
+  function Tracker() {
+    _classCallCheck(this, Tracker);
+
+    if (!window.ga) {
+      this._initGateway();
+    }
+  }
+
+  _createClass(Tracker, [{
+    key: 'sendGameEvent',
+
+    /**
+     * Dispatches a game category event, such as 'start' or 'bot-win'.
+     * @param {String} action The action to track.
+     * @param {Number} [turns] How many turns have elapsed.
+     */
+    value: function sendGameEvent(action, turns) {
+
+      var fields = {
+        hitType: 'event',
+        eventCategory: 'game',
+        eventAction: action
+      };
+
+      if (turns) {
+        fields.eventValue = turns;
+      }
+
+      ga('send', fields);
+    }
+  }, {
+    key: '_initGateway',
+
+    /**
+     * Creates a temporary global ga object, loads analytics.js, and fires off
+     * a pageview event.
+     */
+    value: function _initGateway() {
+
+      var win = window,
+          doc = win.document,
+          script = doc.createElement('script'),
+          placeholder = doc.getElementsByTagName('script')[0];
+
+      // Acts as a pointer to support renaming.
+      win.GoogleAnalyticsObject = TRACKER_NAMESPACE;
+
+      // Creates an initial ga() function.  The queued commands will be executed once analytics.js loads.
+      win[TRACKER_NAMESPACE] = win[TRACKER_NAMESPACE] || function () {
+        (win[TRACKER_NAMESPACE].q = win[TRACKER_NAMESPACE].q || []).push(arguments);
+      };
+
+      // Sets the time (as an integer) this tag was executed.  Used for timing hits.
+      win[TRACKER_NAMESPACE].l = 1 * new Date();
+
+      // Insert the script tag asynchronously.
+      script.async = 1;
+      script.src = SCRIPT_ENDPOINT;
+      placeholder.parentNode.insertBefore(script, placeholder);
+
+      // Create the tracker and send a pageview hit.
+      ga('create', ACCOUNT, 'auto');
+      ga('send', 'pageview');
+    }
+  }]);
+
+  return Tracker;
+})();
+
+Tracker.GAME_START = 'start';
+Tracker.GAME_RESET = 'reset';
+Tracker.GAME_BOT_WIN = 'bot-win';
+Tracker.GAME_PLAYER_WIN = 'player-win';
+Tracker.GAME_STALEMATE = 'stalemate';
+
+exports['default'] = Tracker;
+module.exports = exports['default'];
+
+},{}],19:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -2975,7 +3106,7 @@ function listenOnce(target, type, callback) {
   target.addEventListener(type, handler);
 }
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, '__esModule', {
