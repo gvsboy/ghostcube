@@ -836,6 +836,22 @@ h2 {
 
 /*----------------------------------------------
 
+  Compat
+
+----------------------------------------------*/
+.no-3d #hit, .no-3d .cube {
+  display: none; }
+.no-3d #stage::before {
+  content: '\2665';
+  color: #abcdef;
+  font-size: 16em;
+  line-height: 0.6em; }
+.no-3d h2::after {
+  content: '\a\a\a (and wishes you didn\'t use IE) ;)';
+  white-space: pre; }
+
+/*----------------------------------------------
+
   Cube
 
 ----------------------------------------------*/
