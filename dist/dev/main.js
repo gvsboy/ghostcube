@@ -9,8 +9,11 @@ var _Game = require('./game');
 
 var _Game2 = _interopRequireWildcard(_Game);
 
-// Create a new game!
-var game = new _Game2['default']('container');
+// Create a new game on load!
+window.addEventListener('load', function () {
+  document.body.classList.add('loaded');
+  var game = new _Game2['default']('container');
+});
 
 },{"./game":7,"babel/polyfill":"babel/polyfill"}],2:[function(require,module,exports){
 'use strict';

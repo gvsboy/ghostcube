@@ -856,138 +856,133 @@ h2 {
 
 ----------------------------------------------*/
 #container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 8em;
-  height: 8em;
-  margin-top: -4em;
-  margin-left: -33.5em;
-  animation: splash-cube 2s forwards;
-  -o-animation: splash-cube 2s forwards;
-  -moz-animation: splash-cube 2s forwards;
-  -webkit-animation: splash-cube 2s forwards; }
-  #container.game {
-    animation: game-cube 1s forwards;
-    -o-animation: game-cube 1s forwards;
-    -moz-animation: game-cube 1s forwards;
-    -webkit-animation: game-cube 1s forwards; }
-    #container.game #header {
-      animation: game-header 1s forwards;
-      -o-animation: game-header 1s forwards;
-      -moz-animation: game-header 1s forwards;
-      -webkit-animation: game-header 1s forwards; }
-    #container.game #stage {
-      animation: stage 1s forwards;
-      -o-animation: stage 1s forwards;
-      -moz-animation: stage 1s forwards;
-      -webkit-animation: stage 1s forwards; }
+  display: none; }
 
-/**
- * Click events with animated 3D elements are jank so let's use
- * a click mask over the initial cube state instead.
- */
-#hit {
-  position: absolute;
-  z-index: 10;
-  top: -2em;
-  left: -2em;
-  width: 12em;
-  height: 12em;
-  cursor: pointer; }
-  #hit:hover + #wrap .face {
-    background-color: #abcdef;
-    border-color: #000; }
-
-#wrap {
-  position: relative; }
-
-#header {
-  overflow: hidden;
-  margin-top: -1.4em;
-  margin-left: 13em;
-  padding-bottom: 1.4em;
-  white-space: nowrap;
-  -webkit-font-smoothing: subpixel-antialiased;
-  animation: splash-header 2s forwards;
-  -o-animation: splash-header 2s forwards;
-  -moz-animation: splash-header 2s forwards;
-  -webkit-animation: splash-header 2s forwards; }
-
-#stage {
-  position: absolute;
-  top: 1em;
-  left: 0;
-  -webkit-perspective: 10000px; }
-
-#messages {
-  position: relative;
-  margin: 2em;
-  padding: 0;
-  list-style-type: none; }
-  #messages li {
-    height: 1.5em;
-    font-size: 2em;
-    color: #fff;
+.loaded {
+  /**
+   * Click events with animated 3D elements are jank so let's use
+   * a click mask over the initial cube state instead.
+   */ }
+  .loaded #container {
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 8em;
+    height: 8em;
+    margin-top: -4em;
+    margin-left: -33.5em;
+    animation: splash-cube 2s forwards;
+    -o-animation: splash-cube 2s forwards;
+    -moz-animation: splash-cube 2s forwards;
+    -webkit-animation: splash-cube 2s forwards; }
+    .loaded #container.game {
+      animation: game-cube 1s forwards;
+      -o-animation: game-cube 1s forwards;
+      -moz-animation: game-cube 1s forwards;
+      -webkit-animation: game-cube 1s forwards; }
+      .loaded #container.game #header {
+        animation: game-header 1s forwards;
+        -o-animation: game-header 1s forwards;
+        -moz-animation: game-header 1s forwards;
+        -webkit-animation: game-header 1s forwards; }
+      .loaded #container.game #stage {
+        animation: stage 1s forwards;
+        -o-animation: stage 1s forwards;
+        -moz-animation: stage 1s forwards;
+        -webkit-animation: stage 1s forwards; }
+  .loaded #hit {
+    position: absolute;
+    z-index: 10;
+    top: -2em;
+    left: -2em;
+    width: 12em;
+    height: 12em;
+    cursor: pointer; }
+    .loaded #hit:hover + #wrap .face {
+      background-color: #abcdef;
+      border-color: #000; }
+  .loaded #wrap {
+    position: relative; }
+  .loaded #header {
     overflow: hidden;
-    cursor: default;
-    pointer-events: none;
+    margin-top: -1.4em;
+    margin-left: 13em;
+    padding-bottom: 1.4em;
+    white-space: nowrap;
     -webkit-font-smoothing: subpixel-antialiased;
-    animation: message-add 4s forwards;
-    -o-animation: message-add 4s forwards;
-    -moz-animation: message-add 4s forwards;
-    -webkit-animation: message-add 4s forwards; }
-    #messages li.error {
-      color: red; }
-    #messages li.alert {
-      font-size: 4em;
-      color: yellow; }
-    #messages li.persist {
-      animation: message-add-persist 4s forwards;
-      -o-animation: message-add-persist 4s forwards;
-      -moz-animation: message-add-persist 4s forwards;
-      -webkit-animation: message-add-persist 4s forwards; }
-    #messages li.hide {
-      animation: message-add-persist-hide 0.8s forwards;
-      -o-animation: message-add-persist-hide 0.8s forwards;
-      -moz-animation: message-add-persist-hide 0.8s forwards;
-      -webkit-animation: message-add-persist-hide 0.8s forwards; }
-
-.cube {
-  width: 8em;
-  height: 8em;
-  backface-visibility: hidden;
-  -o-backface-visibility: hidden;
-  -moz-backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transform-style: preserve-3d;
-  -o-transform-style: preserve-3d;
-  -moz-transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
-  animation: cube-rotate 4s linear infinite;
-  -o-animation: cube-rotate 4s linear infinite;
-  -moz-animation: cube-rotate 4s linear infinite;
-  -webkit-animation: cube-rotate 4s linear infinite; }
-  .cube.transition {
-    animation: cube-rotate-stop 2s ease-out forwards;
-    -o-animation: cube-rotate-stop 2s ease-out forwards;
-    -moz-animation: cube-rotate-stop 2s ease-out forwards;
-    -webkit-animation: cube-rotate-stop 2s ease-out forwards; }
-  .cube.init {
-    animation: none;
-    -o-animation: none;
-    -moz-animation: none;
-    -webkit-animation: none;
-    transform: rotateX(315deg) rotateY(315deg);
-    -o-transform: rotateX(315deg) rotateY(315deg);
-    -ms-transform: rotateX(315deg) rotateY(315deg);
-    -moz-transform: rotateX(315deg) rotateY(315deg);
-    -webkit-transform: rotateX(315deg) rotateY(315deg); }
-  .cube.reset {
-    animation: cube-reset 1s forwards;
-    -o-animation: cube-reset 1s forwards;
-    -moz-animation: cube-reset 1s forwards;
-    -webkit-animation: cube-reset 1s forwards; }
+    animation: splash-header 2s forwards;
+    -o-animation: splash-header 2s forwards;
+    -moz-animation: splash-header 2s forwards;
+    -webkit-animation: splash-header 2s forwards; }
+  .loaded #stage {
+    position: absolute;
+    top: 1em;
+    left: 0;
+    -webkit-perspective: 10000px; }
+  .loaded #messages {
+    position: relative;
+    margin: 2em;
+    padding: 0;
+    list-style-type: none; }
+    .loaded #messages li {
+      height: 1.5em;
+      font-size: 2em;
+      color: #fff;
+      overflow: hidden;
+      cursor: default;
+      pointer-events: none;
+      -webkit-font-smoothing: subpixel-antialiased;
+      animation: message-add 4s forwards;
+      -o-animation: message-add 4s forwards;
+      -moz-animation: message-add 4s forwards;
+      -webkit-animation: message-add 4s forwards; }
+      .loaded #messages li.error {
+        color: red; }
+      .loaded #messages li.alert {
+        font-size: 4em;
+        color: yellow; }
+      .loaded #messages li.persist {
+        animation: message-add-persist 4s forwards;
+        -o-animation: message-add-persist 4s forwards;
+        -moz-animation: message-add-persist 4s forwards;
+        -webkit-animation: message-add-persist 4s forwards; }
+      .loaded #messages li.hide {
+        animation: message-add-persist-hide 0.8s forwards;
+        -o-animation: message-add-persist-hide 0.8s forwards;
+        -moz-animation: message-add-persist-hide 0.8s forwards;
+        -webkit-animation: message-add-persist-hide 0.8s forwards; }
+  .loaded .cube {
+    width: 8em;
+    height: 8em;
+    transform-style: preserve-3d;
+    -o-transform-style: preserve-3d;
+    -moz-transform-style: preserve-3d;
+    -webkit-transform-style: preserve-3d;
+    animation: cube-rotate 4s linear infinite;
+    -o-animation: cube-rotate 4s linear infinite;
+    -moz-animation: cube-rotate 4s linear infinite;
+    -webkit-animation: cube-rotate 4s linear infinite; }
+    .loaded .cube.transition {
+      animation: cube-rotate-stop 2s ease-out forwards;
+      -o-animation: cube-rotate-stop 2s ease-out forwards;
+      -moz-animation: cube-rotate-stop 2s ease-out forwards;
+      -webkit-animation: cube-rotate-stop 2s ease-out forwards; }
+    .loaded .cube.init {
+      animation: none;
+      -o-animation: none;
+      -moz-animation: none;
+      -webkit-animation: none;
+      transform: rotateX(315deg) rotateY(315deg);
+      -o-transform: rotateX(315deg) rotateY(315deg);
+      -ms-transform: rotateX(315deg) rotateY(315deg);
+      -moz-transform: rotateX(315deg) rotateY(315deg);
+      -webkit-transform: rotateX(315deg) rotateY(315deg); }
+    .loaded .cube.reset {
+      animation: cube-reset 1s forwards;
+      -o-animation: cube-reset 1s forwards;
+      -moz-animation: cube-reset 1s forwards;
+      -webkit-animation: cube-reset 1s forwards; }
 
 .face {
   position: absolute;

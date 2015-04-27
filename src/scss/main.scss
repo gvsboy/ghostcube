@@ -111,124 +111,132 @@ h2 {
 ----------------------------------------------*/
 
 #container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: $cube-size;
-  height: $cube-size;
-  margin-top: -($cube-size / 2);
-  margin-left: -(($header-width + $header-offset) / 2);
-  @include animation(splash-cube $splash-speed forwards);
+  display: none;
+}
 
-  &.game {
-    @include game-start-animation(game-cube);
+.loaded {
 
-    #header {
-      @include game-start-animation(game-header);
+  #container {
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: $cube-size;
+    height: $cube-size;
+    margin-top: -($cube-size / 2);
+    margin-left: -(($header-width + $header-offset) / 2);
+    @include animation(splash-cube $splash-speed forwards);
+
+    &.game {
+      @include game-start-animation(game-cube);
+
+      #header {
+        @include game-start-animation(game-header);
+      }
+
+      #stage {
+        @include game-start-animation(stage);
+      }
+
     }
+  }
 
-    #stage {
-      @include game-start-animation(stage);
+  /**
+   * Click events with animated 3D elements are jank so let's use
+   * a click mask over the initial cube state instead.
+   */
+  #hit {
+    position: absolute;
+    z-index: 10;
+    top: -($cube-size * 0.25);
+    left: -($cube-size * 0.25);
+    width: $cube-size * 1.5;
+    height: $cube-size * 1.5;
+    cursor: pointer;
+
+    &:hover + #wrap .face {
+      background-color: $cube-color;
+      border-color: #000;
     }
-
   }
-}
 
-/**
- * Click events with animated 3D elements are jank so let's use
- * a click mask over the initial cube state instead.
- */
-#hit {
-  position: absolute;
-  z-index: 10;
-  top: -($cube-size * 0.25);
-  left: -($cube-size * 0.25);
-  width: $cube-size * 1.5;
-  height: $cube-size * 1.5;
-  cursor: pointer;
-
-  &:hover + #wrap .face {
-    background-color: $cube-color;
-    border-color: #000;
+  #wrap {
+    position: relative;
   }
-}
 
-#wrap {
-  position: relative;
-}
-
-#header {
-  overflow: hidden;
-  margin-top: -1.4em;
-  margin-left: $header-offset;
-  padding-bottom: 1.4em;
-  white-space: nowrap;
-  -webkit-font-smoothing: subpixel-antialiased;
-  @include animation(splash-header $splash-speed forwards);
-}
-
-#stage {
-  position: absolute;
-  top: 1em;
-  left: 0;
-  -webkit-perspective: 10000px; // This prevents rendering issues introduced by the 3d-transformed cube element.
-}
-
-#messages {
-  position: relative;
-  margin: 2em;
-  padding: 0;
-  list-style-type: none;
-
-  li {
-    height: 1.5em;
-    font-size: 2em;
-    color: #fff;
+  #header {
     overflow: hidden;
-    cursor: default;
-    pointer-events: none;
+    margin-top: -1.4em;
+    margin-left: $header-offset;
+    padding-bottom: 1.4em;
+    white-space: nowrap;
     -webkit-font-smoothing: subpixel-antialiased;
-    @include animation(message-add 4s forwards);
+    @include animation(splash-header $splash-speed forwards);
+  }
 
-    &.error {
-      color: red;
+  #stage {
+    position: absolute;
+    top: 1em;
+    left: 0;
+    -webkit-perspective: 10000px; // This prevents rendering issues introduced by the 3d-transformed cube element.
+  }
+
+  #messages {
+    position: relative;
+    margin: 2em;
+    padding: 0;
+    list-style-type: none;
+
+    li {
+      height: 1.5em;
+      font-size: 2em;
+      color: #fff;
+      overflow: hidden;
+      cursor: default;
+      pointer-events: none;
+      -webkit-font-smoothing: subpixel-antialiased;
+      @include animation(message-add 4s forwards);
+
+      &.error {
+        color: red;
+      }
+
+      &.alert {
+        font-size: 4em;
+        color: yellow;
+      }
+
+      &.persist {
+        @include animation(message-add-persist 4s forwards);
+      }
+      
+      &.hide {
+        @include animation(message-add-persist-hide 0.8s forwards);
+      }
     }
 
-    &.alert {
-      font-size: 4em;
-      color: yellow;
+  }
+
+  .cube {
+    width: $cube-size;
+    height: $cube-size;
+    @include transform-style(preserve-3d);
+    @include animation(cube-rotate 4s linear infinite);
+
+    &.transition {
+      @include animation(cube-rotate-stop $BASE-SPEED ease-out forwards);
     }
 
-    &.persist {
-      @include animation(message-add-persist 4s forwards);
+    &.init {
+      @include animation(none);
+      @include transform(rotateX($cube-init-x) rotateY($cube-init-y));
     }
-    
-    &.hide {
-      @include animation(message-add-persist-hide 0.8s forwards);
+
+    &.reset {
+      @include animation(cube-reset 1s forwards);
     }
   }
 
-}
-
-.cube {
-  width: $cube-size;
-  height: $cube-size;
-  @include backface-visibility(hidden);
-  @include transform-style(preserve-3d);
-  @include animation(cube-rotate 4s linear infinite);
-
-  &.transition {
-    @include animation(cube-rotate-stop $BASE-SPEED ease-out forwards);
-  }
-
-  &.init {
-    @include animation(none);
-    @include transform(rotateX($cube-init-x) rotateY($cube-init-y));
-  }
-
-  &.reset {
-    @include animation(cube-reset 1s forwards);
-  }
 }
 
 .face {
