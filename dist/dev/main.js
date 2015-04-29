@@ -138,6 +138,7 @@ Bot.prototype = {
 
       if (initial && tile) {
         attack = _this2.getAttackTile(initial, tile);
+        console.log('attack tile:', attack);
         _this2._selector.revert();
         return attack && _this2.selectTile(tile, attack).success();
       }
@@ -183,7 +184,7 @@ Bot.prototype = {
     }, []).join(' ');
 
     // Immediately output the message in the console.
-    //console.log(text);
+    console.log(text);
 
     // Append the text to the master log.
     this._logText += text + '\n';
@@ -964,8 +965,8 @@ Tile.prototype = {
     }, Math.random() * 2000);
 
     // debug
-    //var idData = id.split('-');
-    //el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
+    var idData = id.split('-');
+    el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
 
     return el;
   },
@@ -1452,7 +1453,7 @@ Game.prototype = {
         setTimeout(resolve, _Bot2['default'].THINKING_SPEED);
       });
     };
-
+    console.log('----- BOT TILE SELECTION:', tiles);
     // Wait a moment before running through the selection UI updates, which
     // include rotating the cube to display all the tiles, showing crosshairs
     // for the first tile, and then claiming all before ending the turn.
@@ -1463,6 +1464,8 @@ Game.prototype = {
     }).then(wait).then(function () {
       _this4.currentPlayer.claimAll();
       _this4._endTurn(tiles);
+    })['catch'](function (err) {
+      console.error(err);
     });
   },
 

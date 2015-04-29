@@ -106,6 +106,7 @@ Bot.prototype = {
 
       if (initial && tile) {
         attack = this.getAttackTile(initial, tile);
+        console.log('attack tile:', attack);
         this._selector.revert();
         return attack && this.selectTile(tile, attack).success();
       }
@@ -148,7 +149,7 @@ Bot.prototype = {
     }, []).join(' ');
 
     // Immediately output the message in the console.
-    //console.log(text);
+    console.log(text);
 
     // Append the text to the master log.
     this._logText += text + '\n';

@@ -331,6 +331,9 @@ Game.prototype = {
       .then(() => {
         this.currentPlayer.claimAll();
         this._endTurn(tiles);
+      })
+      .catch(err => {
+        console.error(err);
       });
   },
 
