@@ -11,17 +11,20 @@ module.exports = function(config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['browserify', 'mocha', 'chai', 'sinon-chai'],
+    frameworks: ['browserify', 'mocha', 'chai', 'sinon-chai', 'fixture'],
 
 
     // list of files / patterns to load in the browser
     files: [
+      'node_modules/babelify/node_modules/babel-core/browser-polyfill.js',
+      'test/fixtures/**/*.fixture.html',
       'test/specs/**/*.spec.js'
     ],
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
+      'test/fixtures/**/*.fixture.html': ['html2js'],
       'test/specs/**/*.spec.js': ['browserify']
     },
     browserify: {

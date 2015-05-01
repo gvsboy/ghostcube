@@ -4,7 +4,6 @@ describe('Tutorial', function() {
 
   beforeEach(function() {
     this.tutorial = new Tutorial();
-    //spyOn(this.tutorial, 'emit');
   });
 
   it('exists', function() {
@@ -33,19 +32,19 @@ describe('Tutorial', function() {
     });
 
     it('causes the tutorial object to emit a message event when invoked', function() {
+      sinon.spy(this.tutorial, 'emit');
       this.tutorial.hook(this.obj, 'bar', 'start');
       this.obj.bar(5);
-      expect(true).to.be.ok;
-      //expect(this.tutorial.emit).toHaveBeenCalledWith('message', Tutorial.lessons.start, 'info');
+      expect(this.tutorial.emit).to.have.been.calledWith('message', Tutorial.lessons.start);
     });
 
     it('invokes message emmision only once', function() {
+      sinon.spy(this.tutorial, 'emit');
       this.tutorial.hook(this.obj, 'bar', 'start');
       this.obj.bar(5);
       this.obj.bar(4);
       this.obj.bar(3);
-      expect(true).to.be.ok;
-      //expect(this.tutorial.emit.calls.count()).toBe(1);
+      expect(this.tutorial.emit).to.have.been.calledOnce;
     });
 
   });
