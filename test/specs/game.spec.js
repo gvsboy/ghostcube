@@ -9,17 +9,17 @@ describe('Game', function() {
   beforeEach(function() {
     this.game = new Game('container');
     this.game.cube.build();
-    this.game.initializeGame();
+    this.game.initialize();
   });
 
   it('exists', function() {
     expect(Game).to.exist;
   });
 
-  describe('_resetGameState()', function() {
+  describe('reset()', function() {
 
     it('selects the user for the first turn', function() {
-      this.game._resetGameState();
+      this.game.reset();
       expect(this.game.currentPlayer).to.equal(_.first(this.game.players));
     });
 

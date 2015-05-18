@@ -10,7 +10,7 @@ describe('TileSelector', function() {
   beforeEach(function() {
     this.game = new Game('container');
     this.game.cube.build();
-    this.game.initializeGame();
+    this.game.initialize();
     this.selector = new TileSelector(this.game.players[0]);
   });
 

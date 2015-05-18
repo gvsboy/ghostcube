@@ -64,7 +64,7 @@ Game.prototype = {
       listenOnce(container, events.animationEnd, () => {
         this.cube
           .build()
-          .then(_.bind(this.initializeGame, this));
+          .then(_.bind(this.initialize, this));
       });
     });
   },
@@ -73,7 +73,7 @@ Game.prototype = {
    * Configures the cube for game mode by creating players, setting listeners,
    * and initializing the renderer.
    */
-  initializeGame: function() {
+  initialize: function() {
 
     // Create the players: A human and a bot.
     var human = new Player('Player', 'player1', this.cube),
@@ -177,13 +177,31 @@ Game.prototype = {
   },
 
   /**
+   * Removes all claimed tiles from each player and destroys all messages.
+   * Sets the current player to the first player in the array.
+   */
+  reset: function() {
+
+    this.messages.removeAll();
+    this.cube.el.classList.add('reset');
+    tracker.sendGameEvent(Tracker.GAME_RESET);
+
+    this.renderer.setSyncMovement(450, 450).then(() => {
+      _.forEach(this.players, player => player.releaseAll());
+      this.cube.el.classList.remove('reset');
+      this.setCurrentPlayer(_.first(this.players));
+      this.turns = 0;
+    });
+  },
+
+  /**
    * Instantiates a tutorial instance and hooks into methods that should
    * emit lesson messages.
    */
   _initializeTutorial: function() {
     this.tutorial = new Tutorial();
     this.tutorial
-      .hook(this, 'initializeGame', 'start')
+      .hook(this, 'initialize', 'start')
       .hook(this, 'showCrosshairs', 'click')
       .hook(this, '_endTurn', 'turn');
     this.messages.listenTo(this.tutorial);
@@ -269,26 +287,8 @@ Game.prototype = {
     // listen for document clicks to reset.
     setTimeout(() => {
       this.messages.add('newGame', 'persist');
-      listenOnce(document, 'click', _.bind(this._resetGameState, this));
+      listenOnce(document, 'click', _.bind(this.reset, this));
     }, 2000);
-  },
-
-  /**
-   * Removes all claimed tiles from each player and destroys all messages.
-   * Sets the current player to the first player in the array.
-   */
-  _resetGameState: function() {
-
-    this.messages.removeAll();
-    this.cube.el.classList.add('reset');
-    tracker.sendGameEvent(Tracker.GAME_RESET);
-
-    this.renderer.setSyncMovement(450, 450).then(() => {
-      _.forEach(this.players, player => player.releaseAll());
-      this.cube.el.classList.remove('reset');
-      this.setCurrentPlayer(_.first(this.players));
-      this.turns = 0;
-    });
   },
 
   // Potentially dangerous as this is hackable...

@@ -10,7 +10,7 @@ describe('Player', function() {
   beforeEach(function() {
     this.game = new Game('container');
     this.game.cube.build();
-    this.game.initializeGame();
+    this.game.initialize();
     this.player = this.game.players[0];
   });
 

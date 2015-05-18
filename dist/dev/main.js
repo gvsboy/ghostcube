@@ -965,8 +965,8 @@ Tile.prototype = {
     }, Math.random() * 2000);
 
     // debug
-    var idData = id.split('-');
-    el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
+    //var idData = id.split('-');
+    //el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
 
     return el;
   },
@@ -1201,7 +1201,7 @@ Game.prototype = {
       _this._initializeTutorial();
 
       _listenOnce.listenOnce(container, _events.events.animationEnd, function () {
-        _this.cube.build().then(_import2['default'].bind(_this.initializeGame, _this));
+        _this.cube.build().then(_import2['default'].bind(_this.initialize, _this));
       });
     });
   },
@@ -1210,7 +1210,7 @@ Game.prototype = {
    * Configures the cube for game mode by creating players, setting listeners,
    * and initializing the renderer.
    */
-  initializeGame: function initializeGame() {
+  initialize: function initialize() {
 
     // Create the players: A human and a bot.
     var human = new _Player2['default']('Player', 'player1', this.cube),
@@ -1311,12 +1311,33 @@ Game.prototype = {
   },
 
   /**
+   * Removes all claimed tiles from each player and destroys all messages.
+   * Sets the current player to the first player in the array.
+   */
+  reset: function reset() {
+    var _this2 = this;
+
+    this.messages.removeAll();
+    this.cube.el.classList.add('reset');
+    tracker.sendGameEvent(_Tracker2['default'].GAME_RESET);
+
+    this.renderer.setSyncMovement(450, 450).then(function () {
+      _import2['default'].forEach(_this2.players, function (player) {
+        return player.releaseAll();
+      });
+      _this2.cube.el.classList.remove('reset');
+      _this2.setCurrentPlayer(_import2['default'].first(_this2.players));
+      _this2.turns = 0;
+    });
+  },
+
+  /**
    * Instantiates a tutorial instance and hooks into methods that should
    * emit lesson messages.
    */
   _initializeTutorial: function _initializeTutorial() {
     this.tutorial = new _Tutorial2['default']();
-    this.tutorial.hook(this, 'initializeGame', 'start').hook(this, 'showCrosshairs', 'click').hook(this, '_endTurn', 'turn');
+    this.tutorial.hook(this, 'initialize', 'start').hook(this, 'showCrosshairs', 'click').hook(this, '_endTurn', 'turn');
     this.messages.listenTo(this.tutorial);
   },
 
@@ -1389,7 +1410,7 @@ Game.prototype = {
    * and sets a listener.
    */
   _waitAndListenForReset: function _waitAndListenForReset() {
-    var _this2 = this;
+    var _this3 = this;
 
     // Remove the current player and disable cube interactions.
     this.currentPlayer = null;
@@ -1398,30 +1419,9 @@ Game.prototype = {
     // After two seconds, display a message to begin a new game and
     // listen for document clicks to reset.
     setTimeout(function () {
-      _this2.messages.add('newGame', 'persist');
-      _listenOnce.listenOnce(document, 'click', _import2['default'].bind(_this2._resetGameState, _this2));
+      _this3.messages.add('newGame', 'persist');
+      _listenOnce.listenOnce(document, 'click', _import2['default'].bind(_this3.reset, _this3));
     }, 2000);
-  },
-
-  /**
-   * Removes all claimed tiles from each player and destroys all messages.
-   * Sets the current player to the first player in the array.
-   */
-  _resetGameState: function _resetGameState() {
-    var _this3 = this;
-
-    this.messages.removeAll();
-    this.cube.el.classList.add('reset');
-    tracker.sendGameEvent(_Tracker2['default'].GAME_RESET);
-
-    this.renderer.setSyncMovement(450, 450).then(function () {
-      _import2['default'].forEach(_this3.players, function (player) {
-        return player.releaseAll();
-      });
-      _this3.cube.el.classList.remove('reset');
-      _this3.setCurrentPlayer(_import2['default'].first(_this3.players));
-      _this3.turns = 0;
-    });
   },
 
   // Potentially dangerous as this is hackable...
@@ -1453,7 +1453,7 @@ Game.prototype = {
         setTimeout(resolve, _Bot2['default'].THINKING_SPEED);
       });
     };
-    console.log('----- BOT TILE SELECTION:', tiles);
+
     // Wait a moment before running through the selection UI updates, which
     // include rotating the cube to display all the tiles, showing crosshairs
     // for the first tile, and then claiming all before ending the turn.
