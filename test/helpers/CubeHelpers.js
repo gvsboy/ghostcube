@@ -1,6 +1,8 @@
 import _ from 'lodash';
 import Cube from '../../src/js/cube/cube';
 import Side from '../../src/js/cube/side';
+import Player from '../../src/js/player';
+import Bot from '../../src/js/bot';
 
 export function createCube(size) {
   var cube = new Cube(document.getElementById('cube'));
@@ -12,6 +14,12 @@ export function createSide(size, id) {
   var el = document.createElement('div');
   el.id = id || 'front';
   return new Side(el, size || 3);
+}
+
+export function createPlayers(cube) {
+  var human = new Player('Kevin', 'player1', cube),
+      bot = new Bot('CPU', 'player2', cube, human);
+  return [human, bot];
 }
 
 /**

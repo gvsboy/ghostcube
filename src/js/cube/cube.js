@@ -5,13 +5,13 @@ import * as vendor from '../util/vendor';
 function Cube(el, size) {
 
   // The HTML element representing the cube.
-  this.el                     = el;
+  this.el = el;
 
   // The cube's size regarding tiles across a side. Default to 3.
-  this.size                   = size || 3;
+  this.size = size || 3;
 
   // Cached reference to the style object.
-  this.style                  = this.el.style;
+  this.style = this.el.style;
 
   // This will be set in beginGame.
   this._sides = null;

@@ -1,3 +1,8 @@
+import _ from 'lodash';
+import CubeCache from '../../src/js/selection/CubeCache';
+import Player from '../../src/js/player';
+import {createCube, getTiles} from '../helpers/CubeHelpers';
+
 describe('CubeCache', function() {
 
   /**
@@ -52,6 +57,14 @@ describe('CubeCache', function() {
     return this.cubeCache.getLines().length;
   }
 
+  // Wish there was a better way to handle this binding...
+  before(function() {
+    this.add = _.bind(add, this);
+    this.remove = _.bind(remove, this);
+    this.singlesLength = _.bind(singlesLength, this);
+    this.linesLength = _.bind(linesLength, this);
+  });
+
   beforeEach(function() {
 
     // Create a new CubeCache instance.
@@ -60,30 +73,24 @@ describe('CubeCache', function() {
     // Reference the cube and player as some tests need it.
     this.cube = this.cubeCache._cube;
     this.player = new Player('Test', 'player1', this.cube);
-
-    // Wish there was a better way to handle this...
-    this.add = _.bind(add, this);
-    this.remove = _.bind(remove, this);
-    this.singlesLength = _.bind(singlesLength, this);
-    this.linesLength = _.bind(linesLength, this);
   });
 
   it('exists', function() {
-    expect(CubeCache).toBeDefined();
+    expect(CubeCache).to.exist;
   });
 
   describe('initialize()', function() {
 
     it('creates a lineMap object of cube sides to cache lines', function() {
       var lineMap = this.cubeCache._lineMap;
-      expect(_.isObject(lineMap)).toBeTruthy();
-      expect(_.keys(lineMap).length).toBe(6);
-      expect(_.isArray(lineMap.top)).toBeTruthy();
+      expect(_.isObject(lineMap)).to.be.ok;
+      expect(_.keys(lineMap).length).to.equal(6);
+      expect(_.isArray(lineMap.top)).to.exist;
     });
 
     it('creates a singles array to cache single tiles', function() {
-      expect(this.cubeCache._singles).toBeDefined();
-      expect(_.isArray(this.cubeCache._singles)).toBeTruthy();
+      expect(this.cubeCache._singles).to.exist;
+      expect(_.isArray(this.cubeCache._singles)).to.be.ok;
     });
 
   });
@@ -97,8 +104,8 @@ describe('CubeCache', function() {
      */
     it('passes scenario 1', function() {
       this.add('top 3', 'top 5');
-      expect(this.singlesLength()).toEqual(0);
-      expect(this.linesLength()).toEqual(1);
+      expect(this.singlesLength()).to.equal(0);
+      expect(this.linesLength()).to.equal(1);
     });
 
     /* Scenario 2:
@@ -108,8 +115,8 @@ describe('CubeCache', function() {
      */
     it('passes scenario 2', function() {
       this.add('top 3', 'top 7');
-      expect(this.singlesLength()).toEqual(2);
-      expect(this.linesLength()).toEqual(0);
+      expect(this.singlesLength()).to.equal(2);
+      expect(this.linesLength()).to.equal(0);
     });
 
     /* Scenario 3:
@@ -119,8 +126,8 @@ describe('CubeCache', function() {
      */
     it('passes scenario 3', function() {
       this.add('top 1', 'top 2', 'top 5');
-      expect(this.singlesLength()).toEqual(0);
-      expect(this.linesLength()).toEqual(2);
+      expect(this.singlesLength()).to.equal(0);
+      expect(this.linesLength()).to.equal(2);
     });
 
     /* Scenario 4:
@@ -130,8 +137,8 @@ describe('CubeCache', function() {
      */
     it('passes scenario 4', function() {
       this.add('top 0', 'top 1', 'top 3', 'top 4');
-      expect(this.singlesLength()).toEqual(0);
-      expect(this.linesLength()).toEqual(4);
+      expect(this.singlesLength()).to.equal(0);
+      expect(this.linesLength()).to.equal(4);
     });
 
     /* Scenario 5:
@@ -141,8 +148,8 @@ describe('CubeCache', function() {
      */
     it('passes scenario 5', function() {
       this.add('top 0', 'top 1', 'top 3', 'top 4', 'top 7');
-      expect(this.singlesLength()).toEqual(0);
-      expect(this.linesLength()).toEqual(4);
+      expect(this.singlesLength()).to.equal(0);
+      expect(this.linesLength()).to.equal(4);
     });
 
     /* Scenario 6:
@@ -153,8 +160,8 @@ describe('CubeCache', function() {
     it('passes scenario 6', function() {
       this.add('top 0', 'top 1', 'top 3');
       this.remove('top 0')
-      expect(this.singlesLength()).toEqual(2);
-      expect(this.linesLength()).toEqual(0);
+      expect(this.singlesLength()).to.equal(2);
+      expect(this.linesLength()).to.equal(0);
     });
 
     /* Scenario 7:
@@ -165,8 +172,8 @@ describe('CubeCache', function() {
     it('passes scenario 7', function() {
       this.add('top 0', 'top 1', 'top 3', 'top 4', 'top 5');
       this.remove('top 0', 'top 3', 'top 5')
-      expect(this.singlesLength()).toEqual(0);
-      expect(this.linesLength()).toEqual(1);
+      expect(this.singlesLength()).to.equal(0);
+      expect(this.linesLength()).to.equal(1);
     });
 
     /* Scenario 8:
@@ -177,8 +184,8 @@ describe('CubeCache', function() {
     it('passes scenario 8', function() {
       this.add('top 0', 'top 1', 'top 3', 'top 4', 'top 5', 'top 7', 'top 8');
       this.remove('top 0', 'top 1', 'top 3', 'top 8');
-      expect(this.singlesLength()).toEqual(0);
-      expect(this.linesLength()).toEqual(2);
+      expect(this.singlesLength()).to.equal(0);
+      expect(this.linesLength()).to.equal(2);
     });
 
     /* Scenario 9:
@@ -189,8 +196,8 @@ describe('CubeCache', function() {
     it('passes scenario 9', function() {
       this.add('top 0', 'top 1', 'top 3', 'top 5', 'top 6', 'top 7', 'top 8');
       this.remove('top 0', 'top 1', 'top 3', 'top 5', 'top 6', 'top 7', 'top 8');
-      expect(this.singlesLength()).toEqual(0);
-      expect(this.linesLength()).toEqual(0);
+      expect(this.singlesLength()).to.equal(0);
+      expect(this.linesLength()).to.equal(0);
     });
 
     /* Scenario 10:
@@ -201,8 +208,8 @@ describe('CubeCache', function() {
     it('passes scenario 10', function() {
       this.add('top 0', 'top 1', 'top 2', 'top 3', 'top 4', 'top 5', 'top 6', 'top 7', 'top 8');
       this.remove('top 0', 'top 1', 'top 2', 'top 3', 'top 4', 'top 5');
-      expect(this.singlesLength()).toEqual(0);
-      expect(this.linesLength()).toEqual(1);
+      expect(this.singlesLength()).to.equal(0);
+      expect(this.linesLength()).to.equal(1);
     });
 
 
@@ -214,20 +221,20 @@ describe('CubeCache', function() {
     it('passes scenario 11', function() {
 
       this.add('top 1', 'top 3', 'top 5', 'top 7', 'top 8');
-      expect(this.singlesLength()).toEqual(0);
-      expect(this.linesLength()).toEqual(4);
+      expect(this.singlesLength()).to.equal(0);
+      expect(this.linesLength()).to.equal(4);
 
       this.remove('top 1');
-      expect(this.singlesLength()).toEqual(0);
-      expect(this.linesLength()).toEqual(3);
+      expect(this.singlesLength()).to.equal(0);
+      expect(this.linesLength()).to.equal(3);
 
       this.add('top 0', 'top 1', 'top 2', 'top 4', 'top 6');
-      expect(this.singlesLength()).toEqual(0);
-      expect(this.linesLength()).toEqual(6);
+      expect(this.singlesLength()).to.equal(0);
+      expect(this.linesLength()).to.equal(6);
 
       this.remove('top 0', 'top 1', 'top 2', 'top 3', 'top 4', 'top 5');
-      expect(this.singlesLength()).toEqual(0);
-      expect(this.linesLength()).toEqual(1);
+      expect(this.singlesLength()).to.equal(0);
+      expect(this.linesLength()).to.equal(1);
     });
 
     /* Scenario 12:
@@ -238,20 +245,20 @@ describe('CubeCache', function() {
     it('passes scenario 12', function() {
 
       this.add('top 1', 'top 3', 'top 5', 'top 7', 'top 8');
-      expect(this.singlesLength()).toEqual(0);
-      expect(this.linesLength()).toEqual(4);
+      expect(this.singlesLength()).to.equal(0);
+      expect(this.linesLength()).to.equal(4);
 
       this.remove('top 1');
-      expect(this.singlesLength()).toEqual(0);
-      expect(this.linesLength()).toEqual(3);
+      expect(this.singlesLength()).to.equal(0);
+      expect(this.linesLength()).to.equal(3);
 
       this.add('top 0', 'top 1', 'top 2', 'top 4', 'top 6');
-      expect(this.singlesLength()).toEqual(0);
-      expect(this.linesLength()).toEqual(6);
+      expect(this.singlesLength()).to.equal(0);
+      expect(this.linesLength()).to.equal(6);
 
       this.remove('top 0', 'top 1', 'top 2', 'top 3', 'top 4', 'top 5', 'top 6', 'top 7', 'top 8');
-      expect(this.singlesLength()).toEqual(0);
-      expect(this.linesLength()).toEqual(0);
+      expect(this.singlesLength()).to.equal(0);
+      expect(this.linesLength()).to.equal(0);
     });
 
   });
