@@ -36,6 +36,10 @@ var _import = require('lodash');
 
 var _import2 = _interopRequireWildcard(_import);
 
+var _TileSelector = require('./selection/TileSelector');
+
+var _TileSelector2 = _interopRequireWildcard(_TileSelector);
+
 var _Player2 = require('./player');
 
 var _Player3 = _interopRequireWildcard(_Player2);
@@ -89,9 +93,43 @@ var Bot = (function (_Player) {
     }
   }, {
     key: 'getAttackTile',
+
+    /**
+     * Gets a tile where the two passed tile's coordinates intersect. This method
+     * differs from the Player's method in that the Bot's selection isn't contingent
+     * on a side being visible, however efforts are made to attack a visible side
+     * if possible.
+     * @param  {Tile} tile1 The first tile selected.
+     * @param  {Tile} tile2 The second tile selected.
+     * @return {Tile} The tile being attacked.
+     */
     value: function getAttackTile(tile1, tile2) {
-      console.log('BOT attack tile!');
-      return this._cubeCache._cube.getAttackTile(tile1, tile2);
+
+      var selector = new _TileSelector2['default'](this),
+          cube = this._cubeCache._cube,
+          neighbors,
+          attackedTiles;
+
+      if (tile1 && tile2 && tile1.isNeighboringSide(tile2)) {
+
+        // Get the shared neighboring sides and sort by neighbor visibility. It's preferred that
+        // the bot makes a move on a known active side.
+        neighbors = _import2['default'].sortBy(_import2['default'].intersection(tile1.side.getNeighbors(), tile2.side.getNeighbors()), function (neighbor) {
+          return !neighbor.isVisible(cube.x, cube.y);
+        }),
+
+        // Get all the attacked tiles to validate.
+        attackedTiles = _import2['default'].map(neighbors, function (side) {
+          return _import2['default'].intersection(tile1.translate(side), tile2.translate(side))[0];
+        });
+
+        // Return the first tile that is valid, or falsy.
+        return _import2['default'].find(attackedTiles, function (tile) {
+          return selector.validate(tile).success();
+        });
+      }
+
+      return null;
     }
   }, {
     key: '_selectLines',
@@ -167,7 +205,6 @@ var Bot = (function (_Player) {
 
         if (initial && tile) {
           attack = _this2.getAttackTile(initial, tile);
-          console.log('attack tile:', attack);
           _this2._selector.revert();
           return attack && _this2.selectTile(tile, attack).success();
         }
@@ -219,7 +256,7 @@ var Bot = (function (_Player) {
       }, []).join(' ');
 
       // Immediately output the message in the console.
-      console.log(text);
+      //console.log(text);
 
       // Append the text to the master log.
       this._logText += text + '\n';
@@ -234,7 +271,7 @@ Bot.THINKING_SPEED = 600;
 exports['default'] = Bot;
 module.exports = exports['default'];
 
-},{"./player":9,"lodash":"lodash"}],3:[function(require,module,exports){
+},{"./player":9,"./selection/TileSelector":15,"lodash":"lodash"}],3:[function(require,module,exports){
 'use strict';
 
 var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { 'default': obj }; };
@@ -435,34 +472,6 @@ Cube.prototype = {
       // Find the translated tiles and run the callback on each.
       _import2['default'].forEach(tile.translate(neighbor), callback);
     });
-  },
-
-  /**
-   * Gets the tile where the two passed tile's coordinates intersect.
-   * @param {Tile} [tile1] The first tile selected.
-   * @param {Tile} [tile2] The second tile selected.
-   * @return {Tile}       The tile being attacked.
-   */
-  getAttackTile: function getAttackTile(tile1, tile2) {
-    var _this3 = this;
-
-    var neighbors, side;
-
-    if (tile1 && tile2 && tile1.isNeighboringSide(tile2)) {
-
-      // Get the neighbor sides and exclude the selected side.
-      neighbors = _import2['default'].without(tile2.side.getNeighbors(), tile1.side),
-
-      // Get the neighbor that is visible.
-      side = _import2['default'].find(neighbors, function (neighbor) {
-        return neighbor.isVisible(_this3.x, _this3.y);
-      });
-
-      // Return the tile that intersects the two passed tiles.
-      return _import2['default'].intersection(tile1.translate(side), tile2.translate(side))[0];
-    }
-
-    return null;
   },
 
   /**
@@ -1004,8 +1013,8 @@ Tile.prototype = {
     }, Math.random() * 2000);
 
     // debug
-    var idData = id.split('-');
-    el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
+    //var idData = id.split('-');
+    //el.appendChild(document.createTextNode(idData[0].slice(0, 2) + idData[1]));
 
     return el;
   },
@@ -1554,7 +1563,7 @@ Game.prototype = {
 
     // If the user is hovering on a neighboring side of the initial tile,
     // highlight some targeting help on a visible side.
-    this._helperTile = this.cube.getAttackTile(tile, initialTile);
+    this._helperTile = this.currentPlayer.getAttackTile(tile, initialTile);
 
     if (this._helperTile) {
       this._helperTile.addClass('helper');
@@ -1786,8 +1795,34 @@ var Player = (function () {
     }
   }, {
     key: 'getAttackTile',
+
+    /**
+     * Gets the tile where the two passed tile's coordinates intersect.
+     * @param {Tile} [tile1] The first tile selected.
+     * @param {Tile} [tile2] The second tile selected.
+     * @return {Tile}       The tile being attacked.
+     */
     value: function getAttackTile(tile1, tile2) {
-      return this._cubeCache._cube.getAttackTile(tile1, tile2);
+
+      var cube = this._cubeCache._cube,
+          neighbors,
+          side;
+
+      if (tile1 && tile2 && tile1.isNeighboringSide(tile2)) {
+
+        // Get the shared neighboring sides.
+        neighbors = _import2['default'].intersection(tile1.side.getNeighbors(), tile2.side.getNeighbors()),
+
+        // Get the neighbor that is visible.
+        side = _import2['default'].find(neighbors, function (neighbor) {
+          return neighbor.isVisible(cube.x, cube.y);
+        });
+
+        // Return the tile that intersects the two passed tiles.
+        return _import2['default'].intersection(tile1.translate(side), tile2.translate(side))[0];
+      }
+
+      return null;
     }
   }, {
     key: 'getWinLines',

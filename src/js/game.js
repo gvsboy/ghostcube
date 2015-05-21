@@ -382,7 +382,7 @@ Game.prototype = {
 
     // If the user is hovering on a neighboring side of the initial tile,
     // highlight some targeting help on a visible side.
-    this._helperTile = this.cube.getAttackTile(tile, initialTile);
+    this._helperTile = this.currentPlayer.getAttackTile(tile, initialTile);
 
     if (this._helperTile) {
       this._helperTile.addClass('helper');

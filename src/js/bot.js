@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import TileSelector from './selection/TileSelector';
 import Player from './player';
 
 class Bot extends Player {
@@ -42,9 +43,41 @@ class Bot extends Player {
     return this._selector.getSelected();
   }
 
+  /**
+   * Gets a tile where the two passed tile's coordinates intersect. This method
+   * differs from the Player's method in that the Bot's selection isn't contingent
+   * on a side being visible, however efforts are made to attack a visible side
+   * if possible.
+   * @param  {Tile} tile1 The first tile selected.
+   * @param  {Tile} tile2 The second tile selected.
+   * @return {Tile} The tile being attacked.
+   */
   getAttackTile(tile1, tile2) {
-    console.log('BOT attack tile!');
-    return this._cubeCache._cube.getAttackTile(tile1, tile2);
+
+    var selector = new TileSelector(this),
+        cube = this._cubeCache._cube,
+        neighbors, attackedTiles;
+
+    if (tile1 && tile2 && tile1.isNeighboringSide(tile2)) {
+
+      // Get the shared neighboring sides and sort by neighbor visibility. It's preferred that
+      // the bot makes a move on a known active side.
+      neighbors = _.sortBy(
+        _.intersection(tile1.side.getNeighbors(), tile2.side.getNeighbors()), function(neighbor) {
+          return !neighbor.isVisible(cube.x, cube.y);
+        }
+      ),
+
+      // Get all the attacked tiles to validate.
+      attackedTiles = _.map(neighbors, side => {
+        return _.intersection(tile1.translate(side), tile2.translate(side))[0];
+      });
+
+      // Return the first tile that is valid, or falsy.
+      return _.find(attackedTiles, tile => selector.validate(tile).success());
+    }
+
+    return null;
   }
 
   /**
@@ -113,7 +146,6 @@ class Bot extends Player {
 
       if (initial && tile) {
         attack = this.getAttackTile(initial, tile);
-        console.log('attack tile:', attack);
         this._selector.revert();
         return attack && this.selectTile(tile, attack).success();
       }
@@ -156,7 +188,7 @@ class Bot extends Player {
     }, []).join(' ');
 
     // Immediately output the message in the console.
-    console.log(text);
+    //console.log(text);
 
     // Append the text to the master log.
     this._logText += text + '\n';

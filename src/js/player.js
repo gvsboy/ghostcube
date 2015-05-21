@@ -48,8 +48,31 @@ class Player {
     return this._selector.getInitial();
   }
 
+  /**
+   * Gets the tile where the two passed tile's coordinates intersect.
+   * @param {Tile} [tile1] The first tile selected.
+   * @param {Tile} [tile2] The second tile selected.
+   * @return {Tile}       The tile being attacked.
+   */
   getAttackTile(tile1, tile2) {
-    return this._cubeCache._cube.getAttackTile(tile1, tile2);
+
+    var cube = this._cubeCache._cube,
+        neighbors,
+        side;
+
+    if (tile1 && tile2 && tile1.isNeighboringSide(tile2)) {
+
+      // Get the shared neighboring sides.
+      neighbors = _.intersection(tile1.side.getNeighbors(), tile2.side.getNeighbors()),
+
+      // Get the neighbor that is visible.
+      side = _.find(neighbors, neighbor => neighbor.isVisible(cube.x, cube.y));
+
+      // Return the tile that intersects the two passed tiles.
+      return _.intersection(tile1.translate(side), tile2.translate(side))[0];
+    }
+
+    return null;
   }
 
   /**

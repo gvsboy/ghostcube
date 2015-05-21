@@ -188,31 +188,6 @@ Cube.prototype = {
   },
 
   /**
-   * Gets the tile where the two passed tile's coordinates intersect.
-   * @param {Tile} [tile1] The first tile selected.
-   * @param {Tile} [tile2] The second tile selected.
-   * @return {Tile}       The tile being attacked.
-   */
-  getAttackTile: function(tile1, tile2) {
-
-    var neighbors, side;
-
-    if (tile1 && tile2 && tile1.isNeighboringSide(tile2)) {
-
-      // Get the neighbor sides and exclude the selected side.
-      neighbors = _.without(tile2.side.getNeighbors(), tile1.side),
-
-      // Get the neighbor that is visible.
-      side = _.find(neighbors, neighbor => neighbor.isVisible(this.x, this.y));
-
-      // Return the tile that intersects the two passed tiles.
-      return _.intersection(tile1.translate(side), tile2.translate(side))[0];
-    }
-
-    return null;
-  },
-
-  /**
    * Given a current coordinate, update it with the difference.
    * If the result is out of the revolution bounds (between 0 and 360),
    * adjust it to a valid value.
