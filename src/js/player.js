@@ -1,69 +1,68 @@
 import _ from 'lodash';
-import Bot from './bot';
 import TileSelector from './selection/TileSelector';
 import CubeCache from './selection/CubeCache';
 
-function Player(name, tileClass, cube) {
-  this.name = name;
-  this.tileClass = tileClass;
-  this._selector = new TileSelector(this);
-  this._cubeCache = new CubeCache(cube);
-}
+class Player {
 
-Player.prototype = {
+  constructor(name, tileClass, cube) {
+    this.name = name;
+    this.tileClass = tileClass;
+    this._selector = new TileSelector(this);
+    this._cubeCache = new CubeCache(cube);
+  }
 
-  isBot: function() {
-    return this instanceof Bot;
-  },
+  isBot() {
+    return false;
+  }
 
-  claim: function(tile) {
+  claim(tile) {
     tile.claim(this);
     this._cubeCache.add(tile);
-  },
+  }
 
-  release: function(tile) {
+  release(tile) {
     this._cubeCache.remove(tile);
     tile.release();
-  },
+  }
 
-  releaseAll: function() {
+  releaseAll() {
     _.forEach(this._cubeCache.getAllTiles(), tile => tile.release());
     this._cubeCache.initialize();
-  },
+  }
 
-  getLines: function() {
+  getLines() {
     return this._cubeCache.getLines();
-  },
+  }
 
   /**
    * @return {Array[Tile]} All the tiles claimed that do not compose lines.
    */
-  getSingles: function() {
+  getSingles() {
     return this._cubeCache._singles;
-  },
+  }
 
   /**
    * @return {Tile} The first tile selected to be claimed.
    */
-  getInitialTile: function() {
+  getInitialTile() {
     return this._selector.getInitial();
-  },
+  }
 
-  getAttackTile: function(tile1, tile2) {
+  getAttackTile(tile1, tile2) {
     return this._cubeCache._cube.getAttackTile(tile1, tile2);
-  },
+  }
 
   /**
    * Win lines are completed lines. This method returns all the win
    * lines claimed by the player.
    * @return {Array} A collection of this player's win lines.
    */
-  getWinLines: function() {
+  getWinLines() {
     var size = this._cubeCache._cube.size;
     return _.filter(this.getLines(), function(line) {
       return line.length() === size;
     });
-  },
+  }
 
   /**
    * Dictates whether or not the player can attack the given tile.
@@ -72,15 +71,15 @@ Player.prototype = {
    * @param  {Tile} tile The tile to check.
    * @return {Boolean} Can the given tile be attacked by this player?
    */
-  canAttack: function(tile) {
+  canAttack(tile) {
     return tile.claimedBy !== this;
-  },
+  }
 
-  selectTile: function(tile, attackTile) {
+  selectTile(tile, attackTile) {
     return this._selector.validate(tile, attackTile);
-  },
+  }
 
-  claimAll: function() {
+  claimAll() {
 
     _.forEach(this._selector._selected, function(tile, index, array) {
 
@@ -98,24 +97,24 @@ Player.prototype = {
     }, this);
 
     this._selector.reset();
-  },
+  }
 
   /**
    * Checks to see if the player has at least one valid move.
    * Resets the selector after performing the check.
    * @return {Boolean} Does a valid move exist?
    */
-  hasValidMoves: function() {
+  hasValidMoves() {
     var hasMove = this.selectRandom();
     this._selector.reset();
     return hasMove;
-  },
+  }
 
   /**
    * Makes a random valid selection.
    * @return {Boolean} Was a valid selection made?
    */
-  selectRandom: function() {
+  selectRandom() {
 
     /**
      * Given a starting tile, attempt to match two more: a secondary tile
@@ -163,9 +162,9 @@ Player.prototype = {
       // there is at least one valid move and true will be returned.
       return selector.validate(tile).success() && attempt(tile);
     });
-  },
+  }
 
-  _createAttackData: function(tile) {
+  _createAttackData(tile) {
     return {
       player: tile.claimedBy,
       tile: tile,
@@ -175,8 +174,6 @@ Player.prototype = {
     };
   }
 
-};
-
-_.assign(Bot.prototype, Player.prototype);
+}
 
 export default Player;
